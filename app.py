@@ -118,7 +118,10 @@ def page(title,body):
 """,
 title=title,
 style=STYLE,
-body=body)FIELDS = {
+    body=body
+)
+
+FIELDS = {
 
 "marriage": {
 "ثبتنام اولیه":[
