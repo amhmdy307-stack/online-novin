@@ -762,3 +762,341 @@ def customer_chat(customer_id):
         "گفت‌وگو با پشتیبانی",
         body
     )
+
+# -------------------------
+# ورود مدیریت
+# -------------------------
+
+ADMIN_PASSWORD = os.environ.get(
+    "ADMIN_PASSWORD",
+    "123456"
+)
+
+
+def admin_required(func):
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+
+        if not session.get("admin_logged_in"):
+
+            return redirect("/admin/login")
+
+        return func(*args, **kwargs)
+
+    return wrapper
+
+
+@app.route(
+    "/admin/login",
+    methods=["GET", "POST"]
+)
+def admin_login():
+
+    error = ""
+
+    if request.method == "POST":
+
+        password = request.form.get(
+            "password",
+            ""
+        )
+
+        if password == ADMIN_PASSWORD:
+
+            session["admin_logged_in"] = True
+
+            return redirect("/admin")
+
+        error = "رمز عبور اشتباه است."
+
+
+    body = f"""
+
+    <h2>
+    ورود مدیریت
+    </h2>
+
+    <p style="color:red;">
+    {error}
+    </p>
+
+    <form method="post">
+
+        <label>
+        رمز عبور مدیریت
+        </label>
+
+        <input
+            type="password"
+            name="password"
+            required
+        >
+
+        <button type="submit">
+        ورود
+        </button>
+
+    </form>
+
+    """
+
+    return layout(
+        "ورود مدیریت",
+        body
+    )
+
+
+# -------------------------
+# پنل مدیریت
+# -------------------------
+
+@app.route("/admin")
+@admin_required
+def admin_panel():
+
+    con = get_connection()
+
+    customers = con.execute(
+        """
+        SELECT *
+        FROM customers
+        ORDER BY id DESC
+        """
+    ).fetchall()
+
+    con.close()
+
+
+    rows = ""
+
+    for customer in customers:
+
+        rows += f"""
+
+        <div style="
+            border:1px solid #ddd;
+            padding:15px;
+            margin:12px 0;
+            border-radius:10px;
+        ">
+
+            <h3>
+            {customer["name"]}
+            </h3>
+
+            <p>
+            تلفن:
+            {customer["phone"] or "-"}
+            </p>
+
+            <p>
+            کد ملی:
+            {customer["national_id"] or "-"}
+            </p>
+
+            <a href="/admin/customer/{customer["id"]}">
+            📁 مشاهده پرونده
+            </a>
+
+        </div>
+
+        """
+
+
+    if not rows:
+
+        rows = """
+        <p>
+        هنوز مشتری‌ای ثبت نشده است.
+        </p>
+        """
+
+
+    body = f"""
+
+    <h2>
+    پنل مدیریت
+    </h2>
+
+    <a href="/admin/messages">
+    💬 پیام‌های پشتیبانی
+    </a>
+
+    <a href="/admin/logout">
+    خروج از مدیریت
+    </a>
+
+    <hr>
+
+    <h3>
+    👥 لیست مشتریان
+    </h3>
+
+    {rows}
+
+    """
+
+    return layout(
+        "لیست مشتریان",
+        body
+    )
+
+
+# -------------------------
+# پرونده مشتری
+# -------------------------
+
+@app.route("/admin/customer/<int:customer_id>")
+@admin_required
+def admin_customer(customer_id):
+
+    con = get_connection()
+
+    customer = con.execute(
+        """
+        SELECT *
+        FROM customers
+        WHERE id = ?
+        """,
+        (customer_id,)
+    ).fetchone()
+
+
+    if not customer:
+
+        con.close()
+
+        return layout(
+            "خطا",
+            "<h3>مشتری پیدا نشد.</h3>"
+        )
+
+
+    services = con.execute(
+        """
+        SELECT *
+        FROM customer_services
+        WHERE customer_id = ?
+        ORDER BY id DESC
+        """,
+        (customer_id,)
+    ).fetchall()
+
+
+    con.close()
+
+
+    service_html = ""
+
+
+    for service in services:
+
+        remaining = (
+            service["total_price"]
+            - service["paid_price"]
+        )
+
+
+        service_html += f"""
+
+        <div style="
+            border:1px solid #ddd;
+            padding:15px;
+            margin:15px 0;
+            border-radius:10px;
+        ">
+
+            <h3>
+            {service["service_name"]}
+            </h3>
+
+            <p>
+            وضعیت:
+            <b>{service["status"]}</b>
+            </p>
+
+            <p>
+            هزینه:
+            {service["total_price"]:,}
+            تومان
+            </p>
+
+            <p>
+            پرداخت:
+            {service["paid_price"]:,}
+            تومان
+            </p>
+
+            <p>
+            مانده:
+            {remaining:,}
+            تومان
+            </p>
+
+            <p>
+            زمان تقریبی:
+            {service["estimated_time"] or "-"}
+            </p>
+
+            <p>
+            توضیحات:
+            {service["customer_note"] or "-"}
+            </p>
+
+            <a href="/admin/service/{service["id"]}">
+            ✏️ مدیریت این خدمت
+            </a>
+
+        </div>
+
+        """
+
+
+    if not service_html:
+
+        service_html = """
+        <p>
+        هنوز خدمتی برای این مشتری ثبت نشده است.
+        </p>
+        """
+
+
+    body = f"""
+
+    <h2>
+    📁 پرونده مشتری
+    </h2>
+
+    <h3>
+    {customer["name"]}
+    </h3>
+
+    <p>
+    شماره تماس:
+    {customer["phone"] or "-"}
+    </p>
+
+    <p>
+    کد ملی:
+    {customer["national_id"] or "-"}
+    </p>
+
+    <hr>
+
+    <h3>
+    خدمات این مشتری
+    </h3>
+
+    {service_html}
+
+    <a href="/admin">
+    بازگشت به لیست مشتریان
+    </a>
+
+    """
+
+    return layout(
+        "پرونده مشتری",
+        body
+    )
