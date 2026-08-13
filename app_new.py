@@ -231,3 +231,215 @@ def home():
         links
 
     )
+
+# -------------------------
+# صفحه هر خدمت
+# -------------------------
+
+
+@app.route("/service/<service_id>", methods=["GET","POST"])
+def service_page(service_id):
+
+
+    service = get_service(service_id)
+
+
+    if not service:
+
+        return layout(
+            "خطا",
+            "خدمت پیدا نشد"
+        )
+
+
+
+    error = ""
+
+
+
+    if request.method == "POST":
+
+
+        name = request.form.get(
+            "name",
+            ""
+        ).strip()
+
+
+        phone = request.form.get(
+            "phone",
+            ""
+        ).strip()
+
+
+        national_id = request.form.get(
+            "national_id",
+            ""
+        ).strip()
+
+
+        postal = request.form.get(
+            "postal",
+            ""
+        ).strip()
+
+
+
+        if not name:
+
+            error = "نام و نام خانوادگی الزامی است"
+
+
+
+        elif not check_national_id(national_id):
+
+            error = "کد ملی صحیح نیست"
+
+
+
+        elif not check_mobile(phone):
+
+            error = "شماره موبایل صحیح نیست"
+
+
+
+        elif not check_postal(postal):
+
+            error = "کد پستی صحیح نیست"
+
+
+
+        else:
+
+
+            customer_id = create_customer(
+
+                name,
+
+                phone,
+
+                national_id
+
+            )
+
+
+            add_service(
+
+                customer_id,
+
+                service["title"]
+
+            )
+
+
+            return layout(
+
+                "ثبت شد",
+
+                f"""
+
+                <h3>
+                درخواست شما ثبت شد
+                </h3>
+
+                <p>
+                کد پیگیری پرونده شما:
+                {customer_id}
+                </p>
+
+                <a href="/tracking">
+                پیگیری وضعیت
+                </a>
+
+                """
+
+            )
+
+
+
+    fields = ""
+
+
+
+    for field in service["fields"]:
+
+
+        fields += f"""
+
+        <label>
+        {field}
+        </label>
+
+
+        <input name="extra" placeholder="{field}">
+
+
+        """
+
+
+
+    body = f"""
+
+    <h3>
+    {service['title']}
+    </h3>
+
+
+    <p style="color:red">
+    {error}
+    </p>
+
+
+    <form method="post">
+
+
+    <input name="name"
+    placeholder="نام و نام خانوادگی"
+    required>
+
+
+    <input name="national_id"
+    placeholder="کد ملی"
+    inputmode="numeric"
+    maxlength="10"
+    required>
+
+
+    <input name="phone"
+    placeholder="شماره موبایل"
+    inputmode="numeric"
+    maxlength="11"
+    required>
+
+
+    <input name="postal"
+    placeholder="کد پستی"
+    inputmode="numeric"
+    maxlength="10"
+    required>
+
+
+
+    {fields}
+
+
+
+    <button>
+    ثبت درخواست
+    </button>
+
+
+    </form>
+
+
+    """
+
+
+
+    return layout(
+
+        service["title"],
+
+        body
+
+    )
