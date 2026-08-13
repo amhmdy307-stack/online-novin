@@ -618,3 +618,147 @@ def tracking():
         "پیگیری وضعیت",
         body
     )
+
+# -------------------------
+# چت مشتری و پشتیبانی
+# -------------------------
+
+@app.route("/chat/<int:customer_id>", methods=["GET", "POST"])
+def customer_chat(customer_id):
+
+    con = get_connection()
+
+    customer = con.execute(
+        """
+        SELECT *
+        FROM customers
+        WHERE id = ?
+        """,
+        (customer_id,)
+    ).fetchone()
+
+    if not customer:
+
+        con.close()
+
+        return layout(
+            "خطا",
+            "<h3>پرونده پیدا نشد.</h3>"
+        )
+
+
+    if request.method == "POST":
+
+        message = request.form.get(
+            "message",
+            ""
+        ).strip()
+
+        if message:
+
+            con.execute(
+                """
+                INSERT INTO messages
+                (customer_id, sender, message, created_at)
+                VALUES (?, ?, ?, ?)
+                """,
+                (
+                    customer_id,
+                    "customer",
+                    message,
+                    datetime.now().strftime(
+                        "%Y-%m-%d %H:%M:%S"
+                    )
+                )
+            )
+
+            con.commit()
+
+
+    messages = con.execute(
+        """
+        SELECT *
+        FROM messages
+        WHERE customer_id = ?
+        ORDER BY id ASC
+        """,
+        (customer_id,)
+    ).fetchall()
+
+    con.close()
+
+
+    chat_html = ""
+
+    for msg in messages:
+
+        if msg["sender"] == "customer":
+
+            title = "شما"
+
+        else:
+
+            title = "پشتیبانی"
+
+
+        chat_html += f"""
+        <div style="
+            background:#f3f3f3;
+            padding:12px;
+            margin:10px 0;
+            border-radius:10px;
+        ">
+
+            <b>{title}</b>
+
+            <p>
+            {msg["message"]}
+            </p>
+
+            <small>
+            {msg["created_at"]}
+            </small>
+
+        </div>
+        """
+
+
+    body = f"""
+
+    <h2>
+    گفت‌وگو با پشتیبانی
+    </h2>
+
+    <p>
+    مشتری: {customer["name"]}
+    </p>
+
+    <hr>
+
+    {chat_html}
+
+    <form method="post">
+
+        <textarea
+            name="message"
+            placeholder="پیام خود را بنویسید..."
+            required
+        ></textarea>
+
+        <button type="submit">
+        ارسال پیام
+        </button>
+
+    </form>
+
+    <a href="/tracking">
+    بازگشت به پیگیری
+    </a>
+
+    """
+
+
+    return layout(
+        "گفت‌وگو با پشتیبانی",
+        body
+    )
