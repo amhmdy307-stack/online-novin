@@ -443,3 +443,178 @@ def service_page(service_id):
         body
 
     )
+
+# -------------------------
+# پیگیری وضعیت درخواست
+# -------------------------
+
+@app.route("/tracking", methods=["GET", "POST"])
+def tracking():
+
+    result = ""
+    error = ""
+
+    if request.method == "POST":
+
+        tracking_id = request.form.get(
+            "tracking_id",
+            ""
+        ).strip()
+
+        if not tracking_id.isdigit():
+
+            error = "کد پیگیری باید فقط شامل اعداد انگلیسی باشد."
+
+        else:
+
+            con = get_connection()
+
+            customer = con.execute(
+                """
+                SELECT *
+                FROM customers
+                WHERE id = ?
+                """,
+                (int(tracking_id),)
+            ).fetchone()
+
+            if not customer:
+
+                error = "پرونده‌ای با این کد پیگیری پیدا نشد."
+
+            else:
+
+                services = con.execute(
+                    """
+                    SELECT *
+                    FROM customer_services
+                    WHERE customer_id = ?
+                    ORDER BY id DESC
+                    """,
+                    (customer["id"],)
+                ).fetchall()
+
+                con.close()
+
+                cards = ""
+
+                for item in services:
+
+                    remaining = (
+                        item["total_price"]
+                        - item["paid_price"]
+                    )
+
+                    cards += f"""
+                    <div style="
+                        border:1px solid #ddd;
+                        padding:15px;
+                        margin:12px 0;
+                        border-radius:10px;
+                    ">
+
+                        <h3>
+                        {item["service_name"]}
+                        </h3>
+
+                        <p>
+                        <b>وضعیت:</b>
+                        {item["status"]}
+                        </p>
+
+                        <p>
+                        <b>زمان تقریبی:</b>
+                        {item["estimated_time"] or "اعلام نشده"}
+                        </p>
+
+                        <p>
+                        <b>توضیحات:</b>
+                        {item["customer_note"] or "توضیحی ثبت نشده"}
+                        </p>
+
+                        <hr>
+
+                        <p>
+                        <b>هزینه خدمت:</b>
+                        {item["total_price"]:,} تومان
+                        </p>
+
+                        <p>
+                        <b>پرداخت شده:</b>
+                        {item["paid_price"]:,} تومان
+                        </p>
+
+                        <p>
+                        <b>مانده:</b>
+                        {remaining:,} تومان
+                        </p>
+
+                        <p class="small">
+                        تاریخ ثبت:
+                        {item["created_at"]}
+                        </p>
+
+                    </div>
+                    """
+
+                result = f"""
+                <div class="box">
+
+                    <h3>
+                    پرونده {customer["name"]}
+                    </h3>
+
+                    <p>
+                    شماره پیگیری:
+                    {customer["id"]}
+                    </p>
+
+                    {cards}
+
+                    <a href="/chat/{customer["id"]}">
+                    💬 گفت‌وگو با پشتیبانی
+                    </a>
+
+                </div>
+                """
+
+
+    body = f"""
+
+    <h2>
+    پیگیری وضعیت درخواست
+    </h2>
+
+    <p style="color:red;">
+    {error}
+    </p>
+
+    <form method="post">
+
+        <label>
+        کد پیگیری پرونده
+        </label>
+
+        <input
+            type="text"
+            name="tracking_id"
+            inputmode="numeric"
+            pattern="[0-9]+"
+            oninput="this.value=this.value.replace(/[^0-9]/g,'')"
+            required
+        >
+
+        <button type="submit">
+        مشاهده وضعیت
+        </button>
+
+    </form>
+
+    {result}
+
+    """
+
+    return layout(
+        "پیگیری وضعیت",
+        body
+    )
