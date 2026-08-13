@@ -1100,3 +1100,270 @@ def admin_customer(customer_id):
         "پرونده مشتری",
         body
     )
+
+# -------------------------
+# مدیریت یک خدمت
+# -------------------------
+
+@app.route(
+    "/admin/service/<int:service_id>",
+    methods=["GET", "POST"]
+)
+@admin_required
+def admin_service(service_id):
+
+    con = get_connection()
+
+    service = con.execute(
+        """
+        SELECT
+            cs.*,
+            c.name AS customer_name
+        FROM customer_services cs
+        JOIN customers c
+            ON c.id = cs.customer_id
+        WHERE cs.id = ?
+        """,
+        (service_id,)
+    ).fetchone()
+
+    if not service:
+
+        con.close()
+
+        return layout(
+            "خطا",
+            "<h3>خدمت پیدا نشد.</h3>"
+        )
+
+    error = ""
+
+    if request.method == "POST":
+
+        status = request.form.get(
+            "status",
+            "جدید"
+        ).strip()
+
+        estimated_time = request.form.get(
+            "estimated_time",
+            ""
+        ).strip()
+
+        customer_note = request.form.get(
+            "customer_note",
+            ""
+        ).strip()
+
+        total_price = request.form.get(
+            "total_price",
+            "0"
+        ).strip()
+
+        paid_price = request.form.get(
+            "paid_price",
+            "0"
+        ).strip()
+
+        if not check_price(total_price):
+
+            error = "هزینه کل باید فقط عدد انگلیسی باشد."
+
+        elif not check_price(paid_price):
+
+            error = "مبلغ پرداختی باید فقط عدد انگلیسی باشد."
+
+        else:
+
+            total_price = int(total_price or 0)
+            paid_price = int(paid_price or 0)
+
+            if paid_price > total_price:
+
+                error = (
+                    "مبلغ پرداختی نمی‌تواند "
+                    "بیشتر از هزینه کل باشد."
+                )
+
+            else:
+
+                con.execute(
+                    """
+                    UPDATE customer_services
+                    SET
+                        status = ?,
+                        estimated_time = ?,
+                        customer_note = ?,
+                        total_price = ?,
+                        paid_price = ?
+                    WHERE id = ?
+                    """,
+                    (
+                        status,
+                        estimated_time,
+                        customer_note,
+                        total_price,
+                        paid_price,
+                        service_id
+                    )
+                )
+
+                con.commit()
+
+                customer_id = service["customer_id"]
+
+                con.close()
+
+                return redirect(
+                    f"/admin/customer/{customer_id}"
+                )
+
+    con.close()
+
+    body = f"""
+
+    <h2>
+    مدیریت خدمت
+    </h2>
+
+    <p>
+    <b>مشتری:</b>
+    {service["customer_name"]}
+    </p>
+
+    <p>
+    <b>خدمت:</b>
+    {service["service_name"]}
+    </p>
+
+    <p style="color:red;">
+    {error}
+    </p>
+
+    <form method="post">
+
+        <label>
+        وضعیت خدمت
+        </label>
+
+        <select name="status">
+
+            <option
+            value="جدید"
+            {"selected" if service["status"] == "جدید" else ""}
+            >
+            جدید
+            </option>
+
+            <option
+            value="در حال بررسی"
+            {"selected" if service["status"] == "در حال بررسی" else ""}
+            >
+            در حال بررسی
+            </option>
+
+            <option
+            value="در حال انجام"
+            {"selected" if service["status"] == "در حال انجام" else ""}
+            >
+            در حال انجام
+            </option>
+
+            <option
+            value="نیاز به پیگیری"
+            {"selected" if service["status"] == "نیاز به پیگیری" else ""}
+            >
+            نیاز به پیگیری
+            </option>
+
+            <option
+            value="منتظر پاسخ سازمان"
+            {"selected" if service["status"] == "منتظر پاسخ سازمان" else ""}
+            >
+            منتظر پاسخ سازمان
+            </option>
+
+            <option
+            value="انجام شده"
+            {"selected" if service["status"] == "انجام شده" else ""}
+            >
+            انجام شده
+            </option>
+
+            <option
+            value="رد درخواست"
+            {"selected" if service["status"] == "رد درخواست" else ""}
+            >
+            رد درخواست
+            </option>
+
+            <option
+            value="لغو شده"
+            {"selected" if service["status"] == "لغو شده" else ""}
+            >
+            لغو شده
+            </option>
+
+        </select>
+
+
+        <label>
+        هزینه کل (تومان)
+        </label>
+
+        <input
+            type="text"
+            name="total_price"
+            inputmode="numeric"
+            pattern="[0-9]*"
+            value="{service["total_price"]}"
+            oninput="this.value=this.value.replace(/[^0-9]/g,'')"
+            required
+        >
+
+
+        <label>
+        مبلغ پرداخت شده (تومان)
+        </label>
+
+        <input
+            type="text"
+            name="paid_price"
+            inputmode="numeric"
+            pattern="[0-9]*"
+            value="{service["paid_price"]}"
+            oninput="this.value=this.value.replace(/[^0-9]/g,'')"
+            required
+        >
+
+
+        <label>
+        زمان تقریبی انجام
+        </label>
+
+        <input
+            type="text"
+            name="estimated_time"
+            value="{service["estimated_time"] or ""}"
+            placeholder="مثلاً ۳ روز کاری"
+        >
+
+
+        <label>
+        توضیحات برای مشتری
+        </label>
+
+        <textarea
+            name="customer_note"
+            rows="5"
+            placeholder="توضیحات دلخواه برای مشتری"
+        >{service["customer_note"] or ""}</textarea>
+
+
+        <button type="submit">
+        ذخیره تغییرات
+        </button>
+
+    </form>
+
+    <
