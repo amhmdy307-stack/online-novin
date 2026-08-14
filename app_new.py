@@ -1546,27 +1546,133 @@ def admin_chat(customer_id):
             <b>
             {sender}
             </b>
+@app.route("/admin/messages")
+@admin_required
+def admin_messages():
+    con = get_connection()
 
-            <p>
-            {msg["message"]}
-            </p>
+    messages = con.execute(
+        """
+        SELECT
+            m.*,
+            c.name AS customer_name
+        FROM messages m
+        JOIN customers c
+            ON c.id = m.customer_id
+        ORDER BY m.id DESC
+        """
+    ).fetchall()
 
-            <small>
-            {msg["created_at"]}
-            </small>
+    con.close()
 
+    items = ""
+
+    for msg in messages:
+        sender = "مشتری" if msg["sender"] == "customer" else "پشتیبانی"
+
+        items += f"""
+        <div class="box">
+            <h3>{msg["customer_name"]}</h3>
+            <p><b>{sender}</b></p>
+            <p>{msg["message"]}</p>
+            <small>{msg["created_at"]}</small>
+            <br><br>
+            <a href="/admin/chat/{msg["customer_id"]}">
+                پاسخ به مشتری
+            </a>
+        </div>
+        """
+
+    if not items:
+        items = "<p>هنوز پیامی ثبت نشده است.</p>"
+
+    body = f"""
+    <h2>پیام‌های پشتیبانی</h2>
+
+    {items}
+
+    <br>
+
+    <a href="/admin">
+        بازگشت به پنل مدیریت
+    </a>
+    """
+
+    return layout("پیام‌های پشتیبانی", body)
+
+
+@app.route("/admin/chat/<int:customer_id>", methods=["GET", "POST"])
+@admin_required
+def admin_chat(customer_id):
+    con = get_connection()
+
+    customer = con.execute(
+        """
+        SELECT *
+        FROM customers
+        WHERE id = ?
+        """,
+        (customer_id,)
+    ).fetchone()
+
+    if not customer:
+        con.close()
+        return layout(
+            "خطا",
+            "<h3>مشتری پیدا نشد.</h3>"
+        )
+
+    if request.method == "POST":
+        message = request.form.get("message", "").strip()
+
+        if message:
+            con.execute(
+                """
+                INSERT INTO messages
+                (customer_id, sender, message, created_at)
+                VALUES (?, ?, ?, ?)
+                """,
+                (
+                    customer_id,
+                    "admin",
+                    message,
+                    datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                )
+            )
+
+            con.commit()
+
+    messages = con.execute(
+        """
+        SELECT *
+        FROM messages
+        WHERE customer_id = ?
+        ORDER BY id ASC
+        """,
+        (customer_id,)
+    ).fetchall()
+
+    con.close()
+
+    chat = ""
+
+    for msg in messages:
+        sender = "مشتری" if msg["sender"] == "customer" else "پشتیبانی"
+
+        chat += f"""
+        <div class="box">
+            <b>{sender}</b>
+            <p>{msg["message"]}</p>
+            <small>{msg["created_at"]}</small>
         </div>
         """
 
     body = f"""
-    <h2>
-    گفت‌وگو با {customer["name"]}
-    </h2>
+    <h2>گفت‌وگو با {customer["name"]}</h2>
 
     {chat}
 
     <form method="post">
-
         <textarea
             name="message"
             rows="5"
@@ -1575,33 +1681,27 @@ def admin_chat(customer_id):
         ></textarea>
 
         <button type="submit">
-        ارسال پاسخ
+            ارسال پاسخ
         </button>
-
     </form>
 
+    <br>
+
     <a href="/admin/messages">
-    بازگشت به پیام‌ها
+        بازگشت به پیام‌های پشتیبانی
     </a>
 
+    <br><br>
+
     <a href="/admin/customer/{customer_id}">
-    مشاهده پرونده مشتری
+        مشاهده پرونده مشتری
     </a>
     """
 
-    return layout(
-        "پاسخ پشتیبانی",
-        body
-    )
+    return layout("گفت‌وگوی پشتیبانی", body)
 
-
-# -------------------------
-# خروج از پنل مدیریت
-# -------------------------
 
 @app.route("/admin/logout")
 def admin_logout():
-
     session.clear()
-
     return redirect("/admin/login")
