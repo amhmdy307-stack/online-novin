@@ -19,34 +19,28 @@ import os
 
 app = Flask(__name__)
 
-app.secret_key = "online_novin_secret_key"
+app.secret_key = os.environ.get(
+    "SECRET_KEY",
+    "online_novin_secret_key"
+)
 
-
-# اطلاعات کافی نت
 
 SITE_NAME = "کافی نت آنلاین نوین"
-
 MANAGER = "احمد محمدی مهر"
-
 PHONE = "09920345139"
 
 
-
-# ساخت دیتابیس
-
+# ساخت جداول دیتابیس
 create_tables()
 
 
-
 # -------------------------
-# قالب ساده سایت
+# قالب اصلی سایت
 # -------------------------
-
 
 def layout(title, body):
 
     return f"""
-
 <!DOCTYPE html>
 
 <html lang="fa" dir="rtl">
@@ -55,98 +49,64 @@ def layout(title, body):
 
 <meta charset="UTF-8">
 
-<meta name="viewport" content="width=device-width, initial-scale=1">
-
+<meta name="viewport"
+content="width=device-width, initial-scale=1">
 
 <title>{title}</title>
-
 
 <style>
 
 body {{
-
-font-family:tahoma;
-
-background:#f2f2f2;
-
-padding:20px;
-
+    font-family: tahoma;
+    background: #f2f2f2;
+    padding: 20px;
 }}
-
 
 .box {{
-
-background:white;
-
-max-width:700px;
-
-margin:auto;
-
-padding:20px;
-
-border-radius:15px;
-
+    background: white;
+    max-width: 700px;
+    margin: auto;
+    padding: 20px;
+    border-radius: 15px;
 }}
 
-
-input,textarea,button,select {{
-
-width:100%;
-
-padding:12px;
-
-margin:8px 0;
-
-font-size:16px;
-
+input,
+textarea,
+button,
+select {{
+    width: 100%;
+    padding: 12px;
+    margin: 8px 0;
+    font-size: 16px;
+    box-sizing: border-box;
 }}
-
 
 button {{
-
-background:#0077aa;
-
-color:white;
-
-border:0;
-
-border-radius:8px;
-
+    background: #0077aa;
+    color: white;
+    border: 0;
+    border-radius: 8px;
+    cursor: pointer;
 }}
-
 
 a {{
-
-display:block;
-
-background:#0077aa;
-
-color:white;
-
-padding:12px;
-
-margin:10px;
-
-text-align:center;
-
-text-decoration:none;
-
-border-radius:8px;
-
+    display: block;
+    background: #0077aa;
+    color: white;
+    padding: 12px;
+    margin: 10px 0;
+    text-align: center;
+    text-decoration: none;
+    border-radius: 8px;
 }}
-
 
 </style>
 
-
 </head>
-
 
 <body>
 
-
 <div class="box">
-
 
 <h2>{SITE_NAME}</h2>
 
@@ -158,91 +118,64 @@ border-radius:8px;
 تماس : {PHONE}
 </p>
 
-
 <hr>
-
 
 {body}
 
-
 </div>
-
 
 </body>
 
 </html>
-
 """
-
 
 
 # -------------------------
 # صفحه اصلی
 # -------------------------
 
-
 @app.route("/")
 def home():
 
-
     services = get_all_services()
-
 
     links = ""
 
-
-    for key,item in services.items():
+    for key, item in services.items():
 
         links += f"""
-
         <a href="/service/{key}">
-
         {item['title']}
-
         </a>
-
         """
 
-
-
     links += """
-
     <a href="/tracking">
-
     پیگیری وضعیت درخواست
-
     </a>
-
 
     <a href="/admin/login">
-
     ورود مدیریت
-
     </a>
-
     """
 
-
-
     return layout(
-
         "خانه",
-
         links
-
     )
+
 
 # -------------------------
 # صفحه هر خدمت
 # -------------------------
 
-
-@app.route("/service/<service_id>", methods=["GET","POST"])
+@app.route(
+    "/service/<service_id>",
+    methods=["GET", "POST"]
+)
 def service_page(service_id):
 
-
     service = get_service(service_id)
-
 
     if not service:
 
@@ -251,132 +184,101 @@ def service_page(service_id):
             "خدمت پیدا نشد"
         )
 
-
-
     error = ""
 
-
-
     if request.method == "POST":
-
 
         name = request.form.get(
             "name",
             ""
         ).strip()
 
-
         phone = request.form.get(
             "phone",
             ""
         ).strip()
-
 
         national_id = request.form.get(
             "national_id",
             ""
         ).strip()
 
-
         postal = request.form.get(
             "postal",
             ""
         ).strip()
 
-
-
         if not name:
 
-            error = "نام و نام خانوادگی الزامی است"
+            error = (
+                "نام و نام خانوادگی الزامی است"
+            )
 
+        elif not check_national_id(
+            national_id
+        ):
 
-
-        elif not check_national_id(national_id):
-
-            error = "کد ملی صحیح نیست"
-
-
+            error = (
+                "کد ملی صحیح نیست"
+            )
 
         elif not check_mobile(phone):
 
-            error = "شماره موبایل صحیح نیست"
-
-
+            error = (
+                "شماره موبایل صحیح نیست"
+            )
 
         elif not check_postal(postal):
 
-            error = "کد پستی صحیح نیست"
-
-
+            error = (
+                "کد پستی صحیح نیست"
+            )
 
         else:
 
-
             customer_id = create_customer(
-
                 name,
-
                 phone,
-
                 national_id
-
             )
-
 
             add_service(
-
                 customer_id,
-
                 service["title"]
-
             )
 
-
             return layout(
-
                 "ثبت شد",
-
                 f"""
-
                 <h3>
-                درخواست شما ثبت شد
+                درخواست شما با موفقیت ثبت شد.
                 </h3>
 
                 <p>
                 کد پیگیری پرونده شما:
-                {customer_id}
+                <b>{customer_id}</b>
                 </p>
 
                 <a href="/tracking">
                 پیگیری وضعیت
                 </a>
-
                 """
-
             )
-
-
 
     fields = ""
 
-
-
     for field in service["fields"]:
 
-
         fields += f"""
-
         <label>
         {field}
         </label>
 
-
-        <input name="extra" placeholder="{field}">
-
-
+        <input
+            name="extra"
+            placeholder="{field}"
+        >
         """
-
-
 
     body = f"""
 
@@ -384,71 +286,66 @@ def service_page(service_id):
     {service['title']}
     </h3>
 
-
-    <p style="color:red">
+    <p style="color:red;">
     {error}
     </p>
 
-
     <form method="post">
 
+        <input
+            name="name"
+            placeholder="نام و نام خانوادگی"
+            required
+        >
 
-    <input name="name"
-    placeholder="نام و نام خانوادگی"
-    required>
+        <input
+            name="national_id"
+            placeholder="کد ملی"
+            inputmode="numeric"
+            maxlength="10"
+            required
+        >
 
+        <input
+            name="phone"
+            placeholder="شماره موبایل"
+            inputmode="numeric"
+            maxlength="11"
+            required
+        >
 
-    <input name="national_id"
-    placeholder="کد ملی"
-    inputmode="numeric"
-    maxlength="10"
-    required>
+        <input
+            name="postal"
+            placeholder="کد پستی"
+            inputmode="numeric"
+            maxlength="10"
+            required
+        >
 
+        {fields}
 
-    <input name="phone"
-    placeholder="شماره موبایل"
-    inputmode="numeric"
-    maxlength="11"
-    required>
-
-
-    <input name="postal"
-    placeholder="کد پستی"
-    inputmode="numeric"
-    maxlength="10"
-    required>
-
-
-
-    {fields}
-
-
-
-    <button>
-    ثبت درخواست
-    </button>
-
+        <button type="submit">
+        ثبت درخواست
+        </button>
 
     </form>
 
-
     """
 
-
-
     return layout(
-
         service["title"],
-
         body
-
     )
+
 
 # -------------------------
 # پیگیری وضعیت درخواست
 # -------------------------
 
-@app.route("/tracking", methods=["GET", "POST"])
+@app.route(
+    "/tracking",
+    methods=["GET", "POST"]
+)
 def tracking():
 
     result = ""
@@ -463,7 +360,10 @@ def tracking():
 
         if not tracking_id.isdigit():
 
-            error = "کد پیگیری باید فقط شامل اعداد انگلیسی باشد."
+            error = (
+                "کد پیگیری باید فقط شامل "
+                "اعداد انگلیسی باشد."
+            )
 
         else:
 
@@ -480,7 +380,12 @@ def tracking():
 
             if not customer:
 
-                error = "پرونده‌ای با این کد پیگیری پیدا نشد."
+                con.close()
+
+                error = (
+                    "پرونده‌ای با این کد "
+                    "پیگیری پیدا نشد."
+                )
 
             else:
 
@@ -524,32 +429,37 @@ def tracking():
 
                         <p>
                         <b>زمان تقریبی:</b>
-                        {item["estimated_time"] or "اعلام نشده"}
+                        {item["estimated_time"]
+                        or "اعلام نشده"}
                         </p>
 
                         <p>
                         <b>توضیحات:</b>
-                        {item["customer_note"] or "توضیحی ثبت نشده"}
+                        {item["customer_note"]
+                        or "توضیحی ثبت نشده"}
                         </p>
 
                         <hr>
 
                         <p>
                         <b>هزینه خدمت:</b>
-                        {item["total_price"]:,} تومان
+                        {item["total_price"]:,}
+                        تومان
                         </p>
 
                         <p>
                         <b>پرداخت شده:</b>
-                        {item["paid_price"]:,} تومان
+                        {item["paid_price"]:,}
+                        تومان
                         </p>
 
                         <p>
                         <b>مانده:</b>
-                        {remaining:,} تومان
+                        {remaining:,}
+                        تومان
                         </p>
 
-                        <p class="small">
+                        <p>
                         تاریخ ثبت:
                         {item["created_at"]}
                         </p>
@@ -558,6 +468,7 @@ def tracking():
                     """
 
                 result = f"""
+
                 <div class="box">
 
                     <h3>
@@ -576,8 +487,8 @@ def tracking():
                     </a>
 
                 </div>
-                """
 
+                """
 
     body = f"""
 
@@ -600,7 +511,9 @@ def tracking():
             name="tracking_id"
             inputmode="numeric"
             pattern="[0-9]+"
-            oninput="this.value=this.value.replace(/[^0-9]/g,'')"
+            oninput="
+            this.value=this.value.replace(
+            /[^0-9]/g,'')"
             required
         >
 
@@ -619,11 +532,15 @@ def tracking():
         body
     )
 
+
 # -------------------------
 # چت مشتری و پشتیبانی
 # -------------------------
 
-@app.route("/chat/<int:customer_id>", methods=["GET", "POST"])
+@app.route(
+    "/chat/<int:customer_id>",
+    methods=["GET", "POST"]
+)
 def customer_chat(customer_id):
 
     con = get_connection()
@@ -645,7 +562,6 @@ def customer_chat(customer_id):
             "خطا",
             "<h3>پرونده پیدا نشد.</h3>"
         )
-
 
     if request.method == "POST":
 
@@ -674,7 +590,6 @@ def customer_chat(customer_id):
 
             con.commit()
 
-
     messages = con.execute(
         """
         SELECT *
@@ -687,21 +602,18 @@ def customer_chat(customer_id):
 
     con.close()
 
-
     chat_html = ""
 
     for msg in messages:
 
-        if msg["sender"] == "customer":
-
-            title = "شما"
-
-        else:
-
-            title = "پشتیبانی"
-
+        title = (
+            "شما"
+            if msg["sender"] == "customer"
+            else "پشتیبانی"
+        )
 
         chat_html += f"""
+
         <div style="
             background:#f3f3f3;
             padding:12px;
@@ -720,8 +632,8 @@ def customer_chat(customer_id):
             </small>
 
         </div>
-        """
 
+        """
 
     body = f"""
 
@@ -730,7 +642,8 @@ def customer_chat(customer_id):
     </h2>
 
     <p>
-    مشتری: {customer["name"]}
+    مشتری:
+    {customer["name"]}
     </p>
 
     <hr>
@@ -757,11 +670,11 @@ def customer_chat(customer_id):
 
     """
 
-
     return layout(
         "گفت‌وگو با پشتیبانی",
         body
     )
+
 
 # -------------------------
 # ورود مدیریت
@@ -778,9 +691,13 @@ def admin_required(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
 
-        if not session.get("admin_logged_in"):
+        if not session.get(
+            "admin_logged_in"
+        ):
 
-            return redirect("/admin/login")
+            return redirect(
+                "/admin/login"
+            )
 
         return func(*args, **kwargs)
 
@@ -804,12 +721,13 @@ def admin_login():
 
         if password == ADMIN_PASSWORD:
 
-            session["admin_logged_in"] = True
+            session[
+                "admin_logged_in"
+            ] = True
 
             return redirect("/admin")
 
         error = "رمز عبور اشتباه است."
-
 
     body = f"""
 
@@ -867,7 +785,6 @@ def admin_panel():
 
     con.close()
 
-
     rows = ""
 
     for customer in customers:
@@ -903,7 +820,6 @@ def admin_panel():
 
         """
 
-
     if not rows:
 
         rows = """
@@ -911,7 +827,6 @@ def admin_panel():
         هنوز مشتری‌ای ثبت نشده است.
         </p>
         """
-
 
     body = f"""
 
@@ -947,7 +862,9 @@ def admin_panel():
 # پرونده مشتری
 # -------------------------
 
-@app.route("/admin/customer/<int:customer_id>")
+@app.route(
+    "/admin/customer/<int:customer_id>"
+)
 @admin_required
 def admin_customer(customer_id):
 
@@ -962,7 +879,6 @@ def admin_customer(customer_id):
         (customer_id,)
     ).fetchone()
 
-
     if not customer:
 
         con.close()
@@ -971,7 +887,6 @@ def admin_customer(customer_id):
             "خطا",
             "<h3>مشتری پیدا نشد.</h3>"
         )
-
 
     services = con.execute(
         """
@@ -983,12 +898,9 @@ def admin_customer(customer_id):
         (customer_id,)
     ).fetchall()
 
-
     con.close()
 
-
     service_html = ""
-
 
     for service in services:
 
@@ -996,7 +908,6 @@ def admin_customer(customer_id):
             service["total_price"]
             - service["paid_price"]
         )
-
 
         service_html += f"""
 
@@ -1052,7 +963,6 @@ def admin_customer(customer_id):
 
         """
 
-
     if not service_html:
 
         service_html = """
@@ -1060,7 +970,6 @@ def admin_customer(customer_id):
         هنوز خدمتی برای این مشتری ثبت نشده است.
         </p>
         """
-
 
     body = f"""
 
@@ -1099,8 +1008,7 @@ def admin_customer(customer_id):
     return layout(
         "پرونده مشتری",
         body
-    )
-
+)
 # -------------------------
 # مدیریت یک خدمت
 # -------------------------
@@ -1167,16 +1075,25 @@ def admin_service(service_id):
 
         if not check_price(total_price):
 
-            error = "هزینه کل باید فقط عدد انگلیسی باشد."
+            error = (
+                "هزینه کل باید فقط عدد انگلیسی باشد."
+            )
 
         elif not check_price(paid_price):
 
-            error = "مبلغ پرداختی باید فقط عدد انگلیسی باشد."
+            error = (
+                "مبلغ پرداختی باید فقط عدد انگلیسی باشد."
+            )
 
         else:
 
-            total_price = int(total_price or 0)
-            paid_price = int(paid_price or 0)
+            total_price = int(
+                total_price or 0
+            )
+
+            paid_price = int(
+                paid_price or 0
+            )
 
             if paid_price > total_price:
 
@@ -1210,7 +1127,9 @@ def admin_service(service_id):
 
                 con.commit()
 
-                customer_id = service["customer_id"]
+                customer_id = service[
+                    "customer_id"
+                ]
 
                 con.close()
 
@@ -1249,63 +1168,62 @@ def admin_service(service_id):
         <select name="status">
 
             <option
-            value="جدید"
-            {"selected" if service["status"] == "جدید" else ""}
+                value="جدید"
+                {"selected" if service["status"] == "جدید" else ""}
             >
-            جدید
+                جدید
             </option>
 
             <option
-            value="در حال بررسی"
-            {"selected" if service["status"] == "در حال بررسی" else ""}
+                value="در حال بررسی"
+                {"selected" if service["status"] == "در حال بررسی" else ""}
             >
-            در حال بررسی
+                در حال بررسی
             </option>
 
             <option
-            value="در حال انجام"
-            {"selected" if service["status"] == "در حال انجام" else ""}
+                value="در حال انجام"
+                {"selected" if service["status"] == "در حال انجام" else ""}
             >
-            در حال انجام
+                در حال انجام
             </option>
 
             <option
-            value="نیاز به پیگیری"
-            {"selected" if service["status"] == "نیاز به پیگیری" else ""}
+                value="نیاز به پیگیری"
+                {"selected" if service["status"] == "نیاز به پیگیری" else ""}
             >
-            نیاز به پیگیری
+                نیاز به پیگیری
             </option>
 
             <option
-            value="منتظر پاسخ سازمان"
-            {"selected" if service["status"] == "منتظر پاسخ سازمان" else ""}
+                value="منتظر پاسخ سازمان"
+                {"selected" if service["status"] == "منتظر پاسخ سازمان" else ""}
             >
-            منتظر پاسخ سازمان
+                منتظر پاسخ سازمان
             </option>
 
             <option
-            value="انجام شده"
-            {"selected" if service["status"] == "انجام شده" else ""}
+                value="انجام شده"
+                {"selected" if service["status"] == "انجام شده" else ""}
             >
-            انجام شده
+                انجام شده
             </option>
 
             <option
-            value="رد درخواست"
-            {"selected" if service["status"] == "رد درخواست" else ""}
+                value="رد درخواست"
+                {"selected" if service["status"] == "رد درخواست" else ""}
             >
-            رد درخواست
+                رد درخواست
             </option>
 
             <option
-            value="لغو شده"
-            {"selected" if service["status"] == "لغو شده" else ""}
+                value="لغو شده"
+                {"selected" if service["status"] == "لغو شده" else ""}
             >
-            لغو شده
+                لغو شده
             </option>
 
         </select>
-
 
         <label>
         هزینه کل (تومان)
@@ -1321,7 +1239,6 @@ def admin_service(service_id):
             required
         >
 
-
         <label>
         مبلغ پرداخت شده (تومان)
         </label>
@@ -1336,7 +1253,6 @@ def admin_service(service_id):
             required
         >
 
-
         <label>
         زمان تقریبی انجام
         </label>
@@ -1348,7 +1264,6 @@ def admin_service(service_id):
             placeholder="مثلاً ۳ روز کاری"
         >
 
-
         <label>
         توضیحات برای مشتری
         </label>
@@ -1359,16 +1274,25 @@ def admin_service(service_id):
             placeholder="توضیحات دلخواه برای مشتری"
         >{service["customer_note"] or ""}</textarea>
 
-
         <button type="submit">
         ذخیره تغییرات
         </button>
 
     </form>
 
-    <
+    <a href="/admin/customer/{service["customer_id"]}">
+    بازگشت به پرونده مشتری
+    </a>
 
-                    # -------------------------
+    """
+
+    return layout(
+        "مدیریت خدمت",
+        body
+    )
+
+
+# -------------------------
 # پیام‌های پشتیبانی
 # -------------------------
 
@@ -1396,7 +1320,14 @@ def admin_messages():
 
     for msg in messages:
 
+        sender = (
+            "مشتری"
+            if msg["sender"] == "customer"
+            else "پشتیبانی"
+        )
+
         items += f"""
+
         <div style="
             border:1px solid #ddd;
             padding:15px;
@@ -1409,9 +1340,7 @@ def admin_messages():
             </h3>
 
             <p>
-            <b>
-            {"مشتری" if msg["sender"] == "customer" else "پشتیبانی"}
-            </b>
+            <b>{sender}</b>
             </p>
 
             <p>
@@ -1427,6 +1356,7 @@ def admin_messages():
             </a>
 
         </div>
+
         """
 
     if not items:
@@ -1438,6 +1368,7 @@ def admin_messages():
         """
 
     body = f"""
+
     <h2>
     💬 پیام‌های پشتیبانی
     </h2>
@@ -1447,6 +1378,7 @@ def admin_messages():
     <a href="/admin">
     بازگشت به پنل مدیریت
     </a>
+
     """
 
     return layout(
@@ -1536,6 +1468,7 @@ def admin_chat(customer_id):
         )
 
         chat += f"""
+
         <div style="
             background:#f3f3f3;
             padding:12px;
@@ -1546,133 +1479,29 @@ def admin_chat(customer_id):
             <b>
             {sender}
             </b>
-@app.route("/admin/messages")
-@admin_required
-def admin_messages():
-    con = get_connection()
 
-    messages = con.execute(
-        """
-        SELECT
-            m.*,
-            c.name AS customer_name
-        FROM messages m
-        JOIN customers c
-            ON c.id = m.customer_id
-        ORDER BY m.id DESC
-        """
-    ).fetchall()
+            <p>
+            {msg["message"]}
+            </p>
 
-    con.close()
+            <small>
+            {msg["created_at"]}
+            </small>
 
-    items = ""
-
-    for msg in messages:
-        sender = "مشتری" if msg["sender"] == "customer" else "پشتیبانی"
-
-        items += f"""
-        <div class="box">
-            <h3>{msg["customer_name"]}</h3>
-            <p><b>{sender}</b></p>
-            <p>{msg["message"]}</p>
-            <small>{msg["created_at"]}</small>
-            <br><br>
-            <a href="/admin/chat/{msg["customer_id"]}">
-                پاسخ به مشتری
-            </a>
         </div>
-        """
 
-    if not items:
-        items = "<p>هنوز پیامی ثبت نشده است.</p>"
-
-    body = f"""
-    <h2>پیام‌های پشتیبانی</h2>
-
-    {items}
-
-    <br>
-
-    <a href="/admin">
-        بازگشت به پنل مدیریت
-    </a>
-    """
-
-    return layout("پیام‌های پشتیبانی", body)
-
-
-@app.route("/admin/chat/<int:customer_id>", methods=["GET", "POST"])
-@admin_required
-def admin_chat(customer_id):
-    con = get_connection()
-
-    customer = con.execute(
-        """
-        SELECT *
-        FROM customers
-        WHERE id = ?
-        """,
-        (customer_id,)
-    ).fetchone()
-
-    if not customer:
-        con.close()
-        return layout(
-            "خطا",
-            "<h3>مشتری پیدا نشد.</h3>"
-        )
-
-    if request.method == "POST":
-        message = request.form.get("message", "").strip()
-
-        if message:
-            con.execute(
-                """
-                INSERT INTO messages
-                (customer_id, sender, message, created_at)
-                VALUES (?, ?, ?, ?)
-                """,
-                (
-                    customer_id,
-                    "admin",
-                    message,
-                    datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                )
-            )
-
-            con.commit()
-
-    messages = con.execute(
-        """
-        SELECT *
-        FROM messages
-        WHERE customer_id = ?
-        ORDER BY id ASC
-        """,
-        (customer_id,)
-    ).fetchall()
-
-    con.close()
-
-    chat = ""
-
-    for msg in messages:
-        sender = "مشتری" if msg["sender"] == "customer" else "پشتیبانی"
-
-        chat += f"""
-        <div class="box">
-            <b>{sender}</b>
-            <p>{msg["message"]}</p>
-            <small>{msg["created_at"]}</small>
-        </div>
         """
 
     body = f"""
-    <h2>گفت‌وگو با {customer["name"]}</h2>
+
+    <h2>
+    گفت‌وگو با {customer["name"]}
+    </h2>
 
     {chat}
 
     <form method="post">
+
         <textarea
             name="message"
             rows="5"
@@ -1681,27 +1510,55 @@ def admin_chat(customer_id):
         ></textarea>
 
         <button type="submit">
-            ارسال پاسخ
+        ارسال پاسخ
         </button>
+
     </form>
 
-    <br>
-
     <a href="/admin/messages">
-        بازگشت به پیام‌های پشتیبانی
+    بازگشت به پیام‌های پشتیبانی
     </a>
-
-    <br><br>
 
     <a href="/admin/customer/{customer_id}">
-        مشاهده پرونده مشتری
+    مشاهده پرونده مشتری
     </a>
+
     """
 
-    return layout("گفت‌وگوی پشتیبانی", body)
+    return layout(
+        "گفت‌وگوی پشتیبانی",
+        body
+    )
 
+
+# -------------------------
+# خروج از مدیریت
+# -------------------------
 
 @app.route("/admin/logout")
 def admin_logout():
+
     session.clear()
-    return redirect("/admin/login")
+
+    return redirect(
+        "/admin/login"
+    )
+
+
+# -------------------------
+# اجرای برنامه
+# -------------------------
+
+if __name__ == "__main__":
+
+    port = int(
+        os.environ.get(
+            "PORT",
+            5000
+        )
+    )
+
+    app.run(
+        host="0.0.0.0",
+        port=port
+)
