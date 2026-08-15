@@ -1,0 +1,10 @@
+{% extends 'base.html' %}{% block content %}
+<div class="card" style="max-width:430px;margin:50px auto">
+<h1>ورود مشتری</h1>
+<p>شماره موبایل خود را وارد کنید.</p>
+<form method="post">
+<div class="field"><label>شماره موبایل</label><input name="phone" inputmode="tel" required></div>
+<button class="btn">ورود به پرونده</button>
+</form>
+<p style="color:#777;font-size:12px">ورود فعلی بدون کد پیامکی است و این روش از پنل مدیریت قابل تغییر است.</p>
+</div>{% endblock %}

@@ -1,0 +1,29 @@
+{% extends 'base.html' %}{% block content %}
+<h1>پنل مدیریت</h1><p><a href="/admin/logout">خروج</a></p>
+<h2>خدمات</h2>
+<div class="card"><form method="post" action="/admin/service/save">
+<div class="field"><label>نام خدمت</label><input name="name" placeholder="نام خدمت"></div>
+<div class="field"><label>توضیحات</label><textarea name="description"></textarea></div>
+<div class="field"><label>قیمت (ریال)</label><input name="price" type="number"></div>
+<div class="field"><label>فعال</label><select name="active"><option value="1">بله</option><option value="0">خیر</option></select></div>
+<div class="field"><label>فیلدها (JSON)</label><textarea name="fields_json" rows="7" placeholder='[{"name":"birth","label":"تاریخ تولد","type":"date","required":true}]'></textarea></div>
+<button class="btn">افزودن خدمت</button></form></div>
+{% for s in services %}<div class="card"><h3>{{s.name}}</h3><p>{{s.description}}</p><p>قیمت: {{ "{:,}".format(s.price) }} ریال | {% if s.active %}فعال{% else %}غیرفعال{% endif %}</p>
+<form method="post" action="/admin/service/delete/{{s.id}}" style="display:inline"><button class="btn" style="background:#d33">حذف</button></form></div>{% endfor %}
+<h2>درخواست‌ها</h2><div class="card"><table style="width:100%"><tr><th>مشتری</th><th>خدمت</th><th>وضعیت</th><th>کد</th><th>عملیات</th></tr>{% for r in requests %}<tr><td>{{r.customer_name}}</td><td>{{r.service_name}}</td><td>{{r.status}}</td><td>{{r.tracking_code}}</td><td><form method="post" action="/admin/request/status"><input type="hidden" name="id" value="{{r.id}}"><select name="status"><option>جدید</option><option>در حال بررسی</option><option>منتظر مدارک</option><option>در حال انجام</option><option>انجام شده</option><option>رد شده</option><option>لغو شده</option></select><button class="btn">ثبت</button></form></td></tr>{% endfor %}</table></div>
+<h2>تنظیمات</h2><div class="card"><form method="post" action="/admin/settings"><div class="field"><label>نام سایت</label><input name="site_name" value="{{settings.site_name if settings else 'کافی‌نت آنلاین نوین'}}"></div><div class="field"><label>مدیر</label><input name="manager" value="{{settings.manager if settings else ''}}"></div><div class="field"><label>تلفن</label><input name="phone" value="{{settings.phone if settings else ''}}"></div><button class="btn">ذخیره</button></form></div>
+<h2>تنظیم ورود مشتری</h2>
+<div class="card"><form method="post" action="/admin/settings">
+<div class="field"><label>روش شناسایی مشتری</label>
+<select name="customer_login_mode">
+<option value="phone" {% if settings.get('customer_login_mode')=='phone' %}selected{% endif %}>با شماره موبایل</option>
+</select></div>
+<div class="field"><label>کد تأیید پیامکی</label>
+<select name="customer_otp_enabled">
+<option value="0" {% if settings.get('customer_otp_enabled','0')=='0' %}selected{% endif %}>بدون کد</option>
+<option value="1" {% if settings.get('customer_otp_enabled')=='1' %}selected{% endif %}>با کد پیامکی</option>
+</select></div>
+<button class="btn">ذخیره تنظیمات ورود مشتری</button></form>
+<p style="font-size:12px;color:#777">در نسخه فعلی، حالت بدون کد فعال است. زیرساخت OTP در مرحله اتصال سامانه پیامکی فعال می‌شود.</p></div>
+<h2>تغییر رمز مدیریت</h2><div class="card"><form method="post" action="/admin/password"><input type="password" name="password" placeholder="رمز جدید حداقل ۶ کاراکتر"><button class="btn">تغییر رمز</button></form></div>
+{% endblock %}

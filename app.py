@@ -1,558 +1,249 @@
-from flask import Flask, request, redirect, session, render_template_string
-import sqlite3
-from datetime import datetime
+import os, json, sqlite3, secrets
+from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
+from werkzeug.utils import secure_filename
+
+BASE = os.path.dirname(os.path.abspath(__file__))
+DB = os.path.join(BASE, "site.db")
+UPLOADS = os.path.join(BASE, "uploads")
+os.makedirs(UPLOADS, exist_ok=True)
 
 app = Flask(__name__)
-app.secret_key = "online_novin_secret"
+app.secret_key = os.environ.get("SECRET_KEY", "change-this-secret-key")
+ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "123456")
 
-DB = "online_novin.db"
-ADMIN_PASSWORD = "123456"
-
+def db():
+    con = sqlite3.connect(DB)
+    con.row_factory = sqlite3.Row
+    return con
 
 def init_db():
-    con = sqlite3.connect(DB)
-    cur = con.cursor()
-    cur.execute("""
+    con = db()
+    con.executescript("""
+    CREATE TABLE IF NOT EXISTS customers(
+      id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL,
+      national_id TEXT NOT NULL, phone TEXT NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE TABLE IF NOT EXISTS services(
+      id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL,
+      description TEXT DEFAULT '', price INTEGER DEFAULT 0,
+      active INTEGER DEFAULT 1, image TEXT DEFAULT '',
+      fields_json TEXT DEFAULT '[]'
+    );
     CREATE TABLE IF NOT EXISTS requests(
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        service TEXT,
-        action TEXT,
-        data TEXT,
-        status TEXT,
-        created TEXT
-    )
+      id INTEGER PRIMARY KEY AUTOINCREMENT, customer_id INTEGER,
+      service_id INTEGER, data_json TEXT DEFAULT '{}',
+      status TEXT DEFAULT 'جدید', tracking_code TEXT UNIQUE,
+      total_price INTEGER DEFAULT 0, paid_price INTEGER DEFAULT 0,
+      payment_mode TEXT DEFAULT 'full',
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE TABLE IF NOT EXISTS admins(
+      id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT UNIQUE,
+      password TEXT NOT NULL, active INTEGER DEFAULT 1
+    );
+    CREATE TABLE IF NOT EXISTS settings(
+      key TEXT PRIMARY KEY, value TEXT DEFAULT ''
+    );
+    CREATE TABLE IF NOT EXISTS discount_codes(
+      id INTEGER PRIMARY KEY AUTOINCREMENT, code TEXT UNIQUE,
+      kind TEXT, value INTEGER DEFAULT 0, active INTEGER DEFAULT 1
+    );
     """)
-    con.commit()
-    con.close()
+    if not con.execute("SELECT 1 FROM admins LIMIT 1").fetchone():
+        con.execute("INSERT INTO admins(username,password) VALUES(?,?)", ("admin", ADMIN_PASSWORD))
+    defaults = {
+      "site_name":"کافی‌نت آنلاین نوین",
+      "manager":"احمد محمدی مهر",
+      "phone":"09920345139",
+      "sms_enabled":"0",
+      "payment_enabled":"0",
+      "customer_login_mode":"phone",
+      "customer_otp_enabled":"0"
+    }
+    for k,v in defaults.items():
+        con.execute("INSERT OR IGNORE INTO settings(key,value) VALUES(?,?)",(k,v))
+    if not con.execute("SELECT 1 FROM services LIMIT 1").fetchone():
+        seed = [
+          ("مسکن ملی","ثبت درخواست و بارگذاری مدارک",0),
+          ("ثبت‌نام سهام نوزاد","ثبت اطلاعات پدر و فرزند",0),
+          ("ثبت‌نام خودرو","ایران‌خودرو، سایپا، بهمن موتور",0),
+          ("چک صیادی","ثبت / تأیید یا رد چک",0),
+          ("ثبت قرارداد","اجاره‌نامه / قولنامه",0),
+          ("جواز کسب","ثبت درخواست جواز کسب",0)
+        ]
+        for n,d,p in seed:
+            con.execute("INSERT INTO services(name,description,price) VALUES(?,?,?)",(n,d,p))
+    con.commit(); con.close()
 
-
-def save_data(service, action, data):
-    con = sqlite3.connect(DB)
-    cur = con.cursor()
-    cur.execute("""
-    INSERT INTO requests(service,action,data,status,created)
-    VALUES(?,?,?,?,?)
-    """,(
-        service,
-        action,
-        data,
-        "جدید",
-        datetime.now().strftime("%Y-%m-%d %H:%M")
-    ))
-    con.commit()
-    con.close()
-
-
-STYLE = """
-body{
-direction:rtl;
-font-family:tahoma;
-background:#f2f2f2;
-margin:0;
-}
-
-header{
-background:#006699;
-color:white;
-text-align:center;
-padding:20px;
-}
-
-.logo{
-width:100px;
-height:100px;
-border-radius:50%;
-}
-
-.box{
-background:white;
-margin:20px;
-padding:20px;
-border-radius:15px;
-}
-
-a,button{
-display:block;
-background:#0077aa;
-color:white;
-padding:12px;
-margin:10px 0;
-text-decoration:none;
-border-radius:10px;
-text-align:center;
-}
-
-input,select{
-width:100%;
-padding:10px;
-margin:8px 0;
-border-radius:8px;
-border:1px solid #ccc;
-}
-"""
-
-
-def page(title,body):
-    return render_template_string("""
-<html>
-<head>
-<meta charset="utf-8">
-<title>{{title}}</title>
-<style>{{style}}</style>
-</head>
-
-<body>
-
-<header>
-<h2>
-کافی نت آنلاین نوین - با مدیریت : محمدی مهر
-</h2>
-</header>
-
-<div class="box">
-{{body|safe}}
-</div>
-
-</body>
-</html>
-""",
-title=title,
-style=STYLE,
-    body=body
-)
-
-FIELDS = {
-
-"marriage": {
-"ثبتنام اولیه":[
-("کدملی متقاضی","national_id"),
-("کدملی همسر","spouse_id"),
-("تلفن بنام","phone"),
-("کد پستی","postal"),
-("وضعیت سربازی","military"),
-("ایثارگری","isargari")
-],
-
-"انتخاب بانک":[
-("کدملی","national_id"),
-("بانک موردنظر","bank")
-],
-
-"ویرایش اطلاعات و تلفن جدید":[
-("تلفن جدید","phone"),
-("کدملی","national_id")
-],
-
-"ویرایش شعبه":[
-("کدملی","national_id"),
-("کد رهگیری","tracking")
-],
-
-"حذف درخواست":[
-("کدملی","national_id"),
-("کد رهگیری","tracking")
-],
-
-"مشاهده وضعیت":[
-("کدملی","national_id"),
-("کد رهگیری","tracking")
-],
-
-"بازیابی کد رهگیری":[
-("کدملی","national_id"),
-("نام و نام خانوادگی","name"),
-("تاریخ تولد","birth"),
-("تاریخ ازدواج","marriage_date")
-]
-},
-
-
-"child": {
-
-"ثبتنام جدید":[
-("کدملی","national_id"),
-("تلفن بنام پدر","father_phone")
-],
-
-"ویرایش ثبتنام قبلی":[
-("کدملی پدر","father_id"),
-("کدملی فرزند","child_id"),
-("کد رهگیری","tracking")
-],
-
-"حذف ثبتنام":[
-("کدملی پدر","father_id"),
-("کدملی فرزند","child_id"),
-("کد رهگیری","tracking")
-],
-
-"شماره تلفن سرپرست":[
-("شماره تلفن سرپرست","phone")
-],
-
-"مشاهده وضعیت":[
-("کدملی سرپرست","parent_id"),
-("کدملی فرزند","child_id"),
-("کد رهگیری","tracking")
-],
-
-"بازیابی کد رهگیری":[
-("کدملی پدر","father_id"),
-("کدملی فرزند","child_id"),
-("تاریخ تولد پدر","father_birth"),
-("تاریخ تولد فرزند","child_birth"),
-("نام و نام خانوادگی فرزند","child_name")
-]
-
-}
-}
-
+def admin_required():
+    return session.get("admin") is True
 
 @app.route("/")
 def home():
-
-    return page("صفحه اصلی", """
-    <h3>انتخاب خدمت</h3>
-
-    <a href="/marriage">
-    وام ازدواج
-    </a>
-
-    <a href="/child">
-    وام فرزندآوری
-    </a>
-
-    """)
-
-
-@app.route("/marriage")
-def marriage():
-
-    buttons=""
-
-    for x in FIELDS["marriage"]:
-        buttons += f"""
-        <a href="/form/marriage/{x}">
-        {x}
-        </a>
-        """
-
-    return page("وام ازدواج",
-    "<h3>وام ازدواج</h3>"+buttons)
-
-
-
-@app.route("/child")
-def child():
-
-    buttons=""
-
-    for x in FIELDS["child"]:
-        buttons += f"""
-        <a href="/form/child/{x}">
-        {x}
-        </a>
-        """
-@app.route("/form/<service>/<action>", methods=["GET", "POST"])
-def form(service, action):
-
-    fields = FIELDS.get(service, {}).get(action)
-
-    if fields is None:
-        return "فرم پیدا نشد", 404
-
-    if request.method == "POST":
-
-        data = []
-
-        for label, key in fields:
-            value = request.form.get(key, "").strip()
-            data.append(label + ": " + value)
-
-        save_data(
-            "وام ازدواج" if service == "marriage" else "وام فرزندآوری",
-            action,
-            "\n".join(data)
-        )
-
-        return page("ثبت شد", """
-        <h3>درخواست با موفقیت ثبت شد ✅</h3>
-        <p>درخواست شما برای کافی نت آنلاین نوین ارسال شد.</p>
-
-        <a href="/">
-        بازگشت به صفحه اصلی
-        </a>
-        """)
-
-    inputs = ""
-
-    for label, key in fields:
-
-        if key == "military":
-
-            inputs += """
-            <label>وضعیت سربازی</label>
-
-            <select name="military" required>
-
-            <option value="">
-            انتخاب کنید
-            </option>
-
-            <option>
-            پایان خدمت
-            </option>
-
-            <option>
-            معافیت
-            </option>
-
-            <option>
-            سایر
-            </option>
-
-            </select>
-            """
-
-        elif key == "isargari":
-
-            inputs += """
-            <label>ایثارگری</label>
-
-            <select name="isargari" required>
-
-            <option value="">
-            انتخاب کنید
-            </option>
-
-            <option>
-            دارم
-            </option>
-
-            <option>
-            ندارم
-            </option>
-
-            </select>
-            """
-
-        elif key == "bank":
-
-            inputs += """
-            <label>بانک موردنظر</label>
-
-            <select name="bank" required>
-
-            <option value="">
-            انتخاب بانک
-            </option>
-
-            <option>بانک ملت</option>
-            <option>بانک ملی</option>
-            <option>بانک صادرات</option>
-            <option>بانک تجارت</option>
-            <option>بانک رفاه</option>
-            <option>بانک مسکن</option>
-            <option>سایر</option>
-
-            </select>
-            """
-
-        else:
-
-            inputs += f"""
-            <label>{label}</label>
-            <input
-                type="text"
-                name="{key}"
-                required
-            >
-            """
-
-    back = "/marriage" if service == "marriage" else "/child"
-
-    return page(action, f"""
-    <h3>{action}</h3>
-
-    <form method="POST">
-
-    {inputs}
-
-    <button type="submit">
-    ثبت درخواست
-    </button>
-
-    </form>
-
-    <a href="{back}">
-    بازگشت
-    </a>
-    """)
-
-
-init_db()
-
-
-if __name__ == "__main__":
-
-    app.run(
-        host="0.0.0.0",
-        port=5000
-        )
-    return page("وام فرزندآوری",
-    "<h3>وام فرزندآوری</h3>"+buttons)@app.route("/admin/login", methods=["GET", "POST"])
-def admin_login():
-
-    if request.method == "POST":
-
-        password = request.form.get("password", "")
-
-        if password == ADMIN_PASSWORD:
-
-            session["admin"] = True
-
-            return redirect("/admin")
-
-        return page("خطا", """
-        <h3>رمز عبور اشتباه است ❌</h3>
-
-        <a href="/admin/login">
-        دوباره تلاش کنید
-        </a>
-        """)
-
-    return page("پنل مدیریت", """
-    <h3>ورود به پنل مدیریت</h3>
-
-    <form method="POST">
-
-    <label>
-    رمز عبور
-    </label>
-
-    <input
-        type="password"
-        name="password"
-        required
-    >
-
-    <button type="submit">
-    ورود
-    </button>
-
-    </form>
-    """)
-
-
-@app.route("/admin")
-def admin():
-
-    if not session.get("admin"):
-
-        return redirect("/admin/login")
-
-    con = sqlite3.connect(DB)
-
-    con.row_factory = sqlite3.Row
-
-    rows = con.execute("""
-    SELECT *
-    FROM requests
-    ORDER BY id DESC
-    """).fetchall()
-
+    con=db(); services=con.execute("SELECT * FROM services WHERE active=1 ORDER BY id DESC").fetchall()
+    settings=dict(con.execute("SELECT key,value FROM settings").fetchall())
     con.close()
+    return render_template("home.html", services=services, settings=settings)
 
-    html = """
-    <h3>پنل مدیریت</h3>
+@app.route("/service/<int:sid>", methods=["GET","POST"])
+def service(sid):
+    con=db(); s=con.execute("SELECT * FROM services WHERE id=?", (sid,)).fetchone()
+    con.close()
+    if not s or not s["active"]: return "خدمت فعال نیست",404
+    fields=json.loads(s["fields_json"] or "[]")
+    if request.method=="POST":
+        name=request.form.get("name","").strip()
+        nid=request.form.get("national_id","").strip()
+        phone=request.form.get("phone","").strip()
+        if not name or not nid or not phone:
+            flash("نام، کد ملی و تلفن الزامی است.")
+            return redirect(request.url)
+        con=db()
+        c=con.execute("SELECT id FROM customers WHERE national_id=? OR phone=?",(nid,phone)).fetchone()
+        if c: cid=c["id"]; con.execute("UPDATE customers SET name=?,phone=? WHERE id=?",(name,phone,cid))
+        else:
+            cur=con.execute("INSERT INTO customers(name,national_id,phone) VALUES(?,?,?)",(name,nid,phone)); cid=cur.lastrowid
+        data={k:request.form.get(k,"") for k in request.form.keys() if k not in ("name","national_id","phone")}
+        code="NV-"+secrets.token_hex(4).upper()
+        con.execute("""INSERT INTO requests(customer_id,service_id,data_json,tracking_code,total_price)
+                       VALUES(?,?,?,?,?)""",(cid,sid,json.dumps(data,ensure_ascii=False),code,s["price"]))
+        con.commit(); con.close()
+        return render_template("success.html", code=code)
+    return render_template("service.html", service=s, fields=fields)
 
-    <a href="/admin/logout">
-    خروج از پنل
-    </a>
 
-    <hr>
-
-    """
-
-    if not rows:
-
-        html += """
-        <p>
-        هنوز هیچ درخواستی ثبت نشده است.
-        </p>
-        """
-
-    else:
-
-        for row in rows:
-
-            data = row["data"].replace(
-                "\n",
-                "<br>"
+@app.route("/customer/login", methods=["GET","POST"])
+def customer_login():
+    if request.method == "POST":
+        phone = request.form.get("phone","").strip()
+        if not phone:
+            flash("شماره موبایل را وارد کنید.")
+            return redirect(request.url)
+        con=db()
+        c=con.execute("SELECT * FROM customers WHERE phone=?", (phone,)).fetchone()
+        if not c:
+            cur=con.execute(
+                "INSERT INTO customers(name,national_id,phone) VALUES(?,?,?)",
+                ("مشتری جدید","",phone)
             )
+            cid=cur.lastrowid
+        else:
+            cid=c["id"]
+        con.commit(); con.close()
+        session["customer_id"]=cid
+        return redirect(url_for("customer_dashboard"))
+    return render_template("customer_login.html")
 
-            html += f"""
-            <div style="
-            border:1px solid #ddd;
-            padding:15px;
-            margin:15px 0;
-            border-radius:10px;
-            ">
+@app.route("/customer/logout")
+def customer_logout():
+    session.pop("customer_id", None)
+    return redirect(url_for("customer_login"))
 
-            <b>
-            درخواست شماره {row["id"]}
-            </b>
+@app.route("/customer")
+def customer_dashboard():
+    cid=session.get("customer_id")
+    if not cid:
+        return redirect(url_for("customer_login"))
+    con=db()
+    c=con.execute("SELECT * FROM customers WHERE id=?", (cid,)).fetchone()
+    reqs=con.execute("""SELECT r.*,s.name service_name
+      FROM requests r JOIN services s ON s.id=r.service_id
+      WHERE r.customer_id=? ORDER BY r.id DESC""",(cid,)).fetchall()
+    con.close()
+    return render_template("customer.html", customer=c, requests=reqs)
 
-            <p>
-            خدمت:
-            {row["service"]}
-            </p>
+@app.route("/tracking", methods=["GET","POST"])
+def tracking():
+    result=None
+    if request.values.get("code"):
+        con=db()
+        result=con.execute("""SELECT r.*,s.name service_name,c.name customer_name
+          FROM requests r JOIN services s ON s.id=r.service_id
+          JOIN customers c ON c.id=r.customer_id WHERE r.tracking_code=?""",
+          (request.values["code"].strip(),)).fetchone()
+        con.close()
+    return render_template("tracking.html", result=result)
 
-            <p>
-            گزینه:
-            {row["action"]}
-            </p>
-
-            <p>
-            {data}
-            </p>
-
-            <p>
-            وضعیت:
-            <b>{row["status"]}</b>
-            </p>
-
-            <p>
-            زمان:
-            {row["created"]}
-            </p>
-
-            </div>
-            """
-
-    return page(
-        "پنل مدیریت",
-        html
-    )
-
+@app.route("/admin/login", methods=["GET","POST"])
+def admin_login():
+    if request.method=="POST":
+        u=request.form.get("username",""); p=request.form.get("password","")
+        con=db(); a=con.execute("SELECT * FROM admins WHERE username=? AND active=1",(u,)).fetchone(); con.close()
+        if a and secrets.compare_digest(p,a["password"]):
+            session["admin"]=True; session["admin_id"]=a["id"]; return redirect(url_for("admin"))
+        flash("نام کاربری یا رمز عبور اشتباه است.")
+    return render_template("admin_login.html")
 
 @app.route("/admin/logout")
 def admin_logout():
+    session.clear(); return redirect(url_for("admin_login"))
 
-    session.clear()
+@app.route("/admin")
+def admin():
+    if not admin_required(): return redirect(url_for("admin_login"))
+    con=db()
+    services=con.execute("SELECT * FROM services ORDER BY id DESC").fetchall()
+    customers=con.execute("SELECT * FROM customers ORDER BY id DESC").fetchall()
+    settings=dict(con.execute("SELECT key,value FROM settings").fetchall())
+    reqs=con.execute("""SELECT r.*,s.name service_name,c.name customer_name
+      FROM requests r JOIN services s ON s.id=r.service_id JOIN customers c ON c.id=r.customer_id
+      ORDER BY r.id DESC""").fetchall()
+    con.close()
+    return render_template("admin.html",services=services,customers=customers,requests=reqs,settings=settings)
 
-    return redirect("/")
+@app.post("/admin/service/save")
+def admin_service_save():
+    if not admin_required(): return redirect(url_for("admin_login"))
+    sid=request.form.get("id")
+    name=request.form.get("name","").strip()
+    desc=request.form.get("description","").strip()
+    price=int(request.form.get("price") or 0)
+    active=1 if request.form.get("active")=="1" else 0
+    fields_raw=request.form.get("fields_json","[]")
+    try: json.loads(fields_raw)
+    except: fields_raw="[]"
+    con=db()
+    if sid:
+        con.execute("UPDATE services SET name=?,description=?,price=?,active=?,fields_json=? WHERE id=?",
+                    (name,desc,price,active,fields_raw,sid))
+    else:
+        con.execute("INSERT INTO services(name,description,price,active,fields_json) VALUES(?,?,?,?,?)",
+                    (name,desc,price,active,fields_raw))
+    con.commit(); con.close(); return redirect(url_for("admin"))
 
+@app.post("/admin/request/status")
+def admin_request_status():
+    if not admin_required(): return redirect(url_for("admin_login"))
+    rid=request.form.get("id"); status=request.form.get("status")
+    con=db(); con.execute("UPDATE requests SET status=? WHERE id=?",(status,rid)); con.commit(); con.close()
+    return redirect(url_for("admin"))
+
+@app.post("/admin/settings")
+def admin_settings():
+    if not admin_required(): return redirect(url_for("admin_login"))
+    con=db()
+    for k in ("site_name","manager","phone","sms_enabled","payment_enabled","customer_login_mode","customer_otp_enabled"):
+        con.execute("INSERT OR REPLACE INTO settings(key,value) VALUES(?,?)",(k,request.form.get(k,"")))
+    con.commit(); con.close(); return redirect(url_for("admin"))
+
+@app.post("/admin/password")
+def admin_password():
+    if not admin_required(): return redirect(url_for("admin_login"))
+    new=request.form.get("password","")
+    if len(new)>=6:
+        con=db(); con.execute("UPDATE admins SET password=? WHERE id=?",(new,session["admin_id"])); con.commit(); con.close()
+    return redirect(url_for("admin"))
+
+@app.post("/admin/service/delete/<int:sid>")
+def admin_service_delete(sid):
+    if not admin_required(): return redirect(url_for("admin_login"))
+    con=db(); con.execute("DELETE FROM services WHERE id=?",(sid,)); con.commit(); con.close()
+    return redirect(url_for("admin"))
 
 @app.route("/health")
-def health():
+def health(): return jsonify(ok=True)
 
-    return "OK"
-
-
-if __name__ == "__main__":
-
-    app.run(
-        host="0.0.0.0",
-        port=5000
-    )
+if __name__=="__main__":
+    init_db()
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT",5000)))

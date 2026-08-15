@@ -1,0 +1,20 @@
+{% extends 'base.html' %}{% block content %}
+<h1>پنل مشتری</h1>
+<div class="card">
+<h2>پرونده من</h2>
+<p>نام: {{customer['name'] or 'ثبت نشده'}}</p>
+<p>کد ملی: {{customer['national_id'] or 'ثبت نشده'}}</p>
+<p>تلفن: {{customer['phone']}}</p>
+<a class="btn" href="/">ثبت درخواست جدید</a>
+<a class="btn" href="/customer/logout" style="background:#777">خروج</a>
+</div>
+<h2>سوابق درخواست‌ها</h2>
+{% for r in requests %}
+<div class="card">
+<b>{{r['service_name']}}</b>
+<p>کد پیگیری: {{r['tracking_code']}}</p>
+<p>وضعیت: {{r['status']}}</p>
+<p>مبلغ: {{ "{:,}".format(r['total_price']) }} ریال</p>
+</div>
+{% else %}<div class="card">هنوز درخواستی ثبت نکرده‌اید.</div>{% endfor %}
+{% endblock %}
