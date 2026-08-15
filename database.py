@@ -61,8 +61,7 @@ def create_tables():
         FOREIGN KEY(customer_id)
         REFERENCES customers(id)
 
-    )
-    """)
+    
     )
     """)
 
