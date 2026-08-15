@@ -63,7 +63,20 @@ def create_tables():
 
     )
     """)
+    )
+    """)
 
+# خدمات
+cur.execute("""
+CREATE TABLE IF NOT EXISTS services(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    description TEXT,
+    active INTEGER DEFAULT 1
+)
+""")
+
+# پیام‌های چت
 
 
     # پیام‌های چت
