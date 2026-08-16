@@ -2,414 +2,517 @@
 
 {% block content %}
 
-<style>
-.admin-header{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    gap:15px;
-    flex-wrap:wrap;
-    margin-bottom:20px;
-}
+<h1>پنل مدیریت</h1>
 
-.admin-title{
-    margin:0;
-}
-
-.admin-menu{
-    display:grid;
-    grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
-    gap:10px;
-    margin-bottom:25px;
-}
-
-.admin-menu a{
-    text-decoration:none;
-    background:#fff;
-    padding:15px;
-    border-radius:12px;
-    box-shadow:0 3px 12px #00000010;
-    color:#172033;
-    text-align:center;
-    font-weight:bold;
-}
-
-.section-title{
-    margin-top:30px;
-}
-
-.small{
-    font-size:12px;
-    color:#777;
-}
-
-.danger{
-    background:#d33 !important;
-}
-
-.success{
-    background:#159447 !important;
-}
-
-.gray{
-    background:#687282 !important;
-}
-
-table{
-    border-collapse:collapse;
-}
-
-th,td{
-    padding:10px;
-    border-bottom:1px solid #eee;
-    text-align:right;
-    vertical-align:top;
-}
-
-.status{
-    display:inline-block;
-    padding:5px 9px;
-    border-radius:20px;
-    background:#eef3f8;
-    font-size:12px;
-}
-
-.request-card{
-    border-right:4px solid #1479d1;
-}
-
-.two{
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:15px;
-}
-
-@media(max-width:700px){
-    .two{
-        grid-template-columns:1fr;
-    }
-
-    th,td{
-        font-size:12px;
-        padding:7px;
-    }
-}
-</style>
+<p>
+    <a class="btn" href="/admin/logout">خروج</a>
+</p>
 
 
-<!-- =========================
-     HEADER
-========================= -->
+<!-- =====================================================
+     مدیریت ظاهر سایت
+===================================================== -->
 
-<div class="admin-header">
+<h2>🎨 ظاهر و اطلاعات سایت</h2>
 
-    <div>
-        <h1 class="admin-title">
-            پنل مدیریت
-        </h1>
+<div class="card">
 
-        <p class="small">
-            مدیریت کامل سایت کافی‌نت آنلاین نوین
-        </p>
-    </div>
+<form method="post" action="/admin/settings">
 
-    <div>
 
-        <a
-            class="btn"
-            href="/"
-            target="_blank"
+    <div class="field">
+
+        <label>نام سایت</label>
+
+        <input
+            name="site_name"
+            value="{{ settings.get('site_name','کافی‌نت آنلاین نوین') }}"
         >
-            مشاهده سایت
-        </a>
-
-        <a
-            class="btn danger"
-            href="/admin/logout"
-        >
-            خروج
-        </a>
 
     </div>
 
-</div>
+
+    <div class="field">
+
+        <label>نام مدیر</label>
+
+        <input
+            name="manager"
+            value="{{ settings.get('manager','') }}"
+        >
+
+    </div>
 
 
-<!-- =========================
-     MENU
-========================= -->
+    <div class="field">
 
-<div class="admin-menu">
+        <label>شماره تماس</label>
 
-    <a href="#services">
-        🛠 مدیریت خدمات
-    </a>
+        <input
+            name="phone"
+            value="{{ settings.get('phone','') }}"
+        >
 
-    <a href="#requests">
-        📋 درخواست‌ها
-    </a>
+    </div>
 
-    <a href="#customers">
-        👤 مشتریان
-    </a>
 
-    <a href="#site-settings">
-        ⚙️ تنظیمات سایت
-    </a>
+    <div class="field">
 
-    <a href="#tracking">
-        🔢 کد رهگیری
-    </a>
+        <label>آدرس لوگو</label>
 
-    <a href="#security">
-        🔐 امنیت
-    </a>
+        <input
+            name="logo"
+            value="{{ settings.get('logo','') }}"
+            placeholder="مثلاً /uploads/logo.png"
+        >
+
+        <small>
+            آدرس تصویر لوگو را وارد کنید.
+        </small>
+
+    </div>
+
+
+    <div class="field">
+
+        <label>رنگ اصلی سایت</label>
+
+        <input
+            type="color"
+            name="primary_color"
+            value="{{ settings.get('primary_color','#1479d1') }}"
+            style="height:50px"
+        >
+
+    </div>
+
+
+    <div class="field">
+
+        <label>رنگ منوی بالای سایت</label>
+
+        <input
+            type="color"
+            name="secondary_color"
+            value="{{ settings.get('secondary_color','#102a43') }}"
+            style="height:50px"
+        >
+
+    </div>
+
+
+    <div class="field">
+
+        <label>رنگ پس‌زمینه سایت</label>
+
+        <input
+            type="color"
+            name="background_color"
+            value="{{ settings.get('background_color','#f5f7fb') }}"
+            style="height:50px"
+        >
+
+    </div>
+
+
+    <div class="field">
+
+        <label>رنگ متن</label>
+
+        <input
+            type="color"
+            name="text_color"
+            value="{{ settings.get('text_color','#172033') }}"
+            style="height:50px"
+        >
+
+    </div>
+
+
+    <div class="field">
+
+        <label>رنگ کارت‌ها</label>
+
+        <input
+            type="color"
+            name="card_color"
+            value="{{ settings.get('card_color','#ffffff') }}"
+            style="height:50px"
+        >
+
+    </div>
+
+
+    <div class="field">
+
+        <label>متن هشدار پرداخت</label>
+
+        <textarea
+            name="warning_text"
+            rows="4"
+        >{{ settings.get('warning_text','توجه: پرداخت هزینه خدمات فقط از طریق درگاه رسمی همین سایت انجام می‌شود.') }}</textarea>
+
+    </div>
+
+
+    <button class="btn" type="submit">
+
+        💾 ذخیره تغییرات ظاهر سایت
+
+    </button>
+
+
+</form>
 
 </div>
 
 
 <!-- =====================================================
-     SERVICES
+     مدیریت کد رهگیری
 ===================================================== -->
 
-<h2
-    id="services"
-    class="section-title"
->
-    🛠 مدیریت خدمات
-</h2>
-
+<h2>🔢 تنظیم کد رهگیری</h2>
 
 <div class="card">
 
-    <h3>
-        افزودن خدمت جدید
-    </h3>
-
-    <form
-        method="post"
-        action="/admin/service/save"
-    >
-
-        <div class="two">
-
-            <div class="field">
-
-                <label>
-                    نام خدمت
-                </label>
-
-                <input
-                    name="name"
-                    required
-                    placeholder="مثلاً ثبت‌نام خودرو"
-                >
-
-            </div>
+<form method="post" action="/admin/settings">
 
 
-            <div class="field">
+    <div class="field">
 
-                <label>
-                    دسته‌بندی
-                </label>
+        <label>پیشوند کد رهگیری</label>
 
-                <input
-                    name="category"
-                    placeholder="مثلاً خودرو"
-                >
-
-            </div>
-
-        </div>
-
-
-        <div class="field">
-
-            <label>
-                توضیحات خدمت
-            </label>
-
-            <textarea
-                name="description"
-                rows="4"
-                placeholder="توضیحات کامل خدمت..."
-            ></textarea>
-
-        </div>
-
-
-        <div class="two">
-
-            <div class="field">
-
-                <label>
-                    قیمت (ریال)
-                </label>
-
-                <input
-                    name="price"
-                    type="number"
-                    value="0"
-                >
-
-            </div>
-
-
-            <div class="field">
-
-                <label>
-                    ترتیب نمایش
-                </label>
-
-                <input
-                    name="sort_order"
-                    type="number"
-                    value="0"
-                >
-
-            </div>
-
-        </div>
-
-
-        <div class="field">
-
-            <label>
-                لینک یا آدرس تصویر خدمت
-            </label>
-
-            <input
-                name="image"
-                placeholder="https://..."
-            >
-
-        </div>
-
-
-        <div class="field">
-
-            <label>
-                فعال بودن خدمت
-            </label>
-
-            <select name="active">
-
-                <option value="1">
-                    فعال
-                </option>
-
-                <option value="0">
-                    غیرفعال
-                </option>
-
-            </select>
-
-        </div>
-
-
-        <div class="field">
-
-            <label>
-                فیلدهای اختصاصی فرم (JSON)
-            </label>
-
-            <textarea
-                name="fields_json"
-                rows="8"
-                placeholder='[{"name":"birth","label":"تاریخ تولد","type":"date","required":true}]'
-            ></textarea>
-
-            <p class="small">
-                برای فرم اختصاصی هر خدمت استفاده می‌شود.
-            </p>
-
-        </div>
-
-
-        <div class="field">
-
-            <label>
-                مدارک موردنیاز (JSON)
-            </label>
-
-            <textarea
-                name="documents_json"
-                rows="6"
-                placeholder='[{"name":"national_card","label":"تصویر کارت ملی","required":true}]'
-            ></textarea>
-
-        </div>
-
-
-        <button
-            class="btn success"
-            type="submit"
+        <input
+            name="tracking_prefix"
+            value="{{ settings.get('tracking_prefix','NV-') }}"
+            placeholder="NV-"
         >
-            ➕ افزودن خدمت
-        </button>
 
-    </form>
+    </div>
+
+
+    <div class="field">
+
+        <label>تعداد رقم کد رهگیری</label>
+
+        <input
+            type="number"
+            min="4"
+            max="20"
+            name="tracking_digits"
+            value="{{ settings.get('tracking_digits','8') }}"
+        >
+
+    </div>
+
+
+    <div class="field">
+
+        <label>جداکننده</label>
+
+        <input
+            name="tracking_separator"
+            value="{{ settings.get('tracking_separator','') }}"
+            placeholder="مثلاً -"
+        >
+
+    </div>
+
+
+    <button class="btn" type="submit">
+
+        💾 ذخیره تنظیمات کد رهگیری
+
+    </button>
+
+
+</form>
+
+<p style="color:#777;font-size:13px">
+
+مثال:
+اگر پیشوند <b>NV-</b> و تعداد رقم <b>8</b> باشد،
+کدهایی مانند
+<b>NV-58321476</b>
+ساخته می‌شوند.
+
+</p>
 
 </div>
 
 
-<!-- خدمات موجود -->
+<!-- =====================================================
+     خدمات
+===================================================== -->
+
+<h2>🛠 خدمات</h2>
+
+<div class="card">
+
+<form method="post" action="/admin/service/save">
+
+
+    <div class="field">
+
+        <label>نام خدمت</label>
+
+        <input
+            name="name"
+            placeholder="نام خدمت"
+            required
+        >
+
+    </div>
+
+
+    <div class="field">
+
+        <label>دسته‌بندی</label>
+
+        <input
+            name="category"
+            placeholder="مثلاً خودرو"
+        >
+
+    </div>
+
+
+    <div class="field">
+
+        <label>توضیحات</label>
+
+        <textarea
+            name="description"
+            rows="4"
+        ></textarea>
+
+    </div>
+
+
+    <div class="field">
+
+        <label>تصویر خدمت</label>
+
+        <input
+            name="image"
+            placeholder="آدرس تصویر"
+        >
+
+    </div>
+
+
+    <div class="field">
+
+        <label>قیمت (ریال)</label>
+
+        <input
+            name="price"
+            type="number"
+            value="0"
+        >
+
+    </div>
+
+
+    <div class="field">
+
+        <label>ترتیب نمایش</label>
+
+        <input
+            name="sort_order"
+            type="number"
+            value="0"
+        >
+
+    </div>
+
+
+    <div class="field">
+
+        <label>فعال</label>
+
+        <select name="active">
+
+            <option value="1">
+                بله
+            </option>
+
+            <option value="0">
+                خیر
+            </option>
+
+        </select>
+
+    </div>
+
+
+    <div class="field">
+
+        <label>
+            فیلدهای فرم خدمت
+        </label>
+
+        <textarea
+            name="fields_json"
+            rows="8"
+            placeholder='[{"name":"birth","label":"تاریخ تولد","type":"date","required":true}]'
+        ></textarea>
+
+    </div>
+
+
+    <div class="field">
+
+        <label>
+            مدارک موردنیاز
+        </label>
+
+        <textarea
+            name="documents_json"
+            rows="6"
+            placeholder='["کارت ملی","شناسنامه","مدرک مربوطه"]'
+        ></textarea>
+
+    </div>
+
+
+    <button class="btn" type="submit">
+
+        ➕ افزودن خدمت
+
+    </button>
+
+
+</form>
+
+</div>
+
 
 {% for s in services %}
 
 <div class="card">
 
     <h3>
-        {{s.name}}
+        {{ s.name }}
     </h3>
 
     <p>
-        {{s.description}}
+        {{ s.description }}
     </p>
 
     <p>
 
-        <b>
-            دسته‌بندی:
-        </b>
+        دسته:
+        {{ s.category or '-' }}
 
-        {{s.category or 'بدون دسته‌بندی'}}
+        <br>
 
-    </p>
-
-    <p>
-
-        <b>
-            قیمت:
-        </b>
-
+        قیمت:
         {{ "{:,}".format(s.price or 0) }}
         ریال
 
+        <br>
+
+        وضعیت:
+
+        {% if s.active %}
+
+            <b style="color:green">
+                فعال
+            </b>
+
+        {% else %}
+
+            <b style="color:red">
+                غیرفعال
+            </b>
+
+        {% endif %}
+
     </p>
 
-    <p>
 
-        <span class="status">
+    <form
+        method="post"
+        action="/admin/service/delete/{{ s.id }}"
+        style="display:inline"
+    >
 
-            {% if s.active %}
-                🟢 فعال
-            {% else %}
-                🔴 غیرفعال
-            {% endif %}
+        <button
+            class="btn"
+            style="background:#d33"
+            type="submit"
+        >
 
-        </span>
+            غیرفعال کردن
 
-    </p>
+        </button>
+
+    </form>
+
+</div>
+
+{% endfor %}
 
 
-    <div>
+<!-- =====================================================
+     درخواست ها
+===================================================== -->
+
+<h2>📋 درخواست‌ها</h2>
+
+<div class="card">
+
+<table>
+
+<tr>
+
+    <th>مشتری</th>
+
+    <th>تلفن</th>
+
+    <th>خدمت</th>
+
+    <th>وضعیت</th>
+
+    <th>کد رهگیری</th>
+
+    <th>عملیات</th>
+
+</tr>
+
+
+{% for r in requests %}
+
+<tr>
+
+    <td>
+        {{ r.customer_name }}
+    </td>
+
+    <td>
+        {{ r.customer_phone }}
+    </td>
+
+    <td>
+        {{ r.service_name }}
+    </td>
+
+    <td>
+        {{ r.status }}
+    </td>
+
+    <td>
+        <b>
+            {{ r.tracking_code }}
+        </b>
+    </td>
+
+    <td>
 
         <a
             class="btn"
-            href="{{url_for('service',sid=s.id)}}"
-            target="_blank"
+            href="{{ url_for('admin_request', rid=r.id) }}"
         >
             مشاهده
         </a>
@@ -417,576 +520,169 @@ th,td{
 
         <form
             method="post"
-            action="/admin/service/delete/{{s.id}}"
-            style="display:inline"
+            action="/admin/request/status"
+            style="margin-top:8px"
         >
 
-            <button
-                class="btn danger"
-                type="submit"
-                onclick="return confirm('این خدمت غیرفعال شود؟')"
+            <input
+                type="hidden"
+                name="id"
+                value="{{ r.id }}"
             >
-                غیرفعال کردن
+
+
+            <select name="status">
+
+                <option>جدید</option>
+
+                <option>در حال بررسی</option>
+
+                <option>منتظر مدارک</option>
+
+                <option>در حال انجام</option>
+
+                <option>انجام شده</option>
+
+                <option>رد شده</option>
+
+                <option>لغو شده</option>
+
+            </select>
+
+
+            <button
+                class="btn"
+                type="submit"
+            >
+
+                ثبت وضعیت
+
             </button>
 
         </form>
 
-    </div>
+    </td>
 
-</div>
+</tr>
 
 {% else %}
 
-<div class="card">
-    هنوز خدمتی ثبت نشده است.
-</div>
+<tr>
+
+    <td colspan="6">
+
+        هنوز درخواستی ثبت نشده است.
+
+    </td>
+
+</tr>
 
 {% endfor %}
 
+</table>
+
+</div>
 
 
 <!-- =====================================================
-     REQUESTS
+     مشتریان
 ===================================================== -->
 
-<h2
-    id="requests"
-    class="section-title"
->
-    📋 درخواست‌های مشتریان
-</h2>
-
+<h2>👤 مشتریان</h2>
 
 <div class="card">
 
-    {% if requests %}
+<table>
 
-    <div style="overflow-x:auto">
+<tr>
 
-        <table style="width:100%">
+    <th>نام</th>
 
-            <tr>
+    <th>کد ملی</th>
 
-                <th>
-                    مشتری
-                </th>
+    <th>موبایل</th>
 
-                <th>
-                    تلفن
-                </th>
+    <th>تعداد درخواست</th>
 
-                <th>
-                    خدمت
-                </th>
-
-                <th>
-                    کد رهگیری
-                </th>
-
-                <th>
-                    وضعیت
-                </th>
-
-                <th>
-                    عملیات
-                </th>
-
-            </tr>
+</tr>
 
 
-            {% for r in requests %}
+{% for c in customers %}
 
-            <tr>
+<tr>
 
-                <td>
-                    {{r.customer_name}}
-                </td>
+    <td>
+        {{ c.name }}
+    </td>
 
-                <td>
-                    {{r.customer_phone}}
-                </td>
+    <td>
+        {{ c.national_id }}
+    </td>
 
-                <td>
-                    {{r.service_name}}
-                </td>
+    <td>
+        {{ c.phone }}
+    </td>
 
-                <td>
+    <td>
+        {{ c.request_count }}
+    </td>
 
-                    <b>
-                        {{r.tracking_code}}
-                    </b>
+</tr>
 
-                </td>
+{% else %}
 
-                <td>
+<tr>
 
-                    <span class="status">
-                        {{r.status}}
-                    </span>
+    <td colspan="4">
 
-                </td>
+        مشتری‌ای ثبت نشده است.
 
-                <td>
+    </td>
 
-                    <a
-                        class="btn"
-                        href="/admin/request/{{r.id}}"
-                    >
-                        جزئیات
-                    </a>
+</tr>
 
+{% endfor %}
 
-                    <form
-                        method="post"
-                        action="/admin/request/status"
-                        style="margin-top:8px"
-                    >
+</table>
 
-                        <input
-                            type="hidden"
-                            name="id"
-                            value="{{r.id}}"
-                        >
+</div>
 
 
-                        <select name="status">
+<!-- =====================================================
+     تغییر رمز
+===================================================== -->
 
-                            <option
-                                {% if r.status == 'جدید' %}selected{% endif %}
-                            >
-                                جدید
-                            </option>
+<h2>🔐 تغییر رمز مدیریت</h2>
 
-                            <option
-                                {% if r.status == 'در حال بررسی' %}selected{% endif %}
-                            >
-                                در حال بررسی
-                            </option>
+<div class="card">
 
-                            <option
-                                {% if r.status == 'منتظر مدارک' %}selected{% endif %}
-                            >
-                                منتظر مدارک
-                            </option>
+<form
+    method="post"
+    action="/admin/password"
+>
 
-                            <option
-                                {% if r.status == 'در حال انجام' %}selected{% endif %}
-                            >
-                                در حال انجام
-                            </option>
+    <div class="field">
 
-                            <option
-                                {% if r.status == 'انجام شده' %}selected{% endif %}
-                            >
-                                انجام شده
-                            </option>
-
-                            <option
-                                {% if r.status == 'رد شده' %}selected{% endif %}
-                            >
-                                رد شده
-                            </option>
-
-                            <option
-                                {% if r.status == 'لغو شده' %}selected{% endif %}
-                            >
-                                لغو شده
-                            </option>
-
-                        </select>
-
-
-                        <button
-                            class="btn"
-                            type="submit"
-                        >
-                            ثبت وضعیت
-                        </button>
-
-                    </form>
-
-                </td>
-
-            </tr>
-
-            {% endfor %}
-
-        </table>
+        <input
+            type="password"
+            name="password"
+            placeholder="رمز جدید حداقل ۶ کاراکتر"
+            required
+        >
 
     </div>
 
-    {% else %}
 
-    <p>
-        هنوز درخواستی ثبت نشده است.
-    </p>
-
-    {% endif %}
-
-</div>
-
-
-
-<!-- =====================================================
-     CUSTOMERS
-===================================================== -->
-
-<h2
-    id="customers"
-    class="section-title"
->
-    👤 مشتریان
-</h2>
-
-
-<div class="card">
-
-    {% if customers %}
-
-    <div style="overflow-x:auto">
-
-        <table style="width:100%">
-
-            <tr>
-
-                <th>
-                    نام
-                </th>
-
-                <th>
-                    کد ملی
-                </th>
-
-                <th>
-                    موبایل
-                </th>
-
-                <th>
-                    تعداد درخواست
-                </th>
-
-                <th>
-                    تاریخ ثبت
-                </th>
-
-            </tr>
-
-
-            {% for c in customers %}
-
-            <tr>
-
-                <td>
-                    {{c.name}}
-                </td>
-
-                <td>
-                    {{c.national_id}}
-                </td>
-
-                <td>
-                    {{c.phone}}
-                </td>
-
-                <td>
-                    {{c.request_count}}
-                </td>
-
-                <td>
-                    {{c.created_at}}
-                </td>
-
-            </tr>
-
-            {% endfor %}
-
-        </table>
-
-    </div>
-
-    {% else %}
-
-    <p>
-        هنوز مشتری ثبت نشده است.
-    </p>
-
-    {% endif %}
-
-</div>
-
-
-
-<!-- =====================================================
-     SITE SETTINGS
-===================================================== -->
-
-<h2
-    id="site-settings"
-    class="section-title"
->
-    ⚙️ تنظیمات سایت
-</h2>
-
-
-<div class="card">
-
-    <form
-        method="post"
-        action="/admin/settings"
+    <button
+        class="btn"
+        type="submit"
     >
 
+        تغییر رمز
 
-        <div class="field">
+    </button>
 
-            <label>
-                نام سایت
-            </label>
-
-            <input
-                name="site_name"
-                value="{{settings.get('site_name','کافی‌نت آنلاین نوین')}}"
-            >
-
-        </div>
-
-
-        <div class="field">
-
-            <label>
-                نام مدیر
-            </label>
-
-            <input
-                name="manager"
-                value="{{settings.get('manager','')}}"
-            >
-
-        </div>
-
-
-        <div class="field">
-
-            <label>
-                شماره تماس
-            </label>
-
-            <input
-                name="phone"
-                value="{{settings.get('phone','')}}"
-            >
-
-        </div>
-
-
-        <div class="field">
-
-            <label>
-                لوگو
-            </label>
-
-            <input
-                name="logo"
-                value="{{settings.get('logo','')}}"
-                placeholder="آدرس تصویر لوگو"
-            >
-
-        </div>
-
-
-        <div class="field">
-
-            <label>
-                متن هشدار / اطلاعیه بالای سایت
-            </label>
-
-            <textarea
-                name="warning_text"
-                rows="4"
-            >{{settings.get('warning_text','')}}</textarea>
-
-        </div>
-
-
-        <button
-            class="btn success"
-            type="submit"
-        >
-            💾 ذخیره تنظیمات سایت
-        </button>
-
-    </form>
-
-</div>
-
-
-
-<!-- =====================================================
-     TRACKING
-===================================================== -->
-
-<h2
-    id="tracking"
-    class="section-title"
->
-    🔢 تنظیمات کد رهگیری
-</h2>
-
-
-<div class="card">
-
-    <form
-        method="post"
-        action="/admin/settings"
-    >
-
-        <div class="two">
-
-            <div class="field">
-
-                <label>
-                    پیشوند کد
-                </label>
-
-                <input
-                    name="tracking_prefix"
-                    value="{{settings.get('tracking_prefix','NV-')}}"
-                    placeholder="مثلاً NV-"
-                >
-
-            </div>
-
-
-            <div class="field">
-
-                <label>
-                    تعداد رقم کد
-                </label>
-
-                <input
-                    name="tracking_digits"
-                    type="number"
-                    min="4"
-                    max="20"
-                    value="{{settings.get('tracking_digits','8')}}"
-                >
-
-            </div>
-
-        </div>
-
-
-        <div class="field">
-
-            <label>
-                جداکننده
-            </label>
-
-            <input
-                name="tracking_separator"
-                value="{{settings.get('tracking_separator','')}}"
-                placeholder="مثلاً -"
-            >
-
-        </div>
-
-
-        <div class="notice">
-
-            نمونه:
-
-            <b>
-                {{settings.get('tracking_prefix','NV-')}}
-                {{settings.get('tracking_separator','')}}
-                12345678
-            </b>
-
-            <br>
-
-            <span class="small">
-                تعداد ارقام و پیشوند از همین بخش کنترل می‌شود.
-            </span>
-
-        </div>
-
-
-        <button
-            class="btn success"
-            type="submit"
-        >
-            💾 ذخیره تنظیمات کد رهگیری
-        </button>
-
-    </form>
-
-</div>
-
-
-
-<!-- =====================================================
-     SECURITY
-===================================================== -->
-
-<h2
-    id="security"
-    class="section-title"
->
-    🔐 امنیت و رمز مدیریت
-</h2>
-
-
-<div class="card">
-
-    <form
-        method="post"
-        action="/admin/password"
-    >
-
-        <div class="field">
-
-            <label>
-                رمز جدید مدیریت
-            </label>
-
-            <input
-                type="password"
-                name="password"
-                minlength="6"
-                required
-                placeholder="حداقل ۶ کاراکتر"
-            >
-
-        </div>
-
-
-        <button
-            class="btn"
-            type="submit"
-        >
-            🔑 تغییر رمز مدیریت
-        </button>
-
-    </form>
-
-</div>
-
-
-
-<!-- =====================================================
-     FOOTER
-===================================================== -->
-
-<div
-    class="card"
-    style="text-align:center;margin-top:30px"
->
-
-    <p>
-        پنل مدیریت کافی‌نت آنلاین نوین
-    </p>
-
-    <p class="small">
-        تغییرات سایت از طریق پنل مدیریت انجام می‌شود.
-    </p>
+</form>
 
 </div>
 
