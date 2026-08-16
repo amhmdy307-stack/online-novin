@@ -54,7 +54,7 @@
 
     .landing-buttons {
         display: grid;
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(2, 1fr);
         gap: 12px;
     }
 
@@ -80,6 +80,10 @@
         background: {{ settings.get('secondary_color','#1479d1') if settings else '#1479d1' }};
     }
 
+    .admin-btn {
+        background: {{ settings.get('primary_color','#102a43') if settings else '#102a43' }};
+    }
+
     @media (max-width: 650px) {
 
         .landing {
@@ -88,6 +92,10 @@
 
         .landing-card {
             padding: 28px 18px;
+        }
+
+        .landing-buttons {
+            grid-template-columns: 1fr;
         }
 
         .landing-btn {
@@ -114,21 +122,27 @@
 
 
         <h1>
-            {{ settings.get('site_name','کافی‌نت آنلاین نوین') if settings else 'کافی‌نت آنلاین نوین' }}
+            {{ settings.get(
+                'site_name',
+                'کافی‌نت آنلاین نوین'
+            ) if settings else 'کافی‌نت آنلاین نوین' }}
         </h1>
 
 
         <div class="landing-description">
+
             {{ settings.get(
                 'hero_text',
                 'ارائه خدمات اینترنتی و ثبت درخواست به صورت آنلاین'
             ) if settings else 'ارائه خدمات اینترنتی و ثبت درخواست به صورت آنلاین' }}
+
         </div>
 
 
         <div class="manager">
 
             مدیریت:
+
             {{ settings.get(
                 'manager',
                 'احمد محمدی مهر'
@@ -140,6 +154,7 @@
         <div class="phone">
 
             📞
+
             {{ settings.get(
                 'phone',
                 '09920345139'
@@ -150,11 +165,21 @@
 
         <div class="landing-buttons">
 
+            <!-- ورود مشتری -->
             <a
                 href="{{ url_for('customer_login') }}"
                 class="landing-btn customer-btn"
             >
                 👤 ورود به پنل مشتری
+            </a>
+
+
+            <!-- ورود مدیریت -->
+            <a
+                href="{{ url_for('admin_login') }}"
+                class="landing-btn admin-btn"
+            >
+                🔐 ورود مدیریت
             </a>
 
         </div>
