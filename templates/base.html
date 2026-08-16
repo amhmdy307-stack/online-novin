@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <title>
-        {{ settings.get('site_name','کافی‌نت آنلاین نوین') if settings else 'کافی‌نت آنلاین نوین' }}
+        {{ settings.get('site_name', 'کافی‌نت آنلاین نوین') if settings else 'کافی‌نت آنلاین نوین' }}
     </title>
 
     <style>
@@ -15,14 +15,14 @@
         }
 
         body {
-            font-family: Tahoma, Arial, sans-serif;
-            background: {{ settings.get('background_color','#f5f7fb') if settings else '#f5f7fb' }};
-            color: {{ settings.get('text_color','#172033') if settings else '#172033' }};
             margin: 0;
+            font-family: Tahoma, Arial, sans-serif;
+            background: {{ settings.get('background_color', '#f5f7fb') if settings else '#f5f7fb' }};
+            color: {{ settings.get('text_color', '#172033') if settings else '#172033' }};
         }
 
         .topbar {
-            background: {{ settings.get('primary_color','#102a43') if settings else '#102a43' }};
+            background: {{ settings.get('primary_color', '#102a43') if settings else '#102a43' }};
             color: #fff;
             padding: 14px 20px;
         }
@@ -49,12 +49,12 @@
         .topbar-links a {
             color: #fff;
             text-decoration: none;
-            padding: 9px 12px;
+            padding: 8px 12px;
             border-radius: 8px;
         }
 
         .topbar-links a:hover {
-            background: rgba(255,255,255,.12);
+            background: rgba(255,255,255,.15);
         }
 
         .wrap {
@@ -64,7 +64,7 @@
         }
 
         .card {
-            background: {{ settings.get('card_color','#ffffff') if settings else '#ffffff' }};
+            background: {{ settings.get('card_color', '#ffffff') if settings else '#ffffff' }};
             padding: 18px;
             border-radius: 14px;
             margin: 12px 0;
@@ -72,7 +72,7 @@
         }
 
         .btn {
-            background: {{ settings.get('secondary_color','#1479d1') if settings else '#1479d1' }};
+            background: {{ settings.get('secondary_color', '#1479d1') if settings else '#1479d1' }};
             color: #fff;
             border: 0;
             border-radius: 9px;
@@ -82,6 +82,10 @@
             cursor: pointer;
         }
 
+        .btn:hover {
+            opacity: .9;
+        }
+
         input,
         select,
         textarea {
@@ -89,6 +93,11 @@
             padding: 10px;
             border: 1px solid #d5dce6;
             border-radius: 9px;
+            font-family: inherit;
+        }
+
+        textarea {
+            resize: vertical;
         }
 
         .field {
@@ -102,33 +111,49 @@
             margin-bottom: 12px;
         }
 
-        /* صفحه اصلی */
-        .public-page {
-            min-height: 100vh;
+        .success {
+            background: #e8f7ee;
+            color: #176b3a;
         }
 
-        /* پنل مشتری */
-        .customer-topbar {
-            background: {{ settings.get('primary_color','#102a43') if settings else '#102a43' }};
+        .danger {
+            background: #fdeaea;
+            color: #9b2226;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #fff;
+        }
+
+        th,
+        td {
+            padding: 10px;
+            border-bottom: 1px solid #e5e9ef;
+            text-align: right;
+        }
+
+        th {
+            font-weight: bold;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 5px 9px;
+            border-radius: 20px;
+            font-size: 12px;
+            background: #edf2f7;
+        }
+
+        .admin-badge {
+            background: #102a43;
             color: #fff;
         }
 
-        .customer-topbar .topbar-inner {
-            justify-content: space-between;
-        }
-
-        /* پنل مدیریت */
-        .admin-topbar {
-            background: {{ settings.get('primary_color','#102a43') if settings else '#102a43' }};
+        .customer-badge {
+            background: #1479d1;
             color: #fff;
-        }
-
-        .admin-topbar .topbar-links a {
-            background: rgba(255,255,255,.08);
-        }
-
-        .admin-topbar .topbar-links a:hover {
-            background: rgba(255,255,255,.18);
         }
 
         @media (max-width: 700px) {
@@ -143,7 +168,18 @@
             }
 
             .topbar-links a {
-                font-size: 13px;
+                flex: 1;
+                text-align: center;
+            }
+
+            .wrap {
+                padding: 12px;
+            }
+
+            table {
+                display: block;
+                overflow-x: auto;
+                white-space: nowrap;
             }
         }
     </style>
@@ -155,85 +191,100 @@
 {% set is_customer = session.get('customer_id') %}
 
 
-<!-- =========================
-     پنل مدیریت
-     ========================= -->
-
 {% if is_admin %}
 
-    <div class="topbar admin-topbar">
+<div class="topbar">
 
-        <div class="topbar-inner">
+    <div class="topbar-inner">
 
-            <div class="topbar-title">
-                پنل مدیریت — کافی‌نت آنلاین نوین
-            </div>
+        <div class="topbar-title">
+            پنل مدیریت — کافی‌نت آنلاین نوین
+        </div>
 
-            <div class="topbar-links">
+        <div class="topbar-links">
 
-                <a href="{{ url_for('admin') }}">
-                    🏠 مدیریت
-                </a>
+            <a href="{{ url_for('admin') }}">
+                🏠 مدیریت
+            </a>
 
-                <a href="{{ url_for('home') }}">
-                    🌐 مشاهده سایت
-                </a>
+            <a href="{{ url_for('home') }}">
+                🌐 مشاهده سایت
+            </a>
 
-                <a href="{{ url_for('tracking') }}">
-                    🔎 پیگیری درخواست
-                </a>
-
-                <a href="{{ url_for('admin_logout') }}">
-                    🚪 خروج
-                </a>
-
-            </div>
+            <a href="{{ url_for('admin_logout') }}">
+                🚪 خروج
+            </a>
 
         </div>
 
     </div>
 
+</div>
 
-<!-- =========================
-     پنل مشتری
-     ========================= -->
 
 {% elif is_customer %}
 
-    <div class="topbar customer-topbar">
+<div class="topbar">
 
-        <div class="topbar-inner">
+    <div class="topbar-inner">
 
-            <div class="topbar-title">
-                پنل مشتری — کافی‌نت آنلاین نوین
-            </div>
+        <div class="topbar-title">
+            پنل مشتری — کافی‌نت آنلاین نوین
+        </div>
 
-            <div class="topbar-links">
+        <div class="topbar-links">
 
-                <a href="{{ url_for('customer_dashboard') }}">
-                    🏠 پنل من
-                </a>
+            <a href="{{ url_for('customer_dashboard') }}">
+                🏠 پنل من
+            </a>
 
-                <a href="{{ url_for('home') }}">
-                    🛠️ لیست سامانه های ثبت نامی
-                </a>
+            <a href="{{ url_for('home') }}">
+                📋 لیست سامانه‌های ثبت‌نامی
+            </a>
 
-                <a href="{{ url_for('customer_logout') }}">
-                    🚪 خروج
-                </a>
-
-            </div>
+            <a href="{{ url_for('customer_logout') }}">
+                🚪 خروج
+            </a>
 
         </div>
 
     </div>
 
+</div>
+
+
+{% else %}
+
+<div class="topbar">
+
+    <div class="topbar-inner">
+
+        <div class="topbar-title">
+            {{ settings.get('site_name', 'کافی‌نت آنلاین نوین') if settings else 'کافی‌نت آنلاین نوین' }}
+        </div>
+
+        <div class="topbar-links">
+
+            <a href="{{ url_for('home') }}">
+                🏠 صفحه اصلی
+            </a>
+
+            <a href="{{ url_for('customer_login') }}">
+                👤 ورود مشتری
+            </a>
+
+            <a href="{{ url_for('admin_login') }}">
+                🔐 مدیریت
+            </a>
+
+        </div>
+
+    </div>
+
+</div>
+
 {% endif %}
 
-
-<!-- =========================
-     محتوای صفحات
-     ========================= -->
 
 <main class="wrap">
 
@@ -243,7 +294,6 @@
 
             <div class="notice">
                 {{ m }}
-
             </div>
 
         {% endfor %}
