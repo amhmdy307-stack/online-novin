@@ -1,34 +1,42 @@
-{% extends "base.html" %}
+@app.route(
+    "/customer/login",
+    methods=["GET", "POST"]
+)
+def customer_login():
 
-{% block content %}
+    # اگر مشتری قبلاً وارد شده است
+    if session.get("customer_id"):
+        return redirect(
+            url_for("customer_dashboard")
+        )
 
-<div style="max-width:500px;margin:40px auto;">
+    # ایجاد یک نشست مشتری موقت
+    con = db()
 
-    <div class="card" style="text-align:center;">
+    cursor = con.execute(
+        """
+        INSERT INTO customers
+        (
+            name,
+            national_id,
+            phone
+        )
+        VALUES (?, ?, ?)
+        """,
+        (
+            "مشتری",
+            "",
+            ""
+        )
+    )
 
-        <h1>👤 پنل مشتری</h1>
+    customer_id = cursor.lastrowid
 
-        <p>
-            برای مشاهده خدمات و ثبت درخواست وارد پنل مشتری شوید.
-        </p>
+    con.commit()
+    con.close()
 
-        <a
-            href="{{ url_for('customer_dashboard') }}"
-            class="btn"
-            style="
-                width:100%;
-                box-sizing:border-box;
-                text-align:center;
-                font-size:17px;
-                padding:14px;
-                margin-top:15px;
-            "
-        >
-            ورود به پنل مشتری
-        </a>
+    session["customer_id"] = customer_id
 
-    </div>
-
-</div>
-
-{% endblock %}
+    return redirect(
+        url_for("customer_dashboard")
+    )
