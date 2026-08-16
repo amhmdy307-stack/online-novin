@@ -1,10 +1,45 @@
-{% extends 'base.html' %}{% block content %}
-<div class="card" style="max-width:430px;margin:50px auto">
-<h1>ورود مشتری</h1>
-<p>شماره موبایل خود را وارد کنید.</p>
-<form method="post">
-<div class="field"><label>شماره موبایل</label><input name="phone" inputmode="tel" required></div>
-<button class="btn">ورود به پرونده</button>
-</form>
-<p style="color:#777;font-size:12px">ورود فعلی بدون کد پیامکی است و این روش از پنل مدیریت قابل تغییر است.</p>
-</div>{% endblock %}
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="card" style="max-width:500px;margin:40px auto;">
+
+    <h1>ورود مشتری</h1>
+
+    <p>
+        برای ورود به پنل مشتری، شماره موبایل خود را وارد کنید.
+    </p>
+
+    <form method="post">
+
+        <div class="field">
+            <label>شماره موبایل</label>
+
+            <input
+                type="tel"
+                name="phone"
+                placeholder="09xxxxxxxxx"
+                required
+                maxlength="11"
+            >
+        </div>
+
+        <button class="btn" type="submit">
+            ورود به پنل مشتری
+        </button>
+
+    </form>
+
+    <hr style="margin:25px 0;border:0;border-top:1px solid #ddd;">
+
+    <p style="font-size:14px;color:#666;">
+        اگر قبلاً درخواست ثبت کرده باشید، درخواست‌های شما در پنل مشتری نمایش داده می‌شود.
+    </p>
+
+    <a class="btn" href="/">
+        بازگشت به خدمات
+    </a>
+
+</div>
+
+{% endblock %}
