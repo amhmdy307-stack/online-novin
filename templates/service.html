@@ -2,438 +2,273 @@
 
 {% block content %}
 
-<style>
-    .service-wrapper {
-        max-width: 850px;
-        margin: 20px auto;
-    }
+<div class="card">
 
-    .service-header {
-        background: {{ settings.get('card_color','#ffffff') }};
-        border-radius: 18px;
-        padding: 25px;
-        margin-bottom: 18px;
-        box-shadow: 0 5px 20px rgba(0,0,0,.07);
-    }
+    <h1>
+        {{ service.name }}
+    </h1>
 
-    .service-header h1 {
-        margin-top: 0;
-        color: {{ settings.get('primary_color','#102a43') }};
-    }
-
-    .category {
-        display: inline-block;
-        background: #edf2f7;
-        padding: 6px 12px;
-        border-radius: 20px;
-        font-size: 13px;
-        margin-bottom: 10px;
-    }
-
-    .description {
-        line-height: 2;
-        color: #667085;
-    }
-
-    .price-box {
-        background: #eef7ff;
-        border-radius: 12px;
-        padding: 15px;
-        margin-top: 15px;
-        font-weight: bold;
-    }
-
-    .form-card {
-        background: {{ settings.get('card_color','#ffffff') }};
-        border-radius: 18px;
-        padding: 25px;
-        box-shadow: 0 5px 20px rgba(0,0,0,.07);
-    }
-
-    .field {
-        margin: 15px 0;
-    }
-
-    .field label {
-        display: block;
-        font-weight: bold;
-        margin-bottom: 7px;
-    }
-
-    .required {
-        color: #d33;
-    }
-
-    .document-box {
-        background: #fff8e6;
-        padding: 15px;
-        border-radius: 12px;
-        margin: 20px 0;
-    }
-
-    .document-box li {
-        margin: 7px 0;
-    }
-
-    .submit-box {
-        margin-top: 25px;
-    }
-
-    .submit-btn {
-        width: 100%;
-        padding: 14px;
-        font-size: 16px;
-        font-weight: bold;
-    }
-
-    .back {
-        margin-bottom: 15px;
-    }
-
-    .back a {
-        text-decoration: none;
-    }
-</style>
-
-
-<div class="service-wrapper">
-
-
-    <!-- بازگشت -->
-
-    <div class="back">
-
-        <a
-            class="btn"
-            href="{{ url_for('home') }}"
-        >
-            ↩️ بازگشت به لیست سامانه‌ها
-        </a>
-
-    </div>
-
-
-
-    <!-- اطلاعات سامانه -->
-
-    <div class="service-header">
-
-        {% if service.category %}
-
-        <div class="category">
-            {{ service.category }}
-        </div>
-
-        {% endif %}
-
-
-        <h1>
-            {{ service.name }}
-        </h1>
-
-
-        {% if service.description %}
-
-        <div class="description">
+    {% if service.description %}
+        <p>
             {{ service.description }}
-        </div>
-
-        {% endif %}
-
-
-        <div class="price-box">
-
-            {% if service.price and service.price > 0 %}
-
-                💰 قیمت پایه:
-                {{ "{:,}".format(service.price) }}
-                ریال
-
-            {% else %}
-
-                💰 قیمت:
-                توسط مدیریت تعیین می‌شود.
-
-            {% endif %}
-
-        </div>
-
-    </div>
-
-
-
-    <!-- مدارک -->
-
-    {% if documents %}
-
-    <div class="document-box">
-
-        <h3>
-            📎 مدارک موردنیاز
-        </h3>
-
-        <ul>
-
-            {% for document in documents %}
-
-            <li>
-                {{ document }}
-            </li>
-
-            {% endfor %}
-
-        </ul>
-
-    </div>
-
+        </p>
     {% endif %}
 
-
-
-    <!-- فرم -->
-
-    <div class="form-card">
-
-        <h2>
-            📝 ثبت درخواست
-        </h2>
-
+    {% if service.category %}
         <p>
-            اطلاعات زیر را با دقت وارد کنید.
+            <strong>دسته‌بندی:</strong>
+            {{ service.category }}
         </p>
+    {% endif %}
+
+    {% if service.price %}
+        <p>
+            <strong>
+                قیمت پایه:
+                {{ "{:,}".format(service.price) }}
+                ریال
+            </strong>
+        </p>
+    {% else %}
+        <p>
+            <strong>
+                قیمت:
+            </strong>
+            پس از بررسی درخواست اعلام می‌شود.
+        </p>
+    {% endif %}
+
+</div>
 
 
-        <form
-            method="post"
-            enctype="multipart/form-data"
-        >
+<div class="card">
+
+    <h2>📝 ثبت درخواست</h2>
+
+    <form
+        method="post"
+        enctype="multipart/form-data"
+    >
+
+        <div class="field">
+
+            <label>
+                نام و نام خانوادگی
+            </label>
+
+            <input
+                type="text"
+                name="name"
+                required
+                placeholder="نام و نام خانوادگی"
+            >
+
+        </div>
 
 
-            <!-- اطلاعات پایه مشتری -->
+        <div class="field">
 
-            <div class="field">
+            <label>
+                کد ملی
+            </label>
 
-                <label>
-                    نام و نام خانوادگی
-                    <span class="required">*</span>
-                </label>
+            <input
+                type="text"
+                name="national_id"
+                inputmode="numeric"
+                maxlength="10"
+                required
+                placeholder="کد ملی"
+            >
 
-                <input
-                    type="text"
-                    name="name"
-                    required
-                    placeholder="نام و نام خانوادگی"
-                >
-
-            </div>
-
-
-            <div class="field">
-
-                <label>
-                    کد ملی
-                    <span class="required">*</span>
-                </label>
-
-                <input
-                    type="text"
-                    name="national_id"
-                    required
-                    maxlength="10"
-                    placeholder="کد ملی"
-                >
-
-            </div>
+        </div>
 
 
-            <div class="field">
+        <div class="field">
 
-                <label>
-                    شماره موبایل
-                    <span class="required">*</span>
-                </label>
+            <label>
+                شماره موبایل
+            </label>
 
-                <input
-                    type="tel"
-                    name="phone"
-                    required
-                    placeholder="09xxxxxxxxx"
-                >
+            <input
+                type="tel"
+                name="phone"
+                inputmode="tel"
+                required
+                placeholder="شماره موبایل"
+            >
 
-            </div>
+        </div>
 
 
-
-            <!-- فیلدهای اختصاصی سامانه -->
-
-            {% if fields %}
+        {% if fields %}
 
             <h3>
-                اطلاعات موردنیاز سامانه
+                اطلاعات موردنیاز
             </h3>
-
 
             {% for field in fields %}
 
-            <div class="field">
+                <div class="field">
 
-                <label>
+                    <label>
+                        {{ field.get(
+                            'label',
+                            field.get('name','')
+                        ) }}
 
-                    {{ field.get('label', field.get('name','اطلاعات')) }}
+                        {% if field.get('required') %}
+                            *
+                        {% endif %}
+                    </label>
 
-                    {% if field.get('required') %}
 
-                        <span class="required">*</span>
+                    {% if field.get('type') == 'textarea' %}
+
+                        <textarea
+                            name="{{ field.get('name') }}"
+                            rows="4"
+                            {% if field.get('required') %}
+                                required
+                            {% endif %}
+                        ></textarea>
+
+
+                    {% elif field.get('type') == 'select' %}
+
+                        <select
+                            name="{{ field.get('name') }}"
+                            {% if field.get('required') %}
+                                required
+                            {% endif %}
+                        >
+
+                            <option value="">
+                                انتخاب کنید
+                            </option>
+
+                            {% for option in field.get(
+                                'options',
+                                []
+                            ) %}
+
+                                <option value="{{ option }}">
+                                    {{ option }}
+                                </option>
+
+                            {% endfor %}
+
+                        </select>
+
+
+                    {% elif field.get('type') == 'file' %}
+
+                        <input
+                            type="file"
+                            name="{{ field.get('name') }}"
+                            {% if field.get('required') %}
+                                required
+                            {% endif %}
+                        >
+
+
+                    {% else %}
+
+                        <input
+                            type="{{ field.get(
+                                'type',
+                                'text'
+                            ) }}"
+                            name="{{ field.get('name') }}"
+                            {% if field.get('required') %}
+                                required
+                            {% endif %}
+                        >
 
                     {% endif %}
 
-                </label>
+                </div>
+
+            {% endfor %}
+
+        {% endif %}
 
 
-                {% set field_type = field.get('type','text') %}
+        {% if documents %}
 
+            <h3>
+                📎 مدارک موردنیاز
+            </h3>
 
-                {% if field_type == 'textarea' %}
+            <div class="notice">
 
-                <textarea
-                    name="{{ field.get('name') }}"
-                    {% if field.get('required') %}required{% endif %}
-                    rows="4"
-                ></textarea>
+                مدارک زیر را در صورت نیاز آماده کنید:
 
+                <ul>
 
-                {% elif field_type == 'select' %}
+                    {% for document in documents %}
 
-                <select
-                    name="{{ field.get('name') }}"
-                    {% if field.get('required') %}required{% endif %}
-                >
-
-                    <option value="">
-                        انتخاب کنید
-                    </option>
-
-                    {% for option in field.get('options',[]) %}
-
-                    <option value="{{ option }}">
-                        {{ option }}
-                    </option>
+                        <li>
+                            {{ document }}
+                        </li>
 
                     {% endfor %}
 
-                </select>
-
-
-                {% elif field_type == 'file' %}
-
-                <input
-                    type="file"
-                    name="{{ field.get('name') }}"
-                    {% if field.get('required') %}required{% endif %}
-                >
-
-
-                {% else %}
-
-                <input
-                    type="{{ field_type }}"
-                    name="{{ field.get('name') }}"
-                    {% if field.get('required') %}required{% endif %}
-                >
-
-                {% endif %}
+                </ul>
 
             </div>
 
-            {% endfor %}
-
-            {% endif %}
-
-
-
-            <!-- آپلود مدارک -->
-
-            {% if documents %}
-
-            <h3>
-                📎 بارگذاری مدارک
-            </h3>
-
-
-            {% for document in documents %}
 
             <div class="field">
 
                 <label>
-                    {{ document }}
+                    بارگذاری مدارک
                 </label>
 
                 <input
                     type="file"
-                    name="document_{{ loop.index }}"
+                    name="documents"
+                    multiple
                 >
 
             </div>
 
-            {% endfor %}
-
-            {% endif %}
+        {% endif %}
 
 
+        {% if settings.get('warning_text') %}
 
-            <!-- کد تخفیف -->
+            <div class="warning">
 
-            <div class="field">
-
-                <label>
-                    🎟 کد تخفیف
-                </label>
-
-                <input
-                    type="text"
-                    name="discount_code"
-                    placeholder="در صورت داشتن کد تخفیف وارد کنید"
-                >
+                {{ settings.get(
+                    'warning_text'
+                ) }}
 
             </div>
 
+        {% endif %}
 
 
-            <!-- توضیحات مشتری -->
+        <button
+            class="btn"
+            type="submit"
+        >
+            📤 ثبت درخواست
+        </button>
 
-            <div class="field">
+    </form>
 
-                <label>
-                    توضیحات
-                </label>
-
-                <textarea
-                    name="customer_description"
-                    rows="5"
-                    placeholder="اگر توضیح یا درخواست خاصی دارید بنویسید..."
-                ></textarea>
-
-            </div>
+</div>
 
 
+<div class="card">
 
-            <!-- ارسال -->
-
-            <div class="submit-box">
-
-                <button
-                    class="btn submit-btn"
-                    type="submit"
-                >
-                    ✅ ثبت درخواست سامانه
-                </button>
-
-            </div>
-
-
-        </form>
-
-    </div>
+    <a
+        class="btn"
+        href="{{ url_for('customer_dashboard') }}"
+    >
+        ⬅️ بازگشت به پنل مشتری
+    </a>
 
 </div>
 
