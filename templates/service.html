@@ -2,200 +2,438 @@
 
 {% block content %}
 
-<div class="card">
+<style>
+    .service-wrapper {
+        max-width: 850px;
+        margin: 20px auto;
+    }
 
-    <h1>{{ service.name }}</h1>
+    .service-header {
+        background: {{ settings.get('card_color','#ffffff') }};
+        border-radius: 18px;
+        padding: 25px;
+        margin-bottom: 18px;
+        box-shadow: 0 5px 20px rgba(0,0,0,.07);
+    }
 
-    {% if service.description %}
-        <p>{{ service.description }}</p>
-    {% endif %}
+    .service-header h1 {
+        margin-top: 0;
+        color: {{ settings.get('primary_color','#102a43') }};
+    }
 
-    {% if service.price %}
-        <p>
-            <strong>
-                قیمت:
-                {{ "{:,}".format(service.price) }}
-                ریال
-            </strong>
-        </p>
-    {% endif %}
+    .category {
+        display: inline-block;
+        background: #edf2f7;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 13px;
+        margin-bottom: 10px;
+    }
 
-</div>
+    .description {
+        line-height: 2;
+        color: #667085;
+    }
+
+    .price-box {
+        background: #eef7ff;
+        border-radius: 12px;
+        padding: 15px;
+        margin-top: 15px;
+        font-weight: bold;
+    }
+
+    .form-card {
+        background: {{ settings.get('card_color','#ffffff') }};
+        border-radius: 18px;
+        padding: 25px;
+        box-shadow: 0 5px 20px rgba(0,0,0,.07);
+    }
+
+    .field {
+        margin: 15px 0;
+    }
+
+    .field label {
+        display: block;
+        font-weight: bold;
+        margin-bottom: 7px;
+    }
+
+    .required {
+        color: #d33;
+    }
+
+    .document-box {
+        background: #fff8e6;
+        padding: 15px;
+        border-radius: 12px;
+        margin: 20px 0;
+    }
+
+    .document-box li {
+        margin: 7px 0;
+    }
+
+    .submit-box {
+        margin-top: 25px;
+    }
+
+    .submit-btn {
+        width: 100%;
+        padding: 14px;
+        font-size: 16px;
+        font-weight: bold;
+    }
+
+    .back {
+        margin-bottom: 15px;
+    }
+
+    .back a {
+        text-decoration: none;
+    }
+</style>
 
 
-<div class="card">
+<div class="service-wrapper">
 
-    <h2>ثبت درخواست {{ service.name }}</h2>
 
-    <form method="post" enctype="multipart/form-data">
+    <!-- بازگشت -->
 
-        <!-- اطلاعات پایه مشتری -->
+    <div class="back">
 
-        <h3>اطلاعات متقاضی</h3>
+        <a
+            class="btn"
+            href="{{ url_for('home') }}"
+        >
+            ↩️ بازگشت به لیست سامانه‌ها
+        </a>
 
-        <div class="field">
-            <label>نام و نام خانوادگی</label>
-            <input
-                type="text"
-                name="name"
-                required
-            >
+    </div>
+
+
+
+    <!-- اطلاعات سامانه -->
+
+    <div class="service-header">
+
+        {% if service.category %}
+
+        <div class="category">
+            {{ service.category }}
         </div>
-
-        <div class="field">
-            <label>کد ملی</label>
-            <input
-                type="text"
-                name="national_id"
-                inputmode="numeric"
-                maxlength="10"
-                required
-            >
-        </div>
-
-        <div class="field">
-            <label>شماره موبایل</label>
-            <input
-                type="tel"
-                name="phone"
-                inputmode="tel"
-                required
-            >
-        </div>
-
-
-        <!-- فیلدهای اختصاصی خدمت -->
-
-        {% if fields %}
-
-            <hr>
-
-            <h3>اطلاعات مربوط به این خدمت</h3>
-
-            {% for field in fields %}
-
-                <div class="field">
-
-                    <label>
-                        {{ field.get('label', field.get('name', 'اطلاعات')) }}
-
-                        {% if field.get('required', False) %}
-                            *
-                        {% endif %}
-                    </label>
-
-
-                    {% set field_type = field.get('type', 'text') %}
-
-
-                    {% if field_type == 'textarea' %}
-
-                        <textarea
-                            name="{{ field.get('name') }}"
-                            {% if field.get('required', False) %}required{% endif %}
-                            rows="4"
-                        ></textarea>
-
-
-                    {% elif field_type == 'select' %}
-
-                        <select
-                            name="{{ field.get('name') }}"
-                            {% if field.get('required', False) %}required{% endif %}
-                        >
-
-                            <option value="">
-                                انتخاب کنید
-                            </option>
-
-                            {% for option in field.get('options', []) %}
-
-                                <option value="{{ option }}">
-                                    {{ option }}
-                                </option>
-
-                            {% endfor %}
-
-                        </select>
-
-
-                    {% elif field_type == 'file' %}
-
-                        <input
-                            type="file"
-                            name="{{ field.get('name') }}"
-                            {% if field.get('required', False) %}required{% endif %}
-                        >
-
-
-                    {% else %}
-
-                        <input
-                            type="{{ field_type }}"
-                            name="{{ field.get('name') }}"
-                            {% if field.get('placeholder') %}
-                                placeholder="{{ field.get('placeholder') }}"
-                            {% endif %}
-                            {% if field.get('required', False) %}required{% endif %}
-                        >
-
-                    {% endif %}
-
-                </div>
-
-            {% endfor %}
 
         {% endif %}
 
 
-        <!-- مدارک مورد نیاز -->
+        <h1>
+            {{ service.name }}
+        </h1>
 
-        {% if documents %}
 
-            <hr>
+        {% if service.description %}
 
-            <h3>مدارک مورد نیاز</h3>
+        <div class="description">
+            {{ service.description }}
+        </div>
+
+        {% endif %}
+
+
+        <div class="price-box">
+
+            {% if service.price and service.price > 0 %}
+
+                💰 قیمت پایه:
+                {{ "{:,}".format(service.price) }}
+                ریال
+
+            {% else %}
+
+                💰 قیمت:
+                توسط مدیریت تعیین می‌شود.
+
+            {% endif %}
+
+        </div>
+
+    </div>
+
+
+
+    <!-- مدارک -->
+
+    {% if documents %}
+
+    <div class="document-box">
+
+        <h3>
+            📎 مدارک موردنیاز
+        </h3>
+
+        <ul>
 
             {% for document in documents %}
 
-                <div class="field">
-
-                    <label>
-                        {{ document.get('label', document.get('name', 'مدرک')) }}
-
-                        {% if document.get('required', False) %}
-                            *
-                        {% endif %}
-                    </label>
-
-                    <input
-                        type="file"
-                        name="document_{{ loop.index }}"
-                        {% if document.get('required', False) %}required{% endif %}
-                    >
-
-                </div>
+            <li>
+                {{ document }}
+            </li>
 
             {% endfor %}
 
-        {% endif %}
+        </ul>
+
+    </div>
+
+    {% endif %}
 
 
-        <div class="notice">
-            لطفاً اطلاعات را با دقت وارد کنید.
-            پس از ثبت درخواست، کد پیگیری برای شما نمایش داده می‌شود.
-        </div>
+
+    <!-- فرم -->
+
+    <div class="form-card">
+
+        <h2>
+            📝 ثبت درخواست
+        </h2>
+
+        <p>
+            اطلاعات زیر را با دقت وارد کنید.
+        </p>
 
 
-        <button
-            type="submit"
-            class="btn"
-            style="width:100%;font-size:16px;"
+        <form
+            method="post"
+            enctype="multipart/form-data"
         >
-            ثبت درخواست
-        </button>
 
-    </form>
+
+            <!-- اطلاعات پایه مشتری -->
+
+            <div class="field">
+
+                <label>
+                    نام و نام خانوادگی
+                    <span class="required">*</span>
+                </label>
+
+                <input
+                    type="text"
+                    name="name"
+                    required
+                    placeholder="نام و نام خانوادگی"
+                >
+
+            </div>
+
+
+            <div class="field">
+
+                <label>
+                    کد ملی
+                    <span class="required">*</span>
+                </label>
+
+                <input
+                    type="text"
+                    name="national_id"
+                    required
+                    maxlength="10"
+                    placeholder="کد ملی"
+                >
+
+            </div>
+
+
+            <div class="field">
+
+                <label>
+                    شماره موبایل
+                    <span class="required">*</span>
+                </label>
+
+                <input
+                    type="tel"
+                    name="phone"
+                    required
+                    placeholder="09xxxxxxxxx"
+                >
+
+            </div>
+
+
+
+            <!-- فیلدهای اختصاصی سامانه -->
+
+            {% if fields %}
+
+            <h3>
+                اطلاعات موردنیاز سامانه
+            </h3>
+
+
+            {% for field in fields %}
+
+            <div class="field">
+
+                <label>
+
+                    {{ field.get('label', field.get('name','اطلاعات')) }}
+
+                    {% if field.get('required') %}
+
+                        <span class="required">*</span>
+
+                    {% endif %}
+
+                </label>
+
+
+                {% set field_type = field.get('type','text') %}
+
+
+                {% if field_type == 'textarea' %}
+
+                <textarea
+                    name="{{ field.get('name') }}"
+                    {% if field.get('required') %}required{% endif %}
+                    rows="4"
+                ></textarea>
+
+
+                {% elif field_type == 'select' %}
+
+                <select
+                    name="{{ field.get('name') }}"
+                    {% if field.get('required') %}required{% endif %}
+                >
+
+                    <option value="">
+                        انتخاب کنید
+                    </option>
+
+                    {% for option in field.get('options',[]) %}
+
+                    <option value="{{ option }}">
+                        {{ option }}
+                    </option>
+
+                    {% endfor %}
+
+                </select>
+
+
+                {% elif field_type == 'file' %}
+
+                <input
+                    type="file"
+                    name="{{ field.get('name') }}"
+                    {% if field.get('required') %}required{% endif %}
+                >
+
+
+                {% else %}
+
+                <input
+                    type="{{ field_type }}"
+                    name="{{ field.get('name') }}"
+                    {% if field.get('required') %}required{% endif %}
+                >
+
+                {% endif %}
+
+            </div>
+
+            {% endfor %}
+
+            {% endif %}
+
+
+
+            <!-- آپلود مدارک -->
+
+            {% if documents %}
+
+            <h3>
+                📎 بارگذاری مدارک
+            </h3>
+
+
+            {% for document in documents %}
+
+            <div class="field">
+
+                <label>
+                    {{ document }}
+                </label>
+
+                <input
+                    type="file"
+                    name="document_{{ loop.index }}"
+                >
+
+            </div>
+
+            {% endfor %}
+
+            {% endif %}
+
+
+
+            <!-- کد تخفیف -->
+
+            <div class="field">
+
+                <label>
+                    🎟 کد تخفیف
+                </label>
+
+                <input
+                    type="text"
+                    name="discount_code"
+                    placeholder="در صورت داشتن کد تخفیف وارد کنید"
+                >
+
+            </div>
+
+
+
+            <!-- توضیحات مشتری -->
+
+            <div class="field">
+
+                <label>
+                    توضیحات
+                </label>
+
+                <textarea
+                    name="customer_description"
+                    rows="5"
+                    placeholder="اگر توضیح یا درخواست خاصی دارید بنویسید..."
+                ></textarea>
+
+            </div>
+
+
+
+            <!-- ارسال -->
+
+            <div class="submit-box">
+
+                <button
+                    class="btn submit-btn"
+                    type="submit"
+                >
+                    ✅ ثبت درخواست سامانه
+                </button>
+
+            </div>
+
+
+        </form>
+
+    </div>
 
 </div>
 
