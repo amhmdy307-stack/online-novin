@@ -49,8 +49,8 @@
         .topbar-links a {
             color: #fff;
             text-decoration: none;
-            padding: 7px 10px;
-            border-radius: 7px;
+            padding: 9px 12px;
+            border-radius: 8px;
         }
 
         .topbar-links a:hover {
@@ -102,10 +102,48 @@
             margin-bottom: 12px;
         }
 
+        /* صفحه اصلی */
+        .public-page {
+            min-height: 100vh;
+        }
+
+        /* پنل مشتری */
+        .customer-topbar {
+            background: {{ settings.get('primary_color','#102a43') if settings else '#102a43' }};
+            color: #fff;
+        }
+
+        .customer-topbar .topbar-inner {
+            justify-content: space-between;
+        }
+
+        /* پنل مدیریت */
+        .admin-topbar {
+            background: {{ settings.get('primary_color','#102a43') if settings else '#102a43' }};
+            color: #fff;
+        }
+
+        .admin-topbar .topbar-links a {
+            background: rgba(255,255,255,.08);
+        }
+
+        .admin-topbar .topbar-links a:hover {
+            background: rgba(255,255,255,.18);
+        }
+
         @media (max-width: 700px) {
+
             .topbar-inner {
                 align-items: flex-start;
                 flex-direction: column;
+            }
+
+            .topbar-links {
+                width: 100%;
+            }
+
+            .topbar-links a {
+                font-size: 13px;
             }
         }
     </style>
@@ -116,10 +154,15 @@
 {% set is_admin = session.get('admin') %}
 {% set is_customer = session.get('customer_id') %}
 
+
+<!-- =========================
+     پنل مدیریت
+     ========================= -->
+
 {% if is_admin %}
 
-    <!-- منوی مخصوص مدیر -->
-    <div class="topbar">
+    <div class="topbar admin-topbar">
+
         <div class="topbar-inner">
 
             <div class="topbar-title">
@@ -127,19 +170,38 @@
             </div>
 
             <div class="topbar-links">
-                <a href="{{ url_for('admin') }}">🏠 مدیریت</a>
-                <a href="{{ url_for('home') }}">🌐 مشاهده سایت</a>
-                <a href="{{ url_for('tracking') }}">🔎 پیگیری درخواست</a>
-                <a href="{{ url_for('admin_logout') }}">🚪 خروج</a>
+
+                <a href="{{ url_for('admin') }}">
+                    🏠 مدیریت
+                </a>
+
+                <a href="{{ url_for('home') }}">
+                    🌐 مشاهده سایت
+                </a>
+
+                <a href="{{ url_for('tracking') }}">
+                    🔎 پیگیری درخواست
+                </a>
+
+                <a href="{{ url_for('admin_logout') }}">
+                    🚪 خروج
+                </a>
+
             </div>
 
         </div>
+
     </div>
+
+
+<!-- =========================
+     پنل مشتری
+     ========================= -->
 
 {% elif is_customer %}
 
-    <!-- منوی مخصوص مشتری -->
-    <div class="topbar">
+    <div class="topbar customer-topbar">
+
         <div class="topbar-inner">
 
             <div class="topbar-title">
@@ -147,17 +209,31 @@
             </div>
 
             <div class="topbar-links">
-                <a href="{{ url_for('customer_dashboard') }}">🏠 پنل من</a>
-                <a href="{{ url_for('home') }}">🌐 خدمات</a>
-                <a href="{{ url_for('tracking') }}">🔎 پیگیری درخواست</a>
-                <a href="{{ url_for('customer_logout') }}">🚪 خروج</a>
+
+                <a href="{{ url_for('customer_dashboard') }}">
+                    🏠 پنل من
+                </a>
+
+                <a href="{{ url_for('home') }}">
+                    🛠️ لیست سامانه های ثبت نامی
+                </a>
+
+                <a href="{{ url_for('customer_logout') }}">
+                    🚪 خروج
+                </a>
+
             </div>
 
         </div>
+
     </div>
 
 {% endif %}
 
+
+<!-- =========================
+     محتوای صفحات
+     ========================= -->
 
 <main class="wrap">
 
@@ -167,6 +243,7 @@
 
             <div class="notice">
                 {{ m }}
+
             </div>
 
         {% endfor %}
