@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
 
 {% block content %}
 
@@ -7,14 +7,17 @@
     <h1>{{ service.name }}</h1>
 
     {% if service.description %}
-    <p>{{ service.description }}</p>
+        <p>{{ service.description }}</p>
     {% endif %}
 
     {% if service.price %}
-    <div class="notice">
-        قیمت خدمت:
-        <b>{{ "{:,}".format(service.price) }} ریال</b>
-    </div>
+        <p>
+            <strong>
+                قیمت:
+                {{ "{:,}".format(service.price) }}
+                ریال
+            </strong>
+        </p>
     {% endif %}
 
 </div>
@@ -22,155 +25,177 @@
 
 <div class="card">
 
-    <h2>اطلاعات مشتری</h2>
+    <h2>ثبت درخواست {{ service.name }}</h2>
 
     <form method="post" enctype="multipart/form-data">
 
+        <!-- اطلاعات پایه مشتری -->
+
+        <h3>اطلاعات متقاضی</h3>
+
         <div class="field">
             <label>نام و نام خانوادگی</label>
-
             <input
                 type="text"
                 name="name"
-                placeholder="نام و نام خانوادگی"
                 required
             >
         </div>
 
-
         <div class="field">
             <label>کد ملی</label>
-
             <input
                 type="text"
                 name="national_id"
-                placeholder="کد ملی"
+                inputmode="numeric"
                 maxlength="10"
                 required
             >
         </div>
 
-
         <div class="field">
             <label>شماره موبایل</label>
-
             <input
                 type="tel"
                 name="phone"
-                placeholder="09xxxxxxxxx"
-                maxlength="11"
+                inputmode="tel"
                 required
             >
         </div>
 
 
+        <!-- فیلدهای اختصاصی خدمت -->
+
         {% if fields %}
 
-        <h2>اطلاعات موردنیاز</h2>
+            <hr>
 
-        {% for field in fields %}
+            <h3>اطلاعات مربوط به این خدمت</h3>
 
-        <div class="field">
+            {% for field in fields %}
 
-            <label>
-                {{ field.label or field.name }}
+                <div class="field">
 
-                {% if field.required %}
-                *
-                {% endif %}
-            </label>
+                    <label>
+                        {{ field.get('label', field.get('name', 'اطلاعات')) }}
 
-
-            {% if field.type == 'textarea' %}
-
-            <textarea
-                name="{{ field.name }}"
-                rows="4"
-                {% if field.required %}required{% endif %}
-            ></textarea>
+                        {% if field.get('required', False) %}
+                            *
+                        {% endif %}
+                    </label>
 
 
-            {% elif field.type == 'select' %}
-
-            <select
-                name="{{ field.name }}"
-                {% if field.required %}required{% endif %}
-            >
-
-                <option value="">
-                    انتخاب کنید
-                </option>
-
-                {% for option in field.options or [] %}
-
-                <option value="{{ option }}">
-                    {{ option }}
-                </option>
-
-                {% endfor %}
-
-            </select>
+                    {% set field_type = field.get('type', 'text') %}
 
 
-            {% else %}
+                    {% if field_type == 'textarea' %}
 
-            <input
-                type="{{ field.type or 'text' }}"
-                name="{{ field.name }}"
-                {% if field.required %}required{% endif %}
-            >
+                        <textarea
+                            name="{{ field.get('name') }}"
+                            {% if field.get('required', False) %}required{% endif %}
+                            rows="4"
+                        ></textarea>
 
-            {% endif %}
 
-        </div>
+                    {% elif field_type == 'select' %}
 
-        {% endfor %}
+                        <select
+                            name="{{ field.get('name') }}"
+                            {% if field.get('required', False) %}required{% endif %}
+                        >
+
+                            <option value="">
+                                انتخاب کنید
+                            </option>
+
+                            {% for option in field.get('options', []) %}
+
+                                <option value="{{ option }}">
+                                    {{ option }}
+                                </option>
+
+                            {% endfor %}
+
+                        </select>
+
+
+                    {% elif field_type == 'file' %}
+
+                        <input
+                            type="file"
+                            name="{{ field.get('name') }}"
+                            {% if field.get('required', False) %}required{% endif %}
+                        >
+
+
+                    {% else %}
+
+                        <input
+                            type="{{ field_type }}"
+                            name="{{ field.get('name') }}"
+                            {% if field.get('placeholder') %}
+                                placeholder="{{ field.get('placeholder') }}"
+                            {% endif %}
+                            {% if field.get('required', False) %}required{% endif %}
+                        >
+
+                    {% endif %}
+
+                </div>
+
+            {% endfor %}
 
         {% endif %}
 
+
+        <!-- مدارک مورد نیاز -->
 
         {% if documents %}
 
-        <h2>بارگذاری مدارک</h2>
+            <hr>
 
-        {% for document in documents %}
+            <h3>مدارک مورد نیاز</h3>
 
-        <div class="field">
+            {% for document in documents %}
 
-            <label>
-                {{ document.label or document.name }}
-            </label>
+                <div class="field">
 
-            <input
-                type="file"
-                name="{{ document.name }}"
-                {% if document.required %}required{% endif %}
-            >
+                    <label>
+                        {{ document.get('label', document.get('name', 'مدرک')) }}
 
-        </div>
+                        {% if document.get('required', False) %}
+                            *
+                        {% endif %}
+                    </label>
 
-        {% endfor %}
+                    <input
+                        type="file"
+                        name="document_{{ loop.index }}"
+                        {% if document.get('required', False) %}required{% endif %}
+                    >
+
+                </div>
+
+            {% endfor %}
 
         {% endif %}
 
 
+        <div class="notice">
+            لطفاً اطلاعات را با دقت وارد کنید.
+            پس از ثبت درخواست، کد پیگیری برای شما نمایش داده می‌شود.
+        </div>
+
+
         <button
-            class="btn"
             type="submit"
+            class="btn"
+            style="width:100%;font-size:16px;"
         >
             ثبت درخواست
         </button>
 
     </form>
-
-</div>
-
-
-<div style="margin-top:20px;">
-
-    <a class="btn" href="/">
-        بازگشت به خدمات
-    </a>
 
 </div>
 
