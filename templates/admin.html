@@ -1,260 +1,794 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
 
 {% block content %}
 
 <style>
-    .admin-section {
-        margin-bottom: 30px;
+    .admin-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-bottom: 20px;
     }
 
-    .subservice-box {
-        border: 1px solid #ddd;
-        border-radius: 12px;
-        padding: 15px;
-        margin-top: 10px;
-        background: #fafafa;
-    }
-
-    .subservice-row {
+    .admin-grid {
         display: grid;
-        grid-template-columns: 2fr 1fr 2fr auto;
-        gap: 8px;
-        margin-bottom: 8px;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px;
     }
 
-    .subservice-row input {
+    .admin-card {
+        background: #fff;
+        border-radius: 18px;
+        padding: 20px;
+        box-shadow: 0 5px 20px rgba(0,0,0,.07);
+        margin-bottom: 18px;
+    }
+
+    .admin-card h2 {
+        margin-top: 0;
+    }
+
+    .field {
+        margin-bottom: 14px;
+    }
+
+    .field label {
+        display: block;
+        margin-bottom: 6px;
+        font-weight: bold;
+    }
+
+    input,
+    textarea,
+    select {
         width: 100%;
+        box-sizing: border-box;
+        padding: 11px;
+        border: 1px solid #ddd;
+        border-radius: 10px;
+        font-family: inherit;
     }
 
-    .remove-subservice {
-        background: #d33 !important;
-        min-width: 45px;
+    textarea {
+        resize: vertical;
+    }
+
+    .btn {
+        border: 0;
+        cursor: pointer;
+        display: inline-block;
+        padding: 10px 15px;
+        border-radius: 10px;
+        text-decoration: none;
+        font-weight: bold;
+        background: #1479d1;
+        color: white !important;
+    }
+
+    .btn-dark {
+        background: #102a43;
+    }
+
+    .btn-green {
+        background: #159957;
+    }
+
+    .btn-red {
+        background: #d33;
+    }
+
+    .btn-orange {
+        background: #e67e22;
+    }
+
+    .service-box {
+        border: 1px solid #e5e7eb;
+        border-radius: 15px;
+        padding: 15px;
+        margin-top: 12px;
+    }
+
+    .status {
+        display: inline-block;
+        padding: 5px 10px;
+        border-radius: 20px;
+        background: #eef2f7;
+        font-size: 13px;
+    }
+
+    .table-wrap {
+        overflow-x: auto;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 700px;
+    }
+
+    th,
+    td {
+        padding: 10px;
+        border-bottom: 1px solid #eee;
+        text-align: right;
+    }
+
+    th {
+        background: #f5f7fb;
+    }
+
+    .small {
+        color: #777;
+        font-size: 13px;
     }
 
     @media(max-width:700px) {
-        .subservice-row {
+        .admin-grid {
             grid-template-columns: 1fr;
         }
     }
 </style>
 
 
-<h1>پنل مدیریت</h1>
+<!-- =========================================================
+     HEADER
+========================================================= -->
 
-<p>
-    <a class="btn" href="{{ url_for('admin_logout') }}">
+<div class="admin-header">
+
+    <div>
+        <h1>🔐 پنل مدیریت</h1>
+        <p class="small">
+            مدیریت سامانه‌ها، درخواست‌ها، کارشناسان، مالی و تنظیمات سایت
+        </p>
+    </div>
+
+    <a
+        class="btn btn-dark"
+        href="{{ url_for('admin_logout') }}"
+    >
         خروج
     </a>
+
+</div>
+
+
+<!-- =========================================================
+     DASHBOARD
+========================================================= -->
+
+<div class="admin-grid">
+
+    <div class="admin-card">
+        <h2>📋 درخواست‌ها</h2>
+        <p>
+            مدیریت و بررسی درخواست‌های مشتریان
+        </p>
+
+        <strong>
+            {{ requests|length }}
+        </strong>
+    </div>
+
+
+    <div class="admin-card">
+        <h2>👤 مشتریان</h2>
+        <p>
+            مشتریان ثبت‌شده در سایت
+        </p>
+
+        <strong>
+            {{ customers|length }}
+        </strong>
+    </div>
+
+
+    <div class="admin-card">
+        <h2>🖥 سامانه‌ها</h2>
+        <p>
+            سامانه‌ها از همین پنل قابل ایجاد هستند.
+        </p>
+
+        <strong>
+            {{ services|length }}
+        </strong>
+    </div>
+
+
+    <div class="admin-card">
+        <h2>💰 مدیریت مالی</h2>
+        <p>
+            پرداخت‌ها و وضعیت مالی درخواست‌ها
+        </p>
+
+        <a
+            class="btn btn-green"
+            href="#financial"
+        >
+            مشاهده
+        </a>
+    </div>
+
+</div>
+
+
+<!-- =========================================================
+     ADD SYSTEM
+========================================================= -->
+
+<h2>🖥 افزودن سامانه جدید</h2>
+
+<div class="admin-card">
+
+    <form
+        method="post"
+        action="{{ url_for('admin_service_save') }}"
+    >
+
+        <div class="field">
+            <label>نام سامانه</label>
+
+            <input
+                type="text"
+                name="name"
+                placeholder="مثلاً سامانه موردنظر شما"
+                required
+            >
+        </div>
+
+
+        <div class="field">
+            <label>دسته‌بندی</label>
+
+            <input
+                type="text"
+                name="category"
+                placeholder="مثلاً خدمات دولتی"
+            >
+        </div>
+
+
+        <div class="field">
+            <label>توضیحات سامانه</label>
+
+            <textarea
+                name="description"
+                rows="4"
+                placeholder="توضیحات سامانه"
+            ></textarea>
+        </div>
+
+
+        <div class="field">
+            <label>قیمت پایه</label>
+
+            <input
+                type="number"
+                name="price"
+                value="0"
+                min="0"
+            >
+
+            <div class="small">
+                قیمت به ریال است.
+            </div>
+        </div>
+
+
+        <div class="field">
+            <label>ترتیب نمایش</label>
+
+            <input
+                type="number"
+                name="sort_order"
+                value="0"
+            >
+        </div>
+
+
+        <div class="field">
+
+            <label>فعال بودن سامانه</label>
+
+            <select name="active">
+
+                <option value="1">
+                    فعال
+                </option>
+
+                <option value="0">
+                    غیرفعال
+                </option>
+
+            </select>
+
+        </div>
+
+
+        <!--
+        فرم سامانه از اینجا تعریف می‌شود.
+        مدیر بعداً می‌تواند JSON فرم را وارد کند.
+        -->
+
+        <div class="field">
+
+            <label>
+                فیلدهای فرم سامانه
+            </label>
+
+            <textarea
+                name="fields_json"
+                rows="10"
+                placeholder='[
+{
+"name":"birth_date",
+"label":"تاریخ تولد",
+"type":"date",
+"required":true
+}
+]'
+            ></textarea>
+
+        </div>
+
+
+        <div class="field">
+
+            <label>
+                مدارک موردنیاز
+            </label>
+
+            <textarea
+                name="documents_json"
+                rows="7"
+                placeholder='[
+"کارت ملی",
+"شناسنامه",
+"مدرک مربوطه"
+]'
+            ></textarea>
+
+        </div>
+
+
+        <button
+            class="btn btn-green"
+            type="submit"
+        >
+            ➕ افزودن سامانه
+        </button>
+
+    </form>
+
+</div>
+
+
+<!-- =========================================================
+     SYSTEM LIST
+========================================================= -->
+
+<h2>📚 سامانه‌های موجود</h2>
+
+<div class="admin-card">
+
+{% for s in services %}
+
+    <div class="service-box">
+
+        <h3>
+            {{ s.name }}
+        </h3>
+
+        <p>
+            {{ s.description or 'بدون توضیحات' }}
+        </p>
+
+        <p>
+
+            دسته:
+            <strong>
+                {{ s.category or '-' }}
+            </strong>
+
+            <br>
+
+            قیمت پایه:
+            <strong>
+                {{ "{:,}".format(s.price or 0) }}
+                ریال
+            </strong>
+
+            <br>
+
+            وضعیت:
+
+            {% if s.active %}
+
+                <span class="status">
+                    فعال
+                </span>
+
+            {% else %}
+
+                <span class="status">
+                    غیرفعال
+                </span>
+
+            {% endif %}
+
+        </p>
+
+    </div>
+
+{% else %}
+
+    <p>
+        هنوز سامانه‌ای ایجاد نشده است.
+    </p>
+
+{% endfor %}
+
+</div>
+
+
+<!-- =========================================================
+     REQUESTS
+========================================================= -->
+
+<h2>📋 درخواست‌های مشتریان</h2>
+
+<div class="admin-card">
+
+<div class="table-wrap">
+
+<table>
+
+<thead>
+
+<tr>
+
+    <th>مشتری</th>
+
+    <th>تلفن</th>
+
+    <th>سامانه</th>
+
+    <th>کد پیگیری</th>
+
+    <th>وضعیت</th>
+
+    <th>عملیات</th>
+
+</tr>
+
+</thead>
+
+
+<tbody>
+
+{% for r in requests %}
+
+<tr>
+
+    <td>
+        {{ r.customer_name }}
+    </td>
+
+    <td>
+        {{ r.customer_phone }}
+    </td>
+
+    <td>
+        {{ r.service_name }}
+    </td>
+
+    <td>
+
+        <strong>
+            {{ r.tracking_code }}
+        </strong>
+
+    </td>
+
+    <td>
+
+        <span class="status">
+            {{ r.status }}
+        </span>
+
+    </td>
+
+    <td>
+
+        <a
+            class="btn"
+            href="{{ url_for('admin_request', rid=r.id) }}"
+        >
+            مشاهده پرونده
+        </a>
+
+    </td>
+
+</tr>
+
+
+{% else %}
+
+<tr>
+
+    <td colspan="6">
+
+        هنوز درخواستی ثبت نشده است.
+
+    </td>
+
+</tr>
+
+{% endfor %}
+
+</tbody>
+
+</table>
+
+</div>
+
+</div>
+
+
+<!-- =========================================================
+     REQUEST STATUS
+========================================================= -->
+
+<h2>📌 تغییر وضعیت پرونده</h2>
+
+<div class="admin-card">
+
+<p class="small">
+وضعیت پرونده از این بخش قابل مدیریت است.
 </p>
 
 
-<!-- =====================================================
-     ظاهر سایت
-===================================================== -->
+{% for r in requests %}
 
-<div class="admin-section">
+<div class="service-box">
 
-<h2>🎨 ظاهر و اطلاعات سایت</h2>
+    <strong>
+        {{ r.service_name }}
+    </strong>
 
-<div class="card">
+    <br>
 
-<form method="post" action="{{ url_for('admin_settings') }}">
-
-    <div class="field">
-        <label>نام سایت</label>
-
-        <input
-            name="site_name"
-            value="{{ settings.get('site_name','کافی‌نت آنلاین نوین') }}"
-        >
-    </div>
+    کد پیگیری:
+    <strong>
+        {{ r.tracking_code }}
+    </strong>
 
 
-    <div class="field">
-        <label>نام مدیر</label>
+    <form
+        method="post"
+        action="{{ url_for('admin_request_status') }}"
+        style="margin-top:12px"
+    >
 
         <input
-            name="manager"
-            value="{{ settings.get('manager','') }}"
+            type="hidden"
+            name="id"
+            value="{{ r.id }}"
         >
-    </div>
 
 
-    <div class="field">
-        <label>شماره تماس</label>
+        <div class="field">
 
-        <input
-            name="phone"
-            value="{{ settings.get('phone','') }}"
+            <label>
+                وضعیت پرونده
+            </label>
+
+            <select name="status">
+
+                <option value="جدید">
+                    جدید
+                </option>
+
+                <option value="پذیرش شد">
+                    پذیرش شد
+                </option>
+
+                <option value="در حال بررسی">
+                    در حال بررسی
+                </option>
+
+                <option value="قطعی سامانه">
+                    قطعی سامانه
+                </option>
+
+                <option value="نقص مدارک">
+                    نقص مدارک
+                </option>
+
+                <option value="در حال انجام">
+                    در حال انجام
+                </option>
+
+                <option value="انجام شد">
+                    انجام شد
+                </option>
+
+                <option value="رد شد">
+                    رد شد
+                </option>
+
+                <option value="لغو شد">
+                    لغو شد
+                </option>
+
+            </select>
+
+        </div>
+
+
+        <button
+            class="btn btn-orange"
+            type="submit"
         >
-    </div>
+            ثبت وضعیت
+        </button>
+
+    </form>
+
+</div>
+
+{% endfor %}
+
+</div>
 
 
-    <div class="field">
-        <label>آدرس لوگو</label>
+<!-- =========================================================
+     CUSTOMERS
+========================================================= -->
 
-        <input
-            name="logo"
-            value="{{ settings.get('logo','') }}"
-        >
-    </div>
+<h2>👥 مشتریان</h2>
 
+<div class="admin-card">
 
-    <div class="field">
-        <label>رنگ اصلی سایت</label>
+<div class="table-wrap">
 
-        <input
-            type="color"
-            name="primary_color"
-            value="{{ settings.get('primary_color','#1479d1') }}"
-            style="height:50px"
-        >
-    </div>
+<table>
 
+<thead>
 
-    <div class="field">
-        <label>رنگ منوی بالای سایت</label>
+<tr>
 
-        <input
-            type="color"
-            name="secondary_color"
-            value="{{ settings.get('secondary_color','#102a43') }}"
-            style="height:50px"
-        >
-    </div>
+    <th>نام</th>
+
+    <th>کد ملی</th>
+
+    <th>موبایل</th>
+
+    <th>تعداد درخواست</th>
+
+</tr>
+
+</thead>
 
 
-    <div class="field">
-        <label>رنگ پس‌زمینه سایت</label>
+<tbody>
 
-        <input
-            type="color"
-            name="background_color"
-            value="{{ settings.get('background_color','#f5f7fb') }}"
-            style="height:50px"
-        >
-    </div>
+{% for c in customers %}
 
+<tr>
 
-    <div class="field">
-        <label>رنگ کارت‌ها</label>
+    <td>
+        {{ c.name }}
+    </td>
 
-        <input
-            type="color"
-            name="card_color"
-            value="{{ settings.get('card_color','#ffffff') }}"
-            style="height:50px"
-        >
-    </div>
+    <td>
+        {{ c.national_id or '-' }}
+    </td>
 
+    <td>
+        {{ c.phone or '-' }}
+    </td>
 
-    <div class="field">
-        <label>رنگ متن</label>
+    <td>
+        {{ c.request_count }}
+    </td>
 
-        <input
-            type="color"
-            name="text_color"
-            value="{{ settings.get('text_color','#172033') }}"
-            style="height:50px"
-        >
-    </div>
+</tr>
 
+{% else %}
 
-    <div class="field">
-        <label>متن هشدار پرداخت</label>
+<tr>
 
-        <textarea
-            name="warning_text"
-            rows="4"
-        >{{ settings.get('warning_text','') }}</textarea>
-    </div>
+    <td colspan="4">
+        مشتری‌ای ثبت نشده است.
+    </td>
 
+</tr>
 
-    <button class="btn" type="submit">
-        💾 ذخیره تنظیمات
-    </button>
+{% endfor %}
 
-</form>
+</tbody>
+
+</table>
 
 </div>
 
 </div>
 
 
-<!-- =====================================================
-     تنظیم کد پیگیری
-===================================================== -->
+<!-- =========================================================
+     FINANCIAL
+========================================================= -->
 
-<div class="admin-section">
+<h2 id="financial">
+    💰 مدیریت مالی
+</h2>
 
-<h2>🔢 تنظیم کد پیگیری</h2>
+<div class="admin-card">
 
-<div class="card">
+    <div class="admin-grid">
 
-<form method="post" action="{{ url_for('admin_settings') }}">
+        <div>
 
-    <input
-        type="hidden"
-        name="tracking_prefix"
-        value=""
-    >
+            <h3>
+                دریافتی
+            </h3>
 
-    <input
-        type="hidden"
-        name="tracking_separator"
-        value=""
-    >
+            <p>
+                مدیریت پرداخت‌های مشتریان
+            </p>
 
-    <input
-        type="hidden"
-        name="tracking_digits"
-        value="3"
-    >
+        </div>
 
-    <p>
-        کد پیگیری به‌صورت خودکار و تصادفی ساخته می‌شود.
+
+        <div>
+
+            <h3>
+                پرداخت نشده
+            </h3>
+
+            <p>
+                پرونده‌هایی که هنوز پرداخت نشده‌اند.
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <p class="small">
+        اطلاعات پرداخت هر پرونده در صفحه جزئیات همان درخواست نمایش داده می‌شود.
     </p>
 
-    <p>
-        تعداد ارقام:
-        <strong>۳ رقم</strong>
-    </p>
-
-    <button class="btn" type="submit">
-        💾 ذخیره
-    </button>
-
-</form>
-
-</div>
-
 </div>
 
 
-<!-- =====================================================
-     افزودن سامانه / خدمت
-===================================================== -->
+<!-- =========================================================
+     DISCOUNT
+========================================================= -->
 
-<div class="admin-section">
+<h2>
+    🎟 کد تخفیف
+</h2>
 
-<h2>🖥 افزودن سامانه / خدمت</h2>
-
-<div class="card">
+<div class="admin-card">
 
 <form
     method="post"
-    action="{{ url_for('admin_service_save') }}"
-    id="serviceForm"
+    action="/admin/discount/create"
 >
-
 
     <div class="field">
 
-        <label>نام سامانه / خدمت</label>
+        <label>
+            کد تخفیف
+        </label>
 
         <input
-            name="name"
-            placeholder="نام سامانه را وارد کنید"
+            name="code"
+            placeholder="مثلاً NOVIN100"
             required
         >
 
@@ -263,38 +797,36 @@
 
     <div class="field">
 
-        <label>دسته‌بندی</label>
+        <label>
+            نوع تخفیف
+        </label>
 
-        <input
-            name="category"
-            placeholder="دسته‌بندی"
-        >
+        <select name="kind">
 
-    </div>
+            <option value="percent">
+                درصدی
+            </option>
 
+            <option value="fixed">
+                مبلغ ثابت
+            </option>
 
-    <div class="field">
-
-        <label>توضیحات</label>
-
-        <textarea
-            name="description"
-            rows="4"
-            placeholder="توضیحات سامانه"
-        ></textarea>
+        </select>
 
     </div>
 
 
     <div class="field">
 
-        <label>قیمت اصلی سامانه - ریال</label>
+        <label>
+            مقدار تخفیف
+        </label>
 
         <input
-            name="price"
             type="number"
+            name="value"
             min="0"
-            value="0"
+            required
         >
 
     </div>
@@ -302,12 +834,33 @@
 
     <div class="field">
 
-        <label>ترتیب نمایش</label>
+        <label>
+            حداکثر استفاده
+        </label>
 
         <input
-            name="sort_order"
             type="number"
-            value="0"
+            name="max_uses"
+            value="1"
+            min="0"
+        >
+
+        <div class="small">
+            عدد صفر یعنی بدون محدودیت.
+        </div>
+
+    </div>
+
+
+    <div class="field">
+
+        <label>
+            تاریخ شروع
+        </label>
+
+        <input
+            type="date"
+            name="start_date"
         >
 
     </div>
@@ -315,9 +868,287 @@
 
     <div class="field">
 
-        <label>وضعیت سامانه</label>
+        <label>
+            تاریخ پایان
+        </label>
 
-        <select name="active">
+        <input
+            type="date"
+            name="end_date"
+        >
+
+    </div>
+
+
+    <button
+        class="btn btn-green"
+        type="submit"
+    >
+        ➕ ایجاد کد تخفیف
+    </button>
+
+</form>
+
+</div>
+
+
+<!-- =========================================================
+     ADMIN USERS
+========================================================= -->
+
+<h2>
+    👨‍💼 مدیریت ادمین‌ها و کارشناسان
+</h2>
+
+<div class="admin-card">
+
+<form
+    method="post"
+    action="/admin/users/create"
+>
+
+    <div class="field">
+
+        <label>
+            نام کاربری
+        </label>
+
+        <input
+            name="username"
+            required
+        >
+
+    </div>
+
+
+    <div class="field">
+
+        <label>
+            رمز عبور
+        </label>
+
+        <input
+            type="password"
+            name="password"
+            required
+        >
+
+    </div>
+
+
+    <div class="field">
+
+        <label>
+            نوع کاربر
+        </label>
+
+        <select name="role">
+
+            <option value="admin">
+                ادمین
+            </option>
+
+            <option value="expert">
+                کارشناس
+            </option>
+
+        </select>
+
+    </div>
+
+
+    <button
+        class="btn btn-green"
+        type="submit"
+    >
+        ➕ افزودن ادمین / کارشناس
+    </button>
+
+</form>
+
+
+<hr style="margin:25px 0">
+
+
+<p>
+    دسترسی هر کاربر باید بر اساس سامانه‌های مجاز تعیین شود.
+</p>
+
+</div>
+
+
+<!-- =========================================================
+     SMS
+========================================================= -->
+
+<h2>
+    📱 سامانه پیامک
+</h2>
+
+<div class="admin-card">
+
+<form
+    method="post"
+    action="/admin/sms/settings"
+>
+
+    <div class="field">
+
+        <label>
+            فعال‌سازی پیامک
+        </label>
+
+        <select name="enabled">
+
+            <option value="0">
+                غیرفعال
+            </option>
+
+            <option value="1">
+                فعال
+            </option>
+
+        </select>
+
+    </div>
+
+
+    <div class="field">
+
+        <label>
+            ارائه‌دهنده پیامک
+        </label>
+
+        <input
+            name="provider"
+            placeholder="نام سرویس پیامک"
+        >
+
+    </div>
+
+
+    <div class="field">
+
+        <label>
+            API Key
+        </label>
+
+        <input
+            name="api_key"
+        >
+
+    </div>
+
+
+    <div class="field">
+
+        <label>
+            API Secret
+        </label>
+
+        <input
+            name="api_secret"
+            type="password"
+        >
+
+    </div>
+
+
+    <div class="field">
+
+        <label>
+            شماره فرستنده
+        </label>
+
+        <input
+            name="sender"
+        >
+
+    </div>
+
+
+    <button
+        class="btn"
+        type="submit"
+    >
+        💾 ذخیره تنظیمات پیامک
+    </button>
+
+</form>
+
+</div>
+
+
+<!-- =========================================================
+     PAYMENT GATEWAY
+========================================================= -->
+
+<h2>
+    💳 درگاه پرداخت
+</h2>
+
+<div class="admin-card">
+
+<form
+    method="post"
+    action="/admin/payment/settings"
+>
+
+    <div class="field">
+
+        <label>
+            فعال‌سازی درگاه
+        </label>
+
+        <select name="enabled">
+
+            <option value="0">
+                غیرفعال
+            </option>
+
+            <option value="1">
+                فعال
+            </option>
+
+        </select>
+
+    </div>
+
+
+    <div class="field">
+
+        <label>
+            نوع درگاه
+        </label>
+
+        <input
+            name="gateway"
+            placeholder="مثلاً زرین‌پال"
+        >
+
+    </div>
+
+
+    <div class="field">
+
+        <label>
+            Merchant ID
+        </label>
+
+        <input
+            name="merchant_id"
+        >
+
+    </div>
+
+
+    <div class="field">
+
+        <label>
+            حالت تست
+        </label>
+
+        <select name="test_mode">
 
             <option value="1">
                 فعال
@@ -332,393 +1163,27 @@
     </div>
 
 
-    <!-- =================================================
-         زیرسامانه‌ها
-    ================================================== -->
-
-    <h3>📂 زیرسامانه‌ها</h3>
-
-    <p style="color:#777">
-        اگر سامانه زیرمجموعه دارد، از این قسمت اضافه کنید.
-        اگر ندارد، این قسمت را خالی بگذارید.
-    </p>
-
-
-    <div id="subservicesContainer"></div>
-
-
     <button
-        type="button"
-        class="btn"
-        onclick="addSubservice()"
-    >
-        ➕ افزودن زیرسامانه
-    </button>
-
-
-    <input
-        type="hidden"
-        name="subservices_json"
-        id="subservices_json"
-        value="[]"
-    >
-
-
-    <!-- =================================================
-         فرم سامانه
-    ================================================== -->
-
-    <div class="field" style="margin-top:25px">
-
-        <label>
-            فیلدهای اطلاعاتی سامانه
-        </label>
-
-        <textarea
-            name="fields_json"
-            rows="8"
-            placeholder='[{"name":"birth","label":"تاریخ تولد","type":"date","required":true}]'
-        ></textarea>
-
-    </div>
-
-
-    <div class="field">
-
-        <label>
-            مدارک موردنیاز
-        </label>
-
-        <textarea
-            name="documents_json"
-            rows="6"
-            placeholder='["کارت ملی","شناسنامه"]'
-        ></textarea>
-
-    </div>
-
-
-    <button
-        class="btn"
+        class="btn btn-green"
         type="submit"
     >
-        ➕ افزودن سامانه
+        💾 ذخیره تنظیمات درگاه
     </button>
-
 
 </form>
 
 </div>
 
-</div>
 
+<!-- =========================================================
+     PASSWORD
+========================================================= -->
 
-<!-- =====================================================
-     لیست سامانه‌ها
-===================================================== -->
+<h2>
+    🔐 تغییر رمز مدیریت
+</h2>
 
-<div class="admin-section">
-
-<h2>📋 سامانه‌های ثبت‌شده</h2>
-
-{% for s in services %}
-
-<div class="card">
-
-    <h3>
-        {{ s.name }}
-    </h3>
-
-
-    {% if s.description %}
-
-        <p>
-            {{ s.description }}
-        </p>
-
-    {% endif %}
-
-
-    <p>
-
-        دسته:
-        {{ s.category or '-' }}
-
-        <br>
-
-        قیمت اصلی:
-        <strong>
-            {{ "{:,}".format(s.price or 0) }}
-            ریال
-        </strong>
-
-        <br>
-
-        وضعیت:
-
-        {% if s.active %}
-
-            <b style="color:green">
-                فعال
-            </b>
-
-        {% else %}
-
-            <b style="color:red">
-                غیرفعال
-            </b>
-
-        {% endif %}
-
-    </p>
-
-
-    <a
-        class="btn"
-        href="{{ url_for('admin_request', rid=0) }}"
-        style="display:none"
-    >
-        مدیریت
-    </a>
-
-</div>
-
-{% else %}
-
-<div class="notice">
-    هنوز هیچ سامانه‌ای توسط مدیر اضافه نشده است.
-</div>
-
-{% endfor %}
-
-</div>
-
-
-<!-- =====================================================
-     درخواست‌های مشتریان
-===================================================== -->
-
-<div class="admin-section">
-
-<h2>📁 پرونده‌های مشتریان</h2>
-
-<div class="card">
-
-<div style="overflow-x:auto">
-
-<table>
-
-<tr>
-
-    <th>مشتری</th>
-
-    <th>تلفن</th>
-
-    <th>سامانه</th>
-
-    <th>وضعیت</th>
-
-    <th>کد پیگیری</th>
-
-    <th>عملیات</th>
-
-</tr>
-
-
-{% for r in requests %}
-
-<tr>
-
-    <td>
-        {{ r.customer_name }}
-    </td>
-
-
-    <td>
-        {{ r.customer_phone }}
-    </td>
-
-
-    <td>
-        {{ r.service_name }}
-    </td>
-
-
-    <td>
-        <strong>
-            {{ r.status }}
-        </strong>
-    </td>
-
-
-    <td>
-        <strong>
-            {{ r.tracking_code }}
-        </strong>
-    </td>
-
-
-    <td>
-
-        <a
-            class="btn"
-            href="{{ url_for('admin_request', rid=r.id) }}"
-        >
-            👁 مشاهده پرونده
-        </a>
-
-
-        <form
-            method="post"
-            action="{{ url_for('admin_request_status') }}"
-            style="margin-top:8px"
-        >
-
-            <input
-                type="hidden"
-                name="id"
-                value="{{ r.id }}"
-            >
-
-
-            <select name="status">
-
-                <option>پذیرش شد</option>
-
-                <option>در حال بررسی</option>
-
-                <option>قطعی سامانه</option>
-
-                <option>در حال انجام</option>
-
-                <option>منتظر مدارک</option>
-
-                <option>نقص مدارک و مشخصات</option>
-
-                <option>انجام شد</option>
-
-                <option>رد شد</option>
-
-                <option>لغو شد</option>
-
-            </select>
-
-
-            <button
-                class="btn"
-                type="submit"
-            >
-                ثبت وضعیت
-            </button>
-
-        </form>
-
-    </td>
-
-</tr>
-
-
-{% else %}
-
-<tr>
-
-    <td colspan="6">
-        هنوز پرونده‌ای ثبت نشده است.
-    </td>
-
-</tr>
-
-{% endfor %}
-
-</table>
-
-</div>
-
-</div>
-
-</div>
-
-
-<!-- =====================================================
-     مشتریان
-===================================================== -->
-
-<div class="admin-section">
-
-<h2>👥 مشتریان</h2>
-
-<div class="card">
-
-<div style="overflow-x:auto">
-
-<table>
-
-<tr>
-
-    <th>نام</th>
-
-    <th>کد ملی</th>
-
-    <th>موبایل</th>
-
-    <th>تعداد درخواست</th>
-
-</tr>
-
-
-{% for c in customers %}
-
-<tr>
-
-    <td>
-        {{ c.name }}
-    </td>
-
-    <td>
-        {{ c.national_id }}
-    </td>
-
-    <td>
-        {{ c.phone }}
-    </td>
-
-    <td>
-        {{ c.request_count }}
-    </td>
-
-</tr>
-
-
-{% else %}
-
-<tr>
-
-    <td colspan="4">
-        هنوز مشتری‌ای ثبت نشده است.
-    </td>
-
-</tr>
-
-{% endfor %}
-
-</table>
-
-</div>
-
-</div>
-
-</div>
-
-
-<!-- =====================================================
-     تغییر رمز مدیر اصلی
-===================================================== -->
-
-<div class="admin-section">
-
-<h2>🔐 تغییر رمز مدیریت</h2>
-
-<div class="card">
+<div class="admin-card">
 
 <form
     method="post"
@@ -727,18 +1192,23 @@
 
     <div class="field">
 
+        <label>
+            رمز جدید
+        </label>
+
         <input
             type="password"
             name="password"
-            placeholder="رمز جدید حداقل ۶ کاراکتر"
+            minlength="6"
             required
+            placeholder="حداقل ۶ کاراکتر"
         >
 
     </div>
 
 
     <button
-        class="btn"
+        class="btn btn-dark"
         type="submit"
     >
         تغییر رمز
@@ -747,157 +1217,5 @@
 </form>
 
 </div>
-
-</div>
-
-
-<script>
-
-let subservices = [];
-
-
-function addSubservice() {
-
-    const index = subservices.length;
-
-
-    subservices.push({
-        name: "",
-        price: 0,
-        description: ""
-    });
-
-
-    renderSubservices();
-}
-
-
-function removeSubservice(index) {
-
-    subservices.splice(index, 1);
-
-    renderSubservices();
-}
-
-
-function updateSubservice(
-    index,
-    key,
-    value
-) {
-
-    subservices[index][key] = value;
-
-    document.getElementById(
-        "subservices_json"
-    ).value = JSON.stringify(
-        subservices
-    );
-}
-
-
-function renderSubservices() {
-
-    const container =
-        document.getElementById(
-            "subservicesContainer"
-        );
-
-
-    container.innerHTML = "";
-
-
-    subservices.forEach(
-        function(item, index) {
-
-            const box =
-                document.createElement(
-                    "div"
-                );
-
-            box.className =
-                "subservice-box";
-
-
-            box.innerHTML = `
-
-                <div class="subservice-row">
-
-                    <input
-                        type="text"
-                        placeholder="نام زیرسامانه"
-                        value="${escapeHtml(item.name)}"
-                        oninput="updateSubservice(${index}, 'name', this.value)"
-                    >
-
-                    <input
-                        type="number"
-                        min="0"
-                        placeholder="قیمت"
-                        value="${item.price || 0}"
-                        oninput="updateSubservice(${index}, 'price', this.value)"
-                    >
-
-                    <input
-                        type="text"
-                        placeholder="توضیحات"
-                        value="${escapeHtml(item.description)}"
-                        oninput="updateSubservice(${index}, 'description', this.value)"
-                    >
-
-                    <button
-                        type="button"
-                        class="btn remove-subservice"
-                        onclick="removeSubservice(${index})"
-                    >
-                        حذف
-                    </button>
-
-                </div>
-
-            `;
-
-
-            container.appendChild(box);
-
-        }
-    );
-
-
-    document.getElementById(
-        "subservices_json"
-    ).value = JSON.stringify(
-        subservices
-    );
-}
-
-
-function escapeHtml(value) {
-
-    return String(value || "")
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
-}
-
-
-document.getElementById(
-    "serviceForm"
-).addEventListener(
-    "submit",
-    function() {
-
-        document.getElementById(
-            "subservices_json"
-        ).value = JSON.stringify(
-            subservices
-        );
-
-    }
-);
-
-</script>
 
 {% endblock %}
