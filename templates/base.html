@@ -3,157 +3,400 @@
 
 <head>
 
-<meta charset="utf-8">
+    <meta charset="utf-8">
 
-<meta
-name="viewport"
-content="width=device-width,initial-scale=1"
->
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1"
+    >
 
-<title>
-{{ settings.get('site_name','کافی‌نت آنلاین نوین') if settings else 'کافی‌نت آنلاین نوین' }}
-</title>
+    <title>
+        {{ settings.get('site_name', 'کافی‌نت آنلاین نوین') if settings else 'کافی‌نت آنلاین نوین' }}
+    </title>
 
-<style>
+    <style>
 
-body{
-    font-family:Tahoma,Arial,sans-serif;
-    background:#f5f7fb;
-    margin:0;
-    color:#172033;
-}
+        :root {
 
-.wrap{
-    max-width:1100px;
-    margin:auto;
-    padding:20px;
-}
+            --primary:
+                {{ settings.get('primary_color', '#1479d1') if settings else '#1479d1' }};
 
-.nav{
-    background:#102a43;
-    color:#fff;
-    padding:14px 0;
-}
+            --secondary:
+                {{ settings.get('secondary_color', '#102a43') if settings else '#102a43' }};
 
-.nav-inner{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap:20px;
-    flex-wrap:wrap;
-}
+            --background:
+                {{ settings.get('background_color', '#f5f7fb') if settings else '#f5f7fb' }};
 
-.logo-title{
-    font-size:20px;
-    font-weight:bold;
-}
+            --text:
+                {{ settings.get('text_color', '#172033') if settings else '#172033' }};
 
-.nav-links{
-    display:flex;
-    align-items:center;
-    gap:8px;
-    flex-wrap:wrap;
-}
+            --card:
+                {{ settings.get('card_color', '#ffffff') if settings else '#ffffff' }};
 
-.nav a{
-    color:#fff;
-    text-decoration:none;
-    padding:9px 12px;
-    border-radius:8px;
-}
+        }
 
-.nav a:hover{
-    background:#ffffff18;
-}
 
-.customer-link{
-    background:#1479d1;
-}
+        * {
+            box-sizing: border-box;
+        }
 
-.admin-link{
-    background:#d97706;
-}
 
-.card{
-    background:#fff;
-    padding:18px;
-    border-radius:14px;
-    margin:12px 0;
-    box-shadow:0 4px 18px #12345612;
-}
+        body {
 
-.btn{
-    background:#1479d1;
-    color:#fff;
-    border:0;
-    border-radius:9px;
-    padding:10px 15px;
-    text-decoration:none;
-    display:inline-block;
-    cursor:pointer;
-}
+            font-family:
+                Tahoma,
+                Arial,
+                sans-serif;
 
-input,
-select,
-textarea{
-    width:100%;
-    padding:10px;
-    border:1px solid #d5dce6;
-    border-radius:9px;
-    box-sizing:border-box;
-}
+            background:
+                var(--background);
 
-.field{
-    margin:12px 0;
-}
+            color:
+                var(--text);
 
-.notice{
-    background:#fff8e6;
-    padding:12px;
-    border-radius:10px;
-    margin-bottom:12px;
-}
+            margin:
+                0;
 
-.panel-buttons{
-    display:flex;
-    gap:10px;
-    flex-wrap:wrap;
-    margin-top:10px;
-}
+            min-height:
+                100vh;
 
-.panel-buttons a{
-    text-decoration:none;
-    color:#fff;
-    padding:11px 16px;
-    border-radius:9px;
-}
+        }
 
-.customer-panel{
-    background:#1479d1;
-}
 
-.admin-panel{
-    background:#d97706;
-}
+        .nav {
 
-@media(max-width:600px){
+            background:
+                var(--secondary);
 
-    .nav-inner{
-        align-items:flex-start;
-        flex-direction:column;
-    }
+            color:
+                #fff;
 
-    .nav-links{
-        width:100%;
-    }
+            padding:
+                14px 0;
 
-    .nav-links a{
-        font-size:13px;
-    }
+            box-shadow:
+                0 3px 15px #0002;
 
-}
+        }
 
-</style>
+
+        .wrap {
+
+            max-width:
+                1100px;
+
+            margin:
+                auto;
+
+            padding:
+                20px;
+
+        }
+
+
+        .nav .wrap {
+
+            display:
+                flex;
+
+            align-items:
+                center;
+
+            justify-content:
+                space-between;
+
+            gap:
+                15px;
+
+            flex-wrap:
+                wrap;
+
+        }
+
+
+        .brand {
+
+            display:
+                flex;
+
+            align-items:
+                center;
+
+            gap:
+                10px;
+
+            font-weight:
+                bold;
+
+            font-size:
+                18px;
+
+        }
+
+
+        .logo {
+
+            width:
+                45px;
+
+            height:
+                45px;
+
+            object-fit:
+                contain;
+
+            border-radius:
+                10px;
+
+            background:
+                #fff;
+
+        }
+
+
+        .nav-links {
+
+            display:
+                flex;
+
+            align-items:
+                center;
+
+            gap:
+                8px;
+
+            flex-wrap:
+                wrap;
+
+        }
+
+
+        .nav a {
+
+            color:
+                #fff;
+
+            text-decoration:
+                none;
+
+            padding:
+                8px 12px;
+
+            border-radius:
+                8px;
+
+        }
+
+
+        .nav a:hover {
+
+            background:
+                #ffffff18;
+
+        }
+
+
+        .card {
+
+            background:
+                var(--card);
+
+            padding:
+                18px;
+
+            border-radius:
+                14px;
+
+            margin:
+                12px 0;
+
+            box-shadow:
+                0 4px 18px #12345612;
+
+        }
+
+
+        .btn {
+
+            background:
+                var(--primary);
+
+            color:
+                #fff;
+
+            border:
+                0;
+
+            border-radius:
+                9px;
+
+            padding:
+                10px 15px;
+
+            text-decoration:
+                none;
+
+            display:
+                inline-block;
+
+            cursor:
+                pointer;
+
+        }
+
+
+        .btn:hover {
+
+            opacity:
+                .9;
+
+        }
+
+
+        input,
+        select,
+        textarea {
+
+            width:
+                100%;
+
+            padding:
+                10px;
+
+            border:
+                1px solid #d5dce6;
+
+            border-radius:
+                9px;
+
+            box-sizing:
+                border-box;
+
+            font-family:
+                inherit;
+
+        }
+
+
+        .field {
+
+            margin:
+                12px 0;
+
+        }
+
+
+        .notice {
+
+            background:
+                #fff8e6;
+
+            padding:
+                12px;
+
+            border-radius:
+                10px;
+
+            margin:
+                12px 0;
+
+        }
+
+
+        .hero {
+
+            background:
+                linear-gradient(
+                    135deg,
+                    var(--secondary),
+                    var(--primary)
+                );
+
+            color:
+                #fff;
+
+            padding:
+                35px 25px;
+
+            border-radius:
+                18px;
+
+            margin:
+                15px 0;
+
+        }
+
+
+        .hero h1 {
+
+            margin-top:
+                0;
+
+        }
+
+
+        table {
+
+            border-collapse:
+                collapse;
+
+            width:
+                100%;
+
+        }
+
+
+        th,
+        td {
+
+            padding:
+                10px;
+
+            border-bottom:
+                1px solid #eee;
+
+            text-align:
+                right;
+
+        }
+
+
+        @media(max-width:700px) {
+
+            .nav .wrap {
+
+                align-items:
+                    flex-start;
+
+            }
+
+            .nav-links {
+
+                width:
+                    100%;
+
+            }
+
+            .nav-links a {
+
+                font-size:
+                    13px;
+
+                padding:
+                    7px 9px;
+
+            }
+
+            .wrap {
+
+                padding:
+                    12px;
+
+            }
+
+        }
+
+    </style>
 
 </head>
 
@@ -161,77 +404,88 @@ textarea{
 <body>
 
 
-<!-- =========================
-     نوار بالای سایت
-========================= -->
+<header class="nav">
 
-<div class="nav">
-
-<div class="wrap nav-inner">
+    <div class="wrap">
 
 
-<div class="logo-title">
-
-{{ settings.get('site_name','کافی‌نت آنلاین نوین') if settings else 'کافی‌نت آنلاین نوین' }}
-
-</div>
+        <div class="brand">
 
 
-<div class="nav-links">
+            {% if settings and settings.get('logo') %}
 
-<a href="/">
-🏠 خدمات
-</a>
+                <img
+                    class="logo"
+                    src="{{ settings.get('logo') }}"
+                    alt="لوگو"
+                >
 
-<a href="/tracking">
-🔎 پیگیری درخواست
-</a>
-
-<a
-href="/customer/login"
-class="customer-link"
->
-👤 پنل مشتری
-</a>
-
-<a
-href="/admin/login"
-class="admin-link"
->
-🔐 پنل مدیریت
-</a>
-
-</div>
+            {% endif %}
 
 
-</div>
+            <span>
 
-</div>
+                {{ settings.get(
+                    'site_name',
+                    'کافی‌نت آنلاین نوین'
+                ) if settings else 'کافی‌نت آنلاین نوین' }}
+
+            </span>
 
 
-<!-- =========================
-     محتوای اصلی
-========================= -->
+        </div>
+
+
+        <nav class="nav-links">
+
+            <a href="/">
+                خدمات
+            </a>
+
+
+            <a href="/tracking">
+                پیگیری درخواست
+            </a>
+
+
+            <a href="/customer/login">
+                پنل مشتری
+            </a>
+
+
+            <a href="/admin/login">
+                پنل مدیریت
+            </a>
+
+        </nav>
+
+
+    </div>
+
+</header>
+
 
 <main class="wrap">
 
 
-{% with messages=get_flashed_messages() %}
+    {% with messages = get_flashed_messages() %}
 
-{% for m in messages %}
+        {% for message in messages %}
 
-<div class="notice">
-{{ m }}
-</div>
+            <div class="notice">
 
-{% endfor %}
+                {{ message }}
 
-{% endwith %}
+            </div>
+
+        {% endfor %}
+
+    {% endwith %}
 
 
-{% block content %}
+    {% block content %}
 
-{% endblock %}
+    {% endblock %}
 
 
 </main>
