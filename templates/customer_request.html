@@ -1,92 +1,217 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
 
 {% block content %}
 
-<h1>جزئیات درخواست</h1>
+<style>
+    .request-box {
+        background: {{ settings.get('card_color','#ffffff') }};
+        border-radius: 18px;
+        padding: 22px;
+        margin-bottom: 18px;
+        box-shadow: 0 5px 20px rgba(0,0,0,.07);
+    }
 
-<div class="card">
+    .request-box h1,
+    .request-box h2 {
+        color: {{ settings.get('primary_color','#102a43') }};
+    }
 
-    <h2>{{ request_item.service_name }}</h2>
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+    }
+
+    .info {
+        background: #f5f7fb;
+        padding: 12px;
+        border-radius: 10px;
+    }
+
+    .info strong {
+        display: block;
+        margin-top: 5px;
+    }
+
+    .status {
+        display: inline-block;
+        padding: 8px 14px;
+        border-radius: 20px;
+        background: #e8f3ff;
+        color: #1479d1;
+        font-weight: bold;
+    }
+
+    .chat {
+        background: {{ settings.get('card_color','#ffffff') }};
+        border-radius: 18px;
+        padding: 20px;
+        box-shadow: 0 5px 20px rgba(0,0,0,.07);
+    }
+
+    .message {
+        padding: 12px;
+        border-radius: 12px;
+        margin: 10px 0;
+        line-height: 1.8;
+    }
+
+    .message.admin {
+        background: #e8f3ff;
+        border-right: 4px solid #1479d1;
+    }
+
+    .message.customer {
+        background: #f3f4f6;
+        border-right: 4px solid #555;
+    }
+
+    .message small {
+        display: block;
+        color: #777;
+        margin-top: 5px;
+    }
+
+    .file-item {
+        border-bottom: 1px solid #eee;
+        padding: 12px 0;
+    }
+
+    @media(max-width:700px) {
+        .info-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+
+<!-- =====================================================
+     اطلاعات پرونده
+===================================================== -->
+
+<div class="request-box">
+
+    <h1>
+        📁 پرونده من
+    </h1>
+
+    <div class="info-grid">
+
+        <div class="info">
+            نام سامانه
+            <strong>
+                {{ request_item.service_name }}
+            </strong>
+        </div>
+
+        <div class="info">
+            کد پیگیری
+            <strong>
+                {{ request_item.tracking_code }}
+            </strong>
+        </div>
+
+        <div class="info">
+            وضعیت پرونده
+            <strong>
+                <span class="status">
+                    {{ request_item.status }}
+                </span>
+            </strong>
+        </div>
+
+        <div class="info">
+            تاریخ ثبت درخواست
+            <strong>
+                {{ request_item.created_at }}
+            </strong>
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- =====================================================
+     اطلاعات مالی
+===================================================== -->
+
+<div class="request-box">
+
+    <h2>
+        💰 وضعیت پرداخت
+    </h2>
 
     <p>
-        <b>کد پیگیری:</b>
-        {{ request_item.tracking_code }}
+        مبلغ خدمت:
+        <strong>
+            {{ "{:,}".format(request_item.total_price or 0) }}
+            ریال
+        </strong>
     </p>
 
     <p>
-        <b>وضعیت:</b>
-        {{ request_item.status }}
+        مبلغ پرداخت‌شده:
+        <strong>
+            {{ "{:,}".format(request_item.paid_price or 0) }}
+            ریال
+        </strong>
     </p>
 
     <p>
-        <b>مبلغ کل:</b>
-        {{ "{:,}".format(request_item.total_price or 0) }} ریال
-    </p>
-
-    <p>
-        <b>مبلغ پرداخت‌شده:</b>
-        {{ "{:,}".format(request_item.paid_price or 0) }} ریال
-    </p>
-
-    <p>
-        <b>تاریخ ثبت:</b>
-        {{ request_item.created_at }}
+        مبلغ باقی‌مانده:
+        <strong>
+            {{ "{:,}".format(
+                (request_item.total_price or 0)
+                -
+                (request_item.paid_price or 0)
+            ) }}
+            ریال
+        </strong>
     </p>
 
 </div>
 
-{% if files %}
 
-<h2>مدارک ارسال‌شده</h2>
+<!-- =====================================================
+     فایل‌های پرونده
+===================================================== -->
 
-<div class="card">
+<div class="request-box">
 
-    {% for file in files %}
+    <h2>
+        📎 مدارک پرونده
+    </h2>
 
-    <p>
-        {{ file.original_name }}
+    {% if files %}
 
-        <a
-            class="btn"
-            href="{{ url_for('uploaded_file', filename=file.stored_name) }}"
-            target="_blank"
-        >
-            مشاهده فایل
-        </a>
-    </p>
+        {% for file in files %}
 
-    {% endfor %}
+        <div class="file-item">
 
-</div>
+            <strong>
+                {{ file.original_name }}
+            </strong>
 
-{% endif %}
+            <br>
 
-<h2>گفتگو با پشتیبانی</h2>
+            <small>
+                {{ file.created_at }}
+            </small>
 
-<div class="card">
+            <br>
 
-    {% if messages %}
-
-        {% for m in messages %}
-
-        <div style="
-            padding:12px;
-            margin:8px 0;
-            border-radius:10px;
-            background:{% if m.sender == 'customer' %}#eef6ff{% else %}#f2f2f2{% endif %};
-        ">
-
-            <b>
-                {% if m.sender == 'customer' %}
-                    شما
-                {% else %}
-                    پشتیبانی
-                {% endif %}
-            </b>
-
-            <p>{{ m.message }}</p>
-
-            <small>{{ m.created_at }}</small>
+            <a
+                class="btn"
+                style="margin-top:8px;"
+                href="{{ url_for(
+                    'uploaded_file',
+                    filename=file.stored_name
+                ) }}"
+                target="_blank"
+            >
+                👁 مشاهده فایل
+            </a>
 
         </div>
 
@@ -94,42 +219,111 @@
 
     {% else %}
 
-        <p>هنوز پیامی وجود ندارد.</p>
+        <p>
+            هنوز مدرکی برای این پرونده ثبت نشده است.
+        </p>
 
     {% endif %}
 
 </div>
 
-<div class="card">
+
+<!-- =====================================================
+     ارتباط با کارشناس / مدیر
+===================================================== -->
+
+<div class="chat">
+
+    <h2>
+        💬 ارتباط با کارشناس
+    </h2>
+
+    {% if messages %}
+
+        {% for message in messages %}
+
+        <div
+            class="message
+            {% if message.sender == 'admin' %}
+                admin
+            {% else %}
+                customer
+            {% endif %}"
+        >
+
+            <strong>
+
+                {% if message.sender == 'admin' %}
+                    👨‍💼 کارشناس / مدیریت
+                {% else %}
+                    👤 شما
+                {% endif %}
+
+            </strong>
+
+            <div>
+                {{ message.message }}
+            </div>
+
+            <small>
+                {{ message.created_at }}
+            </small>
+
+        </div>
+
+        {% endfor %}
+
+    {% else %}
+
+        <p>
+            هنوز پیامی ارسال نشده است.
+        </p>
+
+    {% endif %}
+
 
     <form
         method="post"
-        action="{{ url_for('customer_message', rid=request_item.id) }}"
+        action="{{ url_for(
+            'customer_message',
+            rid=request_item.id
+        ) }}"
     >
 
         <div class="field">
 
-            <label>پیام شما</label>
+            <label>
+                پیام شما
+            </label>
 
             <textarea
                 name="message"
-                rows="4"
-                placeholder="پیام خود را برای پشتیبانی بنویسید..."
+                rows="5"
                 required
+                placeholder="پیام خود را برای کارشناس بنویسید..."
             ></textarea>
 
         </div>
 
-        <button class="btn" type="submit">
-            ارسال پیام
+        <button
+            class="btn"
+            type="submit"
+        >
+            📤 ارسال پیام
         </button>
 
     </form>
 
 </div>
 
-<a class="btn" href="{{ url_for('customer_dashboard') }}">
-    بازگشت به پنل مشتری
+
+<br>
+
+<a
+    class="btn"
+    href="{{ url_for('customer_dashboard') }}"
+>
+    ↩️ بازگشت به پنل مشتری
 </a>
 
 {% endblock %}
