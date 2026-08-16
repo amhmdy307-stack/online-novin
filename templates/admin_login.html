@@ -1,1 +1,56 @@
-{% extends 'base.html' %}{% block content %}<div class="card" style="max-width:430px;margin:50px auto"><h1>ورود مدیریت</h1><form method="post"><div class="field"><label>نام کاربری</label><input name="username" value="admin"></div><div class="field"><label>رمز</label><input type="password" name="password"></div><button class="btn">ورود</button></form></div>{% endblock %}
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="card" style="max-width:500px;margin:40px auto;">
+
+    <h1>ورود به پنل مدیریت</h1>
+
+    <p>
+        این بخش مخصوص مدیریت کافی‌نت آنلاین نوین است.
+    </p>
+
+    <form method="post">
+
+        <div class="field">
+            <label>نام کاربری</label>
+
+            <input
+                type="text"
+                name="username"
+                placeholder="نام کاربری"
+                required
+                autocomplete="username"
+            >
+        </div>
+
+        <div class="field">
+            <label>رمز عبور</label>
+
+            <input
+                type="password"
+                name="password"
+                placeholder="رمز عبور"
+                required
+                autocomplete="current-password"
+            >
+        </div>
+
+        <button
+            class="btn"
+            type="submit"
+        >
+            ورود به پنل مدیریت
+        </button>
+
+    </form>
+
+    <hr style="margin:25px 0;border:0;border-top:1px solid #ddd;">
+
+    <a class="btn" href="/">
+        بازگشت به سایت
+    </a>
+
+</div>
+
+{% endblock %}
