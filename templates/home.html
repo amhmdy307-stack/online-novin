@@ -13,7 +13,7 @@
     .landing-card {
         width: 100%;
         max-width: 650px;
-        background: #ffffff;
+        background: {{ settings.get('card_color','#ffffff') if settings else '#ffffff' }};
         border-radius: 24px;
         padding: 35px 25px;
         text-align: center;
@@ -29,24 +29,24 @@
 
     .landing-card h1 {
         margin: 5px 0 10px;
-        color: #102a43;
+        color: {{ settings.get('primary_color','#102a43') if settings else '#102a43' }};
         font-size: 28px;
     }
 
     .landing-description {
-        color: #596579;
+        color: {{ settings.get('text_color','#596579') if settings else '#596579' }};
         font-size: 16px;
         margin-bottom: 8px;
     }
 
     .manager {
-        color: #333;
+        color: {{ settings.get('text_color','#333333') if settings else '#333333' }};
         font-weight: bold;
         margin: 18px 0 5px;
     }
 
     .phone {
-        color: #1479d1;
+        color: {{ settings.get('secondary_color','#1479d1') if settings else '#1479d1' }};
         font-weight: bold;
         direction: ltr;
         margin-bottom: 28px;
@@ -54,7 +54,7 @@
 
     .landing-buttons {
         display: grid;
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: 1fr;
         gap: 12px;
     }
 
@@ -77,18 +77,11 @@
     }
 
     .customer-btn {
-        background: #1479d1;
-    }
-
-    .admin-btn {
-        background: #102a43;
-    }
-
-    .tracking-btn {
-        background: #263238;
+        background: {{ settings.get('secondary_color','#1479d1') if settings else '#1479d1' }};
     }
 
     @media (max-width: 650px) {
+
         .landing {
             min-height: 70vh;
         }
@@ -97,41 +90,63 @@
             padding: 28px 18px;
         }
 
-        .landing-buttons {
-            grid-template-columns: 1fr;
-        }
-
         .landing-btn {
             min-height: 55px;
         }
+
     }
 </style>
+
 
 <div class="landing">
 
     <div class="landing-card">
 
         {% if settings and settings.get('logo') %}
+
             <img
                 class="landing-logo"
                 src="{{ url_for('uploaded_file', filename=settings.get('logo')) }}"
                 alt="لوگوی کافی‌نت آنلاین نوین"
             >
+
         {% endif %}
 
-        <h1>کافی‌نت آنلاین نوین</h1>
+
+        <h1>
+            {{ settings.get('site_name','کافی‌نت آنلاین نوین') if settings else 'کافی‌نت آنلاین نوین' }}
+        </h1>
+
 
         <div class="landing-description">
-            ارائه خدمات اینترنتی و ثبت درخواست به صورت آنلاین
+            {{ settings.get(
+                'hero_text',
+                'ارائه خدمات اینترنتی و ثبت درخواست به صورت آنلاین'
+            ) if settings else 'ارائه خدمات اینترنتی و ثبت درخواست به صورت آنلاین' }}
         </div>
+
 
         <div class="manager">
-            مدیریت: احمد محمدی مهر
+
+            مدیریت:
+            {{ settings.get(
+                'manager',
+                'احمد محمدی مهر'
+            ) if settings else 'احمد محمدی مهر' }}
+
         </div>
 
+
         <div class="phone">
-            📞 09920345139
+
+            📞
+            {{ settings.get(
+                'phone',
+                '09920345139'
+            ) if settings else '09920345139' }}
+
         </div>
+
 
         <div class="landing-buttons">
 
@@ -142,24 +157,11 @@
                 👤 ورود به پنل مشتری
             </a>
 
-            <a
-                href="{{ url_for('admin_login') }}"
-                class="landing-btn admin-btn"
-            >
-                🔐 ورود مدیریت
-            </a>
-
-            <a
-                href="{{ url_for('tracking') }}"
-                class="landing-btn tracking-btn"
-            >
-                🔎 پیگیری درخواست
-            </a>
-
         </div>
 
     </div>
 
 </div>
+
 
 {% endblock %}
