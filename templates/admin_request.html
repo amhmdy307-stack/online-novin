@@ -1,0 +1,191 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<h1>مدیریت درخواست</h1>
+
+<div class="card">
+
+    <h2>{{ request_item.service_name }}</h2>
+
+    <p><b>مشتری:</b> {{ request_item.customer_name }}</p>
+    <p><b>شماره موبایل:</b> {{ request_item.phone }}</p>
+    <p><b>کد ملی:</b> {{ request_item.national_id }}</p>
+
+    <p>
+        <b>کد پیگیری:</b>
+        {{ request_item.tracking_code }}
+    </p>
+
+    <p>
+        <b>وضعیت فعلی:</b>
+        {{ request_item.status }}
+    </p>
+
+    <p>
+        <b>مبلغ کل:</b>
+        {{ "{:,}".format(request_item.total_price or 0) }} ریال
+    </p>
+
+    <p>
+        <b>پرداخت‌شده:</b>
+        {{ "{:,}".format(request_item.paid_price or 0) }} ریال
+    </p>
+
+    <p>
+        <b>تاریخ ثبت:</b>
+        {{ request_item.created_at }}
+    </p>
+
+</div>
+
+
+<h2>تغییر وضعیت</h2>
+
+<div class="card">
+
+    <form method="post" action="{{ url_for('admin_request_status') }}">
+
+        <input
+            type="hidden"
+            name="id"
+            value="{{ request_item.id }}"
+        >
+
+        <div class="field">
+
+            <label>وضعیت جدید</label>
+
+            <select name="status">
+
+                <option value="جدید">جدید</option>
+                <option value="در حال بررسی">در حال بررسی</option>
+                <option value="منتظر مدارک">منتظر مدارک</option>
+                <option value="در حال انجام">در حال انجام</option>
+                <option value="انجام شده">انجام شده</option>
+                <option value="رد شده">رد شده</option>
+                <option value="لغو شده">لغو شده</option>
+
+            </select>
+
+        </div>
+
+        <button class="btn" type="submit">
+            ثبت وضعیت
+        </button>
+
+    </form>
+
+</div>
+
+
+{% if files %}
+
+<h2>مدارک مشتری</h2>
+
+<div class="card">
+
+    {% for file in files %}
+
+    <div style="
+        padding:12px;
+        margin:8px 0;
+        background:#f5f7fb;
+        border-radius:10px;
+    ">
+
+        <b>{{ file.original_name }}</b>
+
+        <br><br>
+
+        <a
+            class="btn"
+            href="{{ url_for('uploaded_file', filename=file.stored_name) }}"
+            target="_blank"
+        >
+            مشاهده / دانلود
+        </a>
+
+    </div>
+
+    {% endfor %}
+
+</div>
+
+{% endif %}
+
+
+<h2>گفتگو با مشتری</h2>
+
+<div class="card">
+
+    {% if messages %}
+
+        {% for m in messages %}
+
+        <div style="
+            padding:12px;
+            margin:8px 0;
+            border-radius:10px;
+            background:{% if m.sender == 'admin' %}#eaf7ea{% else %}#eef6ff{% endif %};
+        ">
+
+            <b>
+                {% if m.sender == 'admin' %}
+                    پشتیبانی
+                {% else %}
+                    مشتری
+                {% endif %}
+            </b>
+
+            <p>{{ m.message }}</p>
+
+            <small>{{ m.created_at }}</small>
+
+        </div>
+
+        {% endfor %}
+
+    {% else %}
+
+        <p>هنوز پیامی ثبت نشده است.</p>
+
+    {% endif %}
+
+</div>
+
+
+<div class="card">
+
+    <form
+        method="post"
+        action="{{ url_for('admin_message', rid=request_item.id) }}"
+    >
+
+        <div class="field">
+
+            <label>پیام به مشتری</label>
+
+            <textarea
+                name="message"
+                rows="4"
+                placeholder="پیام خود را بنویسید..."
+                required
+            ></textarea>
+
+        </div>
+
+        <button class="btn" type="submit">
+            ارسال پیام
+        </button>
+
+    </form>
+
+</div>
+
+
+<a class="btn" href="{{ url_for('admin') }}">
+    بازگشت به پنل مدیریت
+</a>
+
+{% endblock %}
