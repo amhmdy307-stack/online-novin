@@ -1,1 +1,177 @@
-{% extends 'base.html' %}{% block content %}<h1>{{service.name}}</h1><p>{{service.description}}</p><form method="post" enctype="multipart/form-data"><h3>اطلاعات پرونده مشتری</h3><div class="field"><label>نام و نام خانوادگی</label><input name="name" required></div><div class="field"><label>کد ملی</label><input name="national_id" inputmode="numeric" required></div><div class="field"><label>تلفن</label><input name="phone" inputmode="tel" required></div>{% for f in fields %}<div class="field"><label>{{f.label}}{% if f.required %} *{% endif %}</label>{% if f.type=='select' %}<select name="{{f.name}}" {% if f.required %}required{% endif %}>{% for o in f.options %}<option value="{{o}}">{{o}}</option>{% endfor %}</select>{% elif f.type=='file' %}<input type="file" name="{{f.name}}" {% if f.required %}required{% endif %}>{% else %}<input type="{{'date' if f.type=='date' else 'text'}}" name="{{f.name}}" {% if f.required %}required{% endif %}>{% endif %}</div>{% endfor %}<div class="notice">هزینه این خدمت: {{ "{:,}".format(service.price) }} ریال</div><button class="btn">ثبت درخواست</button></form>{% endblock %}
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="card">
+
+    <h1>{{ service.name }}</h1>
+
+    {% if service.description %}
+    <p>{{ service.description }}</p>
+    {% endif %}
+
+    {% if service.price %}
+    <div class="notice">
+        قیمت خدمت:
+        <b>{{ "{:,}".format(service.price) }} ریال</b>
+    </div>
+    {% endif %}
+
+</div>
+
+
+<div class="card">
+
+    <h2>اطلاعات مشتری</h2>
+
+    <form method="post" enctype="multipart/form-data">
+
+        <div class="field">
+            <label>نام و نام خانوادگی</label>
+
+            <input
+                type="text"
+                name="name"
+                placeholder="نام و نام خانوادگی"
+                required
+            >
+        </div>
+
+
+        <div class="field">
+            <label>کد ملی</label>
+
+            <input
+                type="text"
+                name="national_id"
+                placeholder="کد ملی"
+                maxlength="10"
+                required
+            >
+        </div>
+
+
+        <div class="field">
+            <label>شماره موبایل</label>
+
+            <input
+                type="tel"
+                name="phone"
+                placeholder="09xxxxxxxxx"
+                maxlength="11"
+                required
+            >
+        </div>
+
+
+        {% if fields %}
+
+        <h2>اطلاعات موردنیاز</h2>
+
+        {% for field in fields %}
+
+        <div class="field">
+
+            <label>
+                {{ field.label or field.name }}
+
+                {% if field.required %}
+                *
+                {% endif %}
+            </label>
+
+
+            {% if field.type == 'textarea' %}
+
+            <textarea
+                name="{{ field.name }}"
+                rows="4"
+                {% if field.required %}required{% endif %}
+            ></textarea>
+
+
+            {% elif field.type == 'select' %}
+
+            <select
+                name="{{ field.name }}"
+                {% if field.required %}required{% endif %}
+            >
+
+                <option value="">
+                    انتخاب کنید
+                </option>
+
+                {% for option in field.options or [] %}
+
+                <option value="{{ option }}">
+                    {{ option }}
+                </option>
+
+                {% endfor %}
+
+            </select>
+
+
+            {% else %}
+
+            <input
+                type="{{ field.type or 'text' }}"
+                name="{{ field.name }}"
+                {% if field.required %}required{% endif %}
+            >
+
+            {% endif %}
+
+        </div>
+
+        {% endfor %}
+
+        {% endif %}
+
+
+        {% if documents %}
+
+        <h2>بارگذاری مدارک</h2>
+
+        {% for document in documents %}
+
+        <div class="field">
+
+            <label>
+                {{ document.label or document.name }}
+            </label>
+
+            <input
+                type="file"
+                name="{{ document.name }}"
+                {% if document.required %}required{% endif %}
+            >
+
+        </div>
+
+        {% endfor %}
+
+        {% endif %}
+
+
+        <button
+            class="btn"
+            type="submit"
+        >
+            ثبت درخواست
+        </button>
+
+    </form>
+
+</div>
+
+
+<div style="margin-top:20px;">
+
+    <a class="btn" href="/">
+        بازگشت به خدمات
+    </a>
+
+</div>
+
+{% endblock %}
