@@ -1,0 +1,135 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<h1>جزئیات درخواست</h1>
+
+<div class="card">
+
+    <h2>{{ request_item.service_name }}</h2>
+
+    <p>
+        <b>کد پیگیری:</b>
+        {{ request_item.tracking_code }}
+    </p>
+
+    <p>
+        <b>وضعیت:</b>
+        {{ request_item.status }}
+    </p>
+
+    <p>
+        <b>مبلغ کل:</b>
+        {{ "{:,}".format(request_item.total_price or 0) }} ریال
+    </p>
+
+    <p>
+        <b>مبلغ پرداخت‌شده:</b>
+        {{ "{:,}".format(request_item.paid_price or 0) }} ریال
+    </p>
+
+    <p>
+        <b>تاریخ ثبت:</b>
+        {{ request_item.created_at }}
+    </p>
+
+</div>
+
+{% if files %}
+
+<h2>مدارک ارسال‌شده</h2>
+
+<div class="card">
+
+    {% for file in files %}
+
+    <p>
+        {{ file.original_name }}
+
+        <a
+            class="btn"
+            href="{{ url_for('uploaded_file', filename=file.stored_name) }}"
+            target="_blank"
+        >
+            مشاهده فایل
+        </a>
+    </p>
+
+    {% endfor %}
+
+</div>
+
+{% endif %}
+
+<h2>گفتگو با پشتیبانی</h2>
+
+<div class="card">
+
+    {% if messages %}
+
+        {% for m in messages %}
+
+        <div style="
+            padding:12px;
+            margin:8px 0;
+            border-radius:10px;
+            background:{% if m.sender == 'customer' %}#eef6ff{% else %}#f2f2f2{% endif %};
+        ">
+
+            <b>
+                {% if m.sender == 'customer' %}
+                    شما
+                {% else %}
+                    پشتیبانی
+                {% endif %}
+            </b>
+
+            <p>{{ m.message }}</p>
+
+            <small>{{ m.created_at }}</small>
+
+        </div>
+
+        {% endfor %}
+
+    {% else %}
+
+        <p>هنوز پیامی وجود ندارد.</p>
+
+    {% endif %}
+
+</div>
+
+<div class="card">
+
+    <form
+        method="post"
+        action="{{ url_for('customer_message', rid=request_item.id) }}"
+    >
+
+        <div class="field">
+
+            <label>پیام شما</label>
+
+            <textarea
+                name="message"
+                rows="4"
+                placeholder="پیام خود را برای پشتیبانی بنویسید..."
+                required
+            ></textarea>
+
+        </div>
+
+        <button class="btn" type="submit">
+            ارسال پیام
+        </button>
+
+    </form>
+
+</div>
+
+<a class="btn" href="{{ url_for('customer_dashboard') }}">
+    بازگشت به پنل مشتری
+</a>
+
+{% endblock %}
