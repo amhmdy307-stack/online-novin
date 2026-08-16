@@ -1,3 +1,7 @@
+# app.py
+# نسخه توسعه‌یافته کافی‌نت آنلاین نوین
+# مدیریت ظاهر سایت از پنل مدیریت
+
 import os
 import json
 import sqlite3
@@ -16,6 +20,7 @@ from flask import (
     jsonify,
     send_from_directory
 )
+
 from werkzeug.utils import secure_filename
 
 
@@ -24,13 +29,10 @@ from werkzeug.utils import secure_filename
 # =========================================================
 
 BASE = os.path.dirname(os.path.abspath(__file__))
-
 DB = os.path.join(BASE, "site.db")
-
 UPLOADS = os.path.join(BASE, "uploads")
 
 os.makedirs(UPLOADS, exist_ok=True)
-
 
 app = Flask(__name__)
 
@@ -219,7 +221,6 @@ def init_db():
 
     """)
 
-
     # =====================================================
     # مدیر اولیه
     # =====================================================
@@ -244,88 +245,47 @@ def init_db():
 
 
     # =====================================================
-    # تنظیمات سایت
+    # تنظیمات پیش‌فرض سایت
     # =====================================================
 
     defaults = {
 
-        "site_name":
-            "کافی‌نت آنلاین نوین",
+        # اطلاعات اصلی
+        "site_name": "کافی‌نت آنلاین نوین",
+        "manager": "احمد محمدی مهر",
+        "phone": "09920345139",
 
-        "manager":
-            "احمد محمدی مهر",
+        # ظاهر
+        "logo": "",
+        "primary_color": "#102a43",
+        "secondary_color": "#1479d1",
+        "background_color": "#f5f7fb",
+        "card_color": "#ffffff",
+        "text_color": "#172033",
 
-        "phone":
-            "09920345139",
+        # متن‌های سایت
+        "hero_title": "خدمات آنلاین کافی‌نت نوین",
+        "hero_text": "تمام خدمات کافی‌نت را به‌صورت غیرحضوری دریافت کنید.",
+        "warning_text": "⚠️ پرداخت خدمات فقط از طریق درگاه رسمی سایت انجام می‌شود.",
 
-        "logo":
-            "",
+        # نمایش بخش‌ها
+        "show_hero": "1",
+        "show_services": "1",
+        "show_tracking": "1",
+        "show_customer_login": "1",
 
-        "tracking_prefix":
-            "NV-",
+        # رهگیری
+        "tracking_prefix": "NV-",
+        "tracking_digits": "8",
+        "tracking_separator": "",
 
-        "tracking_digits":
-            "8",
+        # ورود مشتری
+        "customer_login_mode": "phone",
+        "customer_otp_enabled": "0",
 
-        "tracking_separator":
-            "",
-
-        "warning_text":
-            "توجه: پرداخت هزینه خدمات فقط از طریق درگاه رسمی همین سایت.",
-
-
-        # ==============================
-        # ظاهر سایت
-        # ==============================
-
-        "theme_primary":
-            "#102a43",
-
-        "theme_secondary":
-            "#1479d1",
-
-        "theme_background":
-            "#f5f7fb",
-
-        "theme_card":
-            "#ffffff",
-
-        "theme_text":
-            "#172033",
-
-        "theme_button":
-            "#1479d1",
-
-        "theme_button_text":
-            "#ffffff",
-
-
-        # ==============================
-        # نوشته‌های سایت
-        # ==============================
-
-        "site_header_text":
-            "خدمات آنلاین",
-
-        "site_subtitle":
-            "تمام خدمات کافی‌نت آنلاین نوین به صورت غیرحضوری",
-
-
-        # ==============================
-        # نمایش لینک‌ها
-        # ==============================
-
-        "show_warning":
-            "1",
-
-        "show_customer_link":
-            "1",
-
-        "show_admin_link":
-            "1",
-
-        "show_tracking_link":
-            "1"
+        # امکانات
+        "sms_enabled": "0",
+        "payment_enabled": "0"
 
     }
 
@@ -346,7 +306,7 @@ def init_db():
 
 
     # =====================================================
-    # تنظیمات پیامک
+    # تنظیم پیامک
     # =====================================================
 
     con.execute(
@@ -360,21 +320,13 @@ def init_db():
             api_secret,
             sender
         )
-        VALUES
-        (
-            1,
-            0,
-            '',
-            '',
-            '',
-            ''
-        )
+        VALUES (1, 0, '', '', '', '')
         """
     )
 
 
     # =====================================================
-    # تنظیمات پرداخت
+    # تنظیم درگاه
     # =====================================================
 
     con.execute(
@@ -387,14 +339,7 @@ def init_db():
             merchant_id,
             test_mode
         )
-        VALUES
-        (
-            1,
-            0,
-            '',
-            '',
-            1
-        )
+        VALUES (1, 0, '', '', 1)
         """
     )
 
@@ -483,7 +428,6 @@ def init_db():
 
 
     con.commit()
-
     con.close()
 
 
@@ -543,7 +487,10 @@ def generate_tracking_code():
 
     digits = max(
         4,
-        min(digits, 20)
+        min(
+            digits,
+            20
+        )
     )
 
 
@@ -556,12 +503,9 @@ def generate_tracking_code():
     while True:
 
         number = "".join(
-            secrets.choice(
-                string.digits
-            )
+            secrets.choice(string.digits)
             for _ in range(digits)
         )
-
 
         code = (
             prefix
@@ -605,10 +549,8 @@ def save_uploaded_files(
 
         for file in uploaded:
 
-            if (
-                not file
-                or not file.filename
-            ):
+            if not file or not file.filename:
+
                 continue
 
 
@@ -672,7 +614,6 @@ def save_uploaded_files(
 
 
             con.commit()
-
             con.close()
 
 
@@ -708,7 +649,6 @@ def add_notification(
 
 
     con.commit()
-
     con.close()
 
 
@@ -735,10 +675,13 @@ def home():
     con.close()
 
 
+    settings = get_settings()
+
+
     return render_template(
         "home.html",
         services=services,
-        settings=get_settings()
+        settings=settings
     )
 
 
@@ -770,18 +713,12 @@ def service(sid):
 
     if not service_item:
 
-        return (
-            "خدمت موردنظر پیدا نشد.",
-            404
-        )
+        return "خدمت موردنظر پیدا نشد.", 404
 
 
     if not service_item["active"]:
 
-        return (
-            "این خدمت فعال نیست.",
-            404
-        )
+        return "این خدمت فعال نیست.", 404
 
 
     try:
@@ -832,9 +769,7 @@ def service(sid):
                 "نام و نام خانوادگی الزامی است."
             )
 
-            return redirect(
-                request.url
-            )
+            return redirect(request.url)
 
 
         if not national_id:
@@ -843,9 +778,7 @@ def service(sid):
                 "کد ملی الزامی است."
             )
 
-            return redirect(
-                request.url
-            )
+            return redirect(request.url)
 
 
         if not phone:
@@ -854,9 +787,7 @@ def service(sid):
                 "شماره تلفن الزامی است."
             )
 
-            return redirect(
-                request.url
-            )
+            return redirect(request.url)
 
 
         con = db()
@@ -997,7 +928,6 @@ def service(sid):
 
 
         con.commit()
-
         con.close()
 
 
@@ -1053,9 +983,7 @@ def customer_login():
                 "شماره موبایل را وارد کنید."
             )
 
-            return redirect(
-                request.url
-            )
+            return redirect(request.url)
 
 
         con = db()
@@ -1100,7 +1028,6 @@ def customer_login():
 
 
         con.commit()
-
         con.close()
 
 
@@ -1120,13 +1047,7 @@ def customer_login():
     )
 
 
-# =========================================================
-# CUSTOMER LOGOUT
-# =========================================================
-
-@app.route(
-    "/customer/logout"
-)
+@app.route("/customer/logout")
 def customer_logout():
 
     session.pop(
@@ -1146,9 +1067,7 @@ def customer_logout():
 # CUSTOMER DASHBOARD
 # =========================================================
 
-@app.route(
-    "/customer"
-)
+@app.route("/customer")
 def customer_dashboard():
 
     customer_id = session.get(
@@ -1288,10 +1207,7 @@ def customer_request(rid):
 
     if not result:
 
-        return (
-            "درخواست پیدا نشد.",
-            404
-        )
+        return "درخواست پیدا نشد.", 404
 
 
     return render_template(
@@ -1500,16 +1416,12 @@ def admin_login():
         ):
 
             session["admin"] = True
-
             session["admin_id"] = admin["id"]
-
             session["admin_role"] = admin["role"]
 
 
             return redirect(
-                url_for(
-                    "admin"
-                )
+                url_for("admin")
             )
 
 
@@ -1524,13 +1436,7 @@ def admin_login():
     )
 
 
-# =========================================================
-# ADMIN LOGOUT
-# =========================================================
-
-@app.route(
-    "/admin/logout"
-)
+@app.route("/admin/logout")
 def admin_logout():
 
     session.clear()
@@ -1547,9 +1453,7 @@ def admin_logout():
 # ADMIN PANEL
 # =========================================================
 
-@app.route(
-    "/admin"
-)
+@app.route("/admin")
 def admin():
 
     if not admin_required():
@@ -1605,10 +1509,10 @@ def admin():
     ).fetchall()
 
 
-    settings = get_settings()
-
-
     con.close()
+
+
+    settings = get_settings()
 
 
     return render_template(
@@ -1700,9 +1604,7 @@ def admin_service_save():
 
     active = (
         1
-        if request.form.get(
-            "active"
-        ) == "1"
+        if request.form.get("active") == "1"
         else 0
     )
 
@@ -1721,9 +1623,7 @@ def admin_service_save():
 
     try:
 
-        json.loads(
-            fields_json
-        )
+        json.loads(fields_json)
 
     except Exception:
 
@@ -1732,9 +1632,7 @@ def admin_service_save():
 
     try:
 
-        json.loads(
-            documents_json
-        )
+        json.loads(documents_json)
 
     except Exception:
 
@@ -1749,7 +1647,6 @@ def admin_service_save():
         con.execute(
             """
             UPDATE services
-
             SET
                 name = ?,
                 description = ?,
@@ -1760,7 +1657,6 @@ def admin_service_save():
                 sort_order = ?,
                 fields_json = ?,
                 documents_json = ?
-
             WHERE id = ?
             """,
             (
@@ -1815,14 +1711,11 @@ def admin_service_save():
 
 
     con.commit()
-
     con.close()
 
 
     return redirect(
-        url_for(
-            "admin"
-        )
+        url_for("admin")
     )
 
 
@@ -1882,7 +1775,6 @@ def admin_request_status():
 
 
     con.commit()
-
     con.close()
 
 
@@ -1896,9 +1788,7 @@ def admin_request_status():
 
 
     return redirect(
-        url_for(
-            "admin"
-        )
+        url_for("admin")
     )
 
 
@@ -1931,15 +1821,11 @@ def admin_request(rid):
             c.name AS customer_name,
             c.national_id,
             c.phone
-
         FROM requests r
-
         JOIN services s
         ON s.id = r.service_id
-
         JOIN customers c
         ON c.id = r.customer_id
-
         WHERE r.id = ?
         """,
         (rid,)
@@ -1973,10 +1859,7 @@ def admin_request(rid):
 
     if not result:
 
-        return (
-            "درخواست پیدا نشد.",
-            404
-        )
+        return "درخواست پیدا نشد.", 404
 
 
     return render_template(
@@ -2102,37 +1985,40 @@ def admin_settings():
         )
 
 
+    # تمام تنظیماتی که از پنل قابل تغییر هستند
+
     keys = (
 
         "site_name",
         "manager",
         "phone",
+
         "logo",
 
+        "primary_color",
+        "secondary_color",
+        "background_color",
+        "card_color",
+        "text_color",
+
+        "hero_title",
+        "hero_text",
         "warning_text",
+
+        "show_hero",
+        "show_services",
+        "show_tracking",
+        "show_customer_login",
 
         "tracking_prefix",
         "tracking_digits",
         "tracking_separator",
 
-        # ظاهر
-        "theme_primary",
-        "theme_secondary",
-        "theme_background",
-        "theme_card",
-        "theme_text",
-        "theme_button",
-        "theme_button_text",
+        "customer_login_mode",
+        "customer_otp_enabled",
 
-        # نوشته‌ها
-        "site_header_text",
-        "site_subtitle",
-
-        # نمایش
-        "show_warning",
-        "show_customer_link",
-        "show_admin_link",
-        "show_tracking_link"
+        "sms_enabled",
+        "payment_enabled"
 
     )
 
@@ -2165,14 +2051,16 @@ def admin_settings():
 
 
     con.commit()
-
     con.close()
 
 
+    flash(
+        "تنظیمات سایت با موفقیت ذخیره شد."
+    )
+
+
     return redirect(
-        url_for(
-            "admin"
-        )
+        url_for("admin")
     )
 
 
@@ -2219,14 +2107,16 @@ def admin_password():
 
 
         con.commit()
-
         con.close()
 
 
-    return redirect(
-        url_for(
-            "admin"
+        flash(
+            "رمز مدیریت تغییر کرد."
         )
+
+
+    return redirect(
+        url_for("admin")
     )
 
 
@@ -2262,14 +2152,11 @@ def admin_service_delete(sid):
 
 
     con.commit()
-
     con.close()
 
 
     return redirect(
-        url_for(
-            "admin"
-        )
+        url_for("admin")
     )
 
 
@@ -2292,9 +2179,7 @@ def uploaded_file(filename):
 # HEALTH
 # =========================================================
 
-@app.route(
-    "/health"
-)
+@app.route("/health")
 def health():
 
     return jsonify(
