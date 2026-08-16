@@ -1,55 +1,74 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
 
 {% block content %}
 
 <div class="card" style="max-width:500px;margin:40px auto;">
 
-    <h1>ورود به پنل مدیریت</h1>
+    <h1>🔐 ورود مدیریت</h1>
 
     <p>
-        این بخش مخصوص مدیریت کافی‌نت آنلاین نوین است.
+        برای ورود به پنل مدیریت، اطلاعات ورود را وارد کنید.
     </p>
 
-    <form method="post">
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            {% for message in messages %}
+                <div class="notice" style="margin:10px 0;">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+
+    <form
+        method="post"
+        action="{{ url_for('admin_login') }}"
+    >
 
         <div class="field">
-            <label>نام کاربری</label>
+
+            <label>
+                نام کاربری
+            </label>
 
             <input
                 type="text"
                 name="username"
-                placeholder="نام کاربری"
-                required
                 autocomplete="username"
+                required
+                placeholder="نام کاربری"
             >
+
         </div>
 
+
         <div class="field">
-            <label>رمز عبور</label>
+
+            <label>
+                رمز عبور
+            </label>
 
             <input
                 type="password"
                 name="password"
-                placeholder="رمز عبور"
-                required
                 autocomplete="current-password"
+                required
+                placeholder="رمز عبور"
             >
+
         </div>
+
 
         <button
             class="btn"
             type="submit"
+            style="width:100%;"
         >
-            ورود به پنل مدیریت
+            🔑 ورود به پنل مدیریت
         </button>
 
     </form>
-
-    <hr style="margin:25px 0;border:0;border-top:1px solid #ddd;">
-
-    <a class="btn" href="/">
-        بازگشت به سایت
-    </a>
 
 </div>
 
