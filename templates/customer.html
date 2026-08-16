@@ -4,86 +4,140 @@
 
 <style>
     .customer-header {
-        text-align: center;
+        background: {{ settings.get('card_color','#ffffff') }};
+        border-radius: 18px;
+        padding: 25px;
         margin-bottom: 20px;
+        box-shadow: 0 5px 20px rgba(0,0,0,.07);
     }
 
     .customer-header h1 {
-        margin-bottom: 8px;
+        margin-top: 0;
+        color: {{ settings.get('primary_color','#102a43') }};
     }
 
     .customer-actions {
         display: flex;
         gap: 10px;
         flex-wrap: wrap;
-        justify-content: center;
-        margin-top: 20px;
+        margin-top: 18px;
     }
 
-    .customer-action {
-        min-width: 180px;
-        text-align: center;
+    .customer-actions a {
+        text-decoration: none;
     }
 
-    .request-card {
-        position: relative;
+    .section-title {
+        margin-top: 25px;
+    }
+
+    .service-card,
+    .request-card,
+    .notification-card {
+        background: {{ settings.get('card_color','#ffffff') }};
+        border-radius: 15px;
+        padding: 18px;
+        margin: 12px 0;
+        box-shadow: 0 4px 18px rgba(0,0,0,.06);
+    }
+
+    .service-card h3,
+    .request-card h3 {
+        margin-top: 0;
+    }
+
+    .service-description {
+        color: #667085;
+        line-height: 1.8;
+    }
+
+    .price {
+        font-weight: bold;
+        margin: 12px 0;
     }
 
     .status {
         display: inline-block;
-        padding: 6px 12px;
-        border-radius: 8px;
-        background: #eef4ff;
-        font-weight: bold;
+        padding: 6px 10px;
+        border-radius: 20px;
+        background: #edf2f7;
+        font-size: 13px;
     }
 
-    .tracking-code {
+    .tracking {
         font-weight: bold;
         direction: ltr;
         display: inline-block;
     }
 
-    @media (max-width: 600px) {
+    .request-info {
+        line-height: 2;
+    }
 
-        .customer-action {
-            width: 100%;
+    .notification-card {
+        border-right: 4px solid {{ settings.get('secondary_color','#1479d1') }};
+    }
+
+    .notification-card h4 {
+        margin: 0 0 8px;
+    }
+
+    .notification-card p {
+        margin: 5px 0;
+        line-height: 1.8;
+    }
+
+    .empty {
+        background: #fff8e6;
+        padding: 15px;
+        border-radius: 12px;
+    }
+
+    @media(max-width:650px) {
+        .customer-actions {
+            flex-direction: column;
         }
 
+        .customer-actions .btn {
+            width: 100%;
+            text-align: center;
+        }
     }
 </style>
 
 
-<!-- سربرگ پنل مشتری -->
-<div class="card customer-header">
+<!-- =====================================================
+     اطلاعات مشتری
+===================================================== -->
 
-    <h1>👤 پنل مشتری</h1>
+<div class="customer-header">
 
-    {% if customer and customer.name and customer.name != 'مشتری' %}
-        <p>
-            خوش آمدید
-            <strong>{{ customer.name }}</strong>
-        </p>
-    {% else %}
-        <p>
+    <h1>
+        👤 پنل مشتری
+    </h1>
+
+    <p>
+        {% if customer and customer.name and customer.name != 'مشتری' %}
+            سلام {{ customer.name }} عزیز
+        {% else %}
             به پنل مشتری کافی‌نت آنلاین نوین خوش آمدید.
-        </p>
-    {% endif %}
+        {% endif %}
+    </p>
 
 
     <div class="customer-actions">
 
-        <!-- پیگیری فقط داخل پنل مشتری -->
         <a
-            href="#requests"
-            class="btn customer-action"
+            class="btn"
+            href="{{ url_for('home') }}"
         >
-            🔎 پیگیری درخواست‌های من
+            📋 لیست سامانه‌های ثبت‌نامی
         </a>
 
 
         <a
+            class="btn"
             href="{{ url_for('customer_logout') }}"
-            class="btn customer-action"
             style="background:#555;"
         >
             🚪 خروج
@@ -94,116 +148,208 @@
 </div>
 
 
-<!-- اطلاعیه‌ها -->
+
+<!-- =====================================================
+     اعلان‌ها
+===================================================== -->
+
+<h2 class="section-title">
+    🔔 اعلان‌های من
+</h2>
+
+
 {% if notifications %}
 
-<h2>🔔 اطلاعیه‌ها</h2>
+    {% for n in notifications %}
 
-{% for n in notifications %}
+    <div class="notification-card">
 
-<div class="notice">
+        <h4>
+            {{ n.title }}
+        </h4>
 
-    <strong>{{ n.title }}</strong>
+        <p>
+            {{ n.message }}
+        </p>
 
-    <p>
-        {{ n.message }}
-    </p>
+        {% if n.created_at %}
 
-    {% if n.created_at %}
         <small>
             {{ n.created_at }}
         </small>
-    {% endif %}
+
+        {% endif %}
+
+    </div>
+
+    {% endfor %}
+
+{% else %}
+
+<div class="empty">
+    هنوز اعلانی برای شما ثبت نشده است.
+</div>
+
+{% endif %}
+
+
+
+<!-- =====================================================
+     سامانه‌ها
+===================================================== -->
+
+<h2 class="section-title">
+    📋 لیست سامانه‌های ثبت‌نامی
+</h2>
+
+
+{% if services %}
+
+    {% for s in services %}
+
+    <div class="service-card">
+
+        <h3>
+            {{ s.name }}
+        </h3>
+
+
+        {% if s.category %}
+
+        <small>
+            دسته:
+            {{ s.category }}
+        </small>
+
+        {% endif %}
+
+
+        {% if s.description %}
+
+        <p class="service-description">
+            {{ s.description }}
+        </p>
+
+        {% endif %}
+
+
+        {% if s.price and s.price > 0 %}
+
+        <div class="price">
+            قیمت پایه:
+            {{ "{:,}".format(s.price) }}
+            ریال
+        </div>
+
+        {% else %}
+
+        <div class="price">
+            قیمت توسط مدیریت تعیین می‌شود.
+        </div>
+
+        {% endif %}
+
+
+        <a
+            class="btn"
+            href="{{ url_for('service', sid=s.id) }}"
+        >
+            📝 ثبت درخواست
+        </a>
+
+    </div>
+
+    {% endfor %}
+
+{% else %}
+
+<div class="empty">
+    هنوز سامانه‌ای برای ثبت‌نام فعال نشده است.
+</div>
+
+{% endif %}
+
+
+
+<!-- =====================================================
+     پرونده‌های مشتری
+===================================================== -->
+
+{% if requests %}
+
+<h2 class="section-title">
+    📁 پرونده‌های من
+</h2>
+
+
+{% for r in requests %}
+
+<div class="request-card">
+
+    <h3>
+        {{ r.service_name }}
+    </h3>
+
+
+    <div class="request-info">
+
+        <div>
+            🔢 کد پیگیری:
+
+            <span class="tracking">
+                {{ r.tracking_code }}
+            </span>
+        </div>
+
+
+        <div>
+            📌 وضعیت پرونده:
+
+            <span class="status">
+                {{ r.status }}
+            </span>
+        </div>
+
+
+        {% if r.total_price %}
+
+        <div>
+            💰 مبلغ:
+            {{ "{:,}".format(r.total_price) }}
+            ریال
+        </div>
+
+        {% endif %}
+
+
+        {% if r.paid_price %}
+
+        <div>
+            💳 پرداخت شده:
+            {{ "{:,}".format(r.paid_price) }}
+            ریال
+        </div>
+
+        {% endif %}
+
+    </div>
+
+
+    <div style="margin-top:15px;">
+
+        <a
+            class="btn"
+            href="{{ url_for('customer_request', rid=r.id) }}"
+        >
+            📂 مشاهده پرونده و ارتباط با کارشناس
+        </a>
+
+    </div>
 
 </div>
 
 {% endfor %}
 
 {% endif %}
-
-
-<!-- درخواست‌های مشتری -->
-<div id="requests">
-
-    <h2>📋 درخواست‌های من</h2>
-
-
-    {% if requests %}
-
-        {% for r in requests %}
-
-        <div class="card request-card">
-
-            <h3>
-                {{ r.service_name }}
-            </h3>
-
-
-            <p>
-                کد پیگیری:
-                <span class="tracking-code">
-                    {{ r.tracking_code }}
-                </span>
-            </p>
-
-
-            <p>
-                وضعیت:
-                <span class="status">
-                    {{ r.status }}
-                </span>
-            </p>
-
-
-            {% if r.total_price %}
-
-            <p>
-                مبلغ کل:
-                <strong>
-                    {{ "{:,}".format(r.total_price) }}
-                    ریال
-                </strong>
-            </p>
-
-            {% endif %}
-
-
-            {% if r.paid_price %}
-
-            <p>
-                مبلغ پرداخت‌شده:
-                <strong>
-                    {{ "{:,}".format(r.paid_price) }}
-                    ریال
-                </strong>
-            </p>
-
-            {% endif %}
-
-
-            <a
-                class="btn"
-                href="{{ url_for('customer_request', rid=r.id) }}"
-            >
-                👁 مشاهده جزئیات و پیگیری
-            </a>
-
-        </div>
-
-        {% endfor %}
-
-
-    {% else %}
-
-        <div class="notice">
-
-            هنوز هیچ درخواستی ثبت نکرده‌اید.
-
-        </div>
-
-    {% endif %}
-
-</div>
-
 
 {% endblock %}
