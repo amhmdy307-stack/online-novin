@@ -78,7 +78,8 @@ def init_db():
         sort_order INTEGER DEFAULT 0,
         fields_json TEXT DEFAULT '[]',
         documents_json TEXT DEFAULT '[]',
-        created_at TEXT
+        created_at TEXT,
+        deleted_at TEXT DEFAULT NULL
     );
 
     CREATE TABLE IF NOT EXISTS requests (
@@ -217,6 +218,29 @@ def init_db():
 
     """)
 
+    # -----------------------------------------------------
+    # Migration برای دیتابیس قدیمی
+    # -----------------------------------------------------
+
+    service_columns = [
+        row["name"]
+        for row in con.execute(
+            "PRAGMA table_info(services)"
+        ).fetchall()
+    ]
+
+    if "deleted_at" not in service_columns:
+        con.execute(
+            """
+            ALTER TABLE services
+            ADD COLUMN deleted_at TEXT DEFAULT NULL
+            """
+        )
+
+    # -----------------------------------------------------
+    # ADMIN
+    # -----------------------------------------------------
+
     if not con.execute(
         "SELECT id FROM admins LIMIT 1"
     ).fetchone():
@@ -234,6 +258,10 @@ def init_db():
                 1
             )
         )
+
+    # -----------------------------------------------------
+    # SETTINGS
+    # -----------------------------------------------------
 
     defaults = {
         "site_name": "کافی‌نت آنلاین نوین",
@@ -253,7 +281,7 @@ def init_db():
         "warning_text": "⚠️ پرداخت خدمات فقط از طریق درگاه رسمی سایت انجام می‌شود.",
 
         "show_hero": "1",
-        "show_services": "1",
+        "show_services": "0",
         "show_tracking": "1",
         "show_customer_login": "1",
 
@@ -279,6 +307,10 @@ def init_db():
             (key, value)
         )
 
+    # -----------------------------------------------------
+    # SMS
+    # -----------------------------------------------------
+
     con.execute(
         """
         INSERT OR IGNORE INTO sms_settings
@@ -286,6 +318,10 @@ def init_db():
         VALUES (1, 0, '', '', '', '')
         """
     )
+
+    # -----------------------------------------------------
+    # PAYMENT
+    # -----------------------------------------------------
 
     con.execute(
         """
@@ -295,75 +331,45 @@ def init_db():
         """
     )
 
-    if not con.execute(
-        "SELECT id FROM services LIMIT 1"
-    ).fetchone():
+    # -----------------------------------------------------
+    # حذف نمایش خدمات قدیمی
+    #
+    # خدمات قبلی پاک نمی‌شوند؛ فقط غیرفعال می‌شوند.
+    # این کار باعث می‌شود درخواست‌های قدیمی خراب نشوند.
+    # -----------------------------------------------------
 
-        services = [
+    cleared = con.execute(
+        """
+        SELECT value
+        FROM settings
+        WHERE key = 'old_services_hidden'
+        """
+    ).fetchone()
+
+    if not cleared:
+
+        con.execute(
+            """
+            UPDATE services
+            SET
+                active = 0,
+                deleted_at = ?
+            WHERE deleted_at IS NULL
+            """,
             (
-                "مسکن ملی",
-                "ثبت درخواست مسکن ملی و بارگذاری مدارک",
-                "مسکن"
-            ),
-            (
-                "ثبت‌نام سهام نوزاد",
-                "ثبت اطلاعات پدر و فرزند",
-                "سهام نوزاد"
-            ),
-            (
-                "ثبت‌نام خودرو",
-                "ایران‌خودرو، سایپا و بهمن موتور",
-                "خودرو"
-            ),
-            (
-                "چک صیادی",
-                "ثبت، تأیید یا رد چک صیادی",
-                "چک صیادی"
-            ),
-            (
-                "ثبت قرارداد",
-                "اجاره‌نامه و قولنامه",
-                "قرارداد"
-            ),
-            (
-                "جواز کسب",
-                "ثبت درخواست جواز کسب",
-                "جواز کسب"
+                datetime.now().strftime(
+                    "%Y-%m-%d %H:%M:%S"
+                ),
             )
-        ]
+        )
 
-        for name, description, category in services:
-
-            con.execute(
-                """
-                INSERT INTO services
-                (
-                    name,
-                    description,
-                    category,
-                    price,
-                    active,
-                    sort_order,
-                    fields_json,
-                    documents_json,
-                    created_at
-                )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """,
-                (
-                    name,
-                    description,
-                    category,
-                    0,
-                    1,
-                    0,
-                    "[]",
-                    "[]",
-                    datetime.now().strftime(
-                        "%Y-%m-%d %H:%M:%S"
-                    )
-                )
-            )
+        con.execute(
+            """
+            INSERT OR REPLACE INTO settings
+            (key, value)
+            VALUES ('old_services_hidden', '1')
+            """
+        )
 
     con.commit()
     con.close()
@@ -557,28 +563,124 @@ def add_notification(
 
 
 # =========================================================
+# DISCOUNT
+# =========================================================
+
+def calculate_discount(
+    code,
+    service_id,
+    price
+):
+
+    if not code:
+        return price, 0, None
+
+    code = code.strip().upper()
+
+    con = db()
+
+    discount = con.execute(
+        """
+        SELECT *
+        FROM discount_codes
+        WHERE UPPER(code) = ?
+        AND active = 1
+        """,
+        (code,)
+    ).fetchone()
+
+    con.close()
+
+    if not discount:
+        return (
+            price,
+            0,
+            "کد تخفیف نامعتبر است."
+        )
+
+    today = datetime.now().strftime(
+        "%Y-%m-%d"
+    )
+
+    if discount["start_date"]:
+
+        if today < discount["start_date"]:
+
+            return (
+                price,
+                0,
+                "کد تخفیف هنوز فعال نشده است."
+            )
+
+    if discount["end_date"]:
+
+        if today > discount["end_date"]:
+
+            return (
+                price,
+                0,
+                "تاریخ اعتبار کد تخفیف تمام شده است."
+            )
+
+    if (
+        discount["max_uses"] > 0
+        and discount["used_count"]
+        >= discount["max_uses"]
+    ):
+
+        return (
+            price,
+            0,
+            "سقف استفاده از این کد تخفیف تکمیل شده است."
+        )
+
+    if (
+        discount["service_id"]
+        and discount["service_id"] != service_id
+    ):
+
+        return (
+            price,
+            0,
+            "این کد تخفیف برای این سامانه نیست."
+        )
+
+    if discount["kind"] == "percent":
+
+        amount = int(
+            price * discount["value"] / 100
+        )
+
+    else:
+
+        amount = int(
+            discount["value"]
+        )
+
+    amount = max(
+        0,
+        min(amount, price)
+    )
+
+    final_price = price - amount
+
+    return (
+        final_price,
+        amount,
+        None
+    )
+
+
+# =========================================================
 # HOME
 # =========================================================
 
 @app.route("/")
 def home():
 
-    con = db()
-
-    services = con.execute(
-        """
-        SELECT *
-        FROM services
-        WHERE active = 1
-        ORDER BY sort_order ASC, id DESC
-        """
-    ).fetchall()
-
-    con.close()
-
     return render_template(
         "home.html",
-        services=services,
+        services=[],
         settings=get_settings()
     )
 
@@ -600,6 +702,8 @@ def service(sid):
         SELECT *
         FROM services
         WHERE id = ?
+        AND active = 1
+        AND deleted_at IS NULL
         """,
         (sid,)
     ).fetchone()
@@ -607,23 +711,26 @@ def service(sid):
     con.close()
 
     if not service_item:
-        return "خدمت موردنظر پیدا نشد.", 404
-
-    if not service_item["active"]:
-        return "این خدمت فعال نیست.", 404
+        return "سامانه موردنظر فعال نیست.", 404
 
     try:
+
         fields = json.loads(
             service_item["fields_json"] or "[]"
         )
+
     except Exception:
+
         fields = []
 
     try:
+
         documents = json.loads(
             service_item["documents_json"] or "[]"
         )
+
     except Exception:
+
         documents = []
 
     if request.method == "POST":
@@ -644,16 +751,38 @@ def service(sid):
         ).strip()
 
         if not name:
-            flash("نام و نام خانوادگی الزامی است.")
-            return redirect(request.url)
+
+            flash(
+                "نام و نام خانوادگی الزامی است."
+            )
+
+            return redirect(
+                request.url
+            )
 
         if not national_id:
-            flash("کد ملی الزامی است.")
-            return redirect(request.url)
+
+            flash(
+                "کد ملی الزامی است."
+            )
+
+            return redirect(
+                request.url
+            )
 
         if not phone:
-            flash("شماره تلفن الزامی است.")
-            return redirect(request.url)
+
+            flash(
+                "شماره تلفن الزامی است."
+            )
+
+            return redirect(
+                request.url
+            )
+
+        # -------------------------------------------------
+        # CUSTOMER
+        # -------------------------------------------------
 
         con = db()
 
@@ -713,6 +842,10 @@ def service(sid):
 
             customer_id = cursor.lastrowid
 
+        # -------------------------------------------------
+        # FORM DATA
+        # -------------------------------------------------
+
         data = {}
 
         for key in request.form.keys():
@@ -720,7 +853,8 @@ def service(sid):
             if key in (
                 "name",
                 "national_id",
-                "phone"
+                "phone",
+                "discount_code"
             ):
                 continue
 
@@ -732,9 +866,47 @@ def service(sid):
                 else values[0]
             )
 
-        tracking_code = generate_tracking_code()
+        # -------------------------------------------------
+        # PRICE
+        # -------------------------------------------------
 
-        total_price = service_item["price"] or 0
+        original_price = (
+            service_item["price"] or 0
+        )
+
+        discount_code = request.form.get(
+            "discount_code",
+            ""
+        ).strip()
+
+        total_price, discount_amount, discount_error = calculate_discount(
+            discount_code,
+            sid,
+            original_price
+        )
+
+        if discount_error:
+
+            con.close()
+
+            flash(
+                discount_error
+            )
+
+            return redirect(
+                request.url
+            )
+
+        data["original_price"] = original_price
+        data["discount_code"] = discount_code
+        data["discount_amount"] = discount_amount
+        data["final_price"] = total_price
+
+        # -------------------------------------------------
+        # REQUEST
+        # -------------------------------------------------
+
+        tracking_code = generate_tracking_code()
 
         cursor = con.execute(
             """
@@ -772,6 +944,23 @@ def service(sid):
 
         request_id = cursor.lastrowid
 
+        # -------------------------------------------------
+        # DISCOUNT USE
+        # -------------------------------------------------
+
+        if discount_code:
+
+            con.execute(
+                """
+                UPDATE discount_codes
+                SET used_count = used_count + 1
+                WHERE UPPER(code) = ?
+                """,
+                (
+                    discount_code.upper(),
+                )
+            )
+
         con.commit()
         con.close()
 
@@ -788,7 +977,10 @@ def service(sid):
 
         return render_template(
             "success.html",
-            code=tracking_code
+            code=tracking_code,
+            total_price=total_price,
+            discount_amount=discount_amount,
+            original_price=original_price
         )
 
     return render_template(
@@ -810,13 +1002,12 @@ def service(sid):
 )
 def customer_login():
 
-    # اگر قبلاً وارد شده
     if session.get("customer_id"):
+
         return redirect(
             url_for("customer_dashboard")
         )
 
-    # ورود مستقیم بدون شماره موبایل
     con = db()
 
     cursor = con.execute(
@@ -848,7 +1039,9 @@ def customer_login():
     )
 
 
-@app.route("/customer/logout")
+@app.route(
+    "/customer/logout"
+)
 def customer_logout():
 
     session.pop(
@@ -865,7 +1058,9 @@ def customer_logout():
 # CUSTOMER DASHBOARD
 # =========================================================
 
-@app.route("/customer")
+@app.route(
+    "/customer"
+)
 def customer_dashboard():
 
     customer_id = session.get(
@@ -873,6 +1068,7 @@ def customer_dashboard():
     )
 
     if not customer_id:
+
         return redirect(
             url_for("customer_login")
         )
@@ -913,12 +1109,13 @@ def customer_dashboard():
         (customer_id,)
     ).fetchall()
 
-    # خدمات فعال
+    # فقط سامانه‌های فعال
     services = con.execute(
         """
         SELECT *
         FROM services
         WHERE active = 1
+        AND deleted_at IS NULL
         ORDER BY sort_order ASC, id DESC
         """
     ).fetchall()
@@ -949,6 +1146,7 @@ def customer_request(rid):
     )
 
     if not customer_id:
+
         return redirect(
             url_for("customer_login")
         )
@@ -995,6 +1193,7 @@ def customer_request(rid):
     con.close()
 
     if not result:
+
         return "درخواست پیدا نشد.", 404
 
     return render_template(
@@ -1020,6 +1219,7 @@ def customer_message(rid):
     )
 
     if not customer_id:
+
         return redirect(
             url_for("customer_login")
         )
@@ -1030,6 +1230,7 @@ def customer_message(rid):
     ).strip()
 
     if not message:
+
         return redirect(
             url_for(
                 "customer_request",
@@ -1197,7 +1398,9 @@ def admin_login():
     )
 
 
-@app.route("/admin/logout")
+@app.route(
+    "/admin/logout"
+)
 def admin_logout():
 
     session.clear()
@@ -1211,24 +1414,30 @@ def admin_logout():
 # ADMIN PANEL
 # =========================================================
 
-@app.route("/admin")
+@app.route(
+    "/admin"
+)
 def admin():
 
     if not admin_required():
+
         return redirect(
             url_for("admin_login")
         )
 
     con = db()
 
+    # سامانه‌های موجود برای مدیریت
     services = con.execute(
         """
         SELECT *
         FROM services
+        WHERE deleted_at IS NULL
         ORDER BY sort_order ASC, id DESC
         """
     ).fetchall()
 
+    # مشتریان
     customers = con.execute(
         """
         SELECT
@@ -1243,6 +1452,7 @@ def admin():
         """
     ).fetchall()
 
+    # درخواست‌ها
     requests_list = con.execute(
         """
         SELECT
@@ -1259,6 +1469,19 @@ def admin():
         """
     ).fetchall()
 
+    # کدهای تخفیف
+    discount_codes = con.execute(
+        """
+        SELECT
+            d.*,
+            s.name AS service_name
+        FROM discount_codes d
+        LEFT JOIN services s
+        ON s.id = d.service_id
+        ORDER BY d.id DESC
+        """
+    ).fetchall()
+
     con.close()
 
     return render_template(
@@ -1266,33 +1489,40 @@ def admin():
         services=services,
         customers=customers,
         requests=requests_list,
+        discount_codes=discount_codes,
         settings=get_settings()
     )
 
 
 # =========================================================
-# ADMIN SERVICE SAVE
+# ADMIN ADD SERVICE
 # =========================================================
 
 @app.post(
-    "/admin/service/save"
+    "/admin/service/add"
 )
-def admin_service_save():
+def admin_service_add():
 
     if not admin_required():
+
         return redirect(
             url_for("admin_login")
         )
-
-    sid = request.form.get(
-        "id",
-        ""
-    ).strip()
 
     name = request.form.get(
         "name",
         ""
     ).strip()
+
+    if not name:
+
+        flash(
+            "نام سامانه الزامی است."
+        )
+
+        return redirect(
+            url_for("admin")
+        )
 
     description = request.form.get(
         "description",
@@ -1310,23 +1540,29 @@ def admin_service_save():
     ).strip()
 
     try:
+
         price = int(
             request.form.get(
                 "price",
                 "0"
             ) or 0
         )
+
     except ValueError:
+
         price = 0
 
     try:
+
         sort_order = int(
             request.form.get(
                 "sort_order",
                 "0"
             ) or 0
         )
+
     except ValueError:
+
         sort_order = 0
 
     active = (
@@ -1357,74 +1593,198 @@ def admin_service_save():
 
     con = db()
 
-    if sid:
-
-        con.execute(
-            """
-            UPDATE services
-            SET
-                name = ?,
-                description = ?,
-                category = ?,
-                image = ?,
-                price = ?,
-                active = ?,
-                sort_order = ?,
-                fields_json = ?,
-                documents_json = ?
-            WHERE id = ?
-            """,
-            (
-                name,
-                description,
-                category,
-                image,
-                price,
-                active,
-                sort_order,
-                fields_json,
-                documents_json,
-                sid
+    con.execute(
+        """
+        INSERT INTO services
+        (
+            name,
+            description,
+            category,
+            image,
+            price,
+            active,
+            sort_order,
+            fields_json,
+            documents_json,
+            created_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            name,
+            description,
+            category,
+            image,
+            price,
+            active,
+            sort_order,
+            fields_json,
+            documents_json,
+            datetime.now().strftime(
+                "%Y-%m-%d %H:%M:%S"
             )
         )
-
-    else:
-
-        con.execute(
-            """
-            INSERT INTO services
-            (
-                name,
-                description,
-                category,
-                image,
-                price,
-                active,
-                sort_order,
-                fields_json,
-                documents_json,
-                created_at
-            )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """,
-            (
-                name,
-                description,
-                category,
-                image,
-                price,
-                active,
-                sort_order,
-                fields_json,
-                documents_json,
-                datetime.now().strftime(
-                    "%Y-%m-%d %H:%M:%S"
-                )
-            )
-        )
+    )
 
     con.commit()
     con.close()
+
+    flash(
+        "سامانه با موفقیت اضافه شد."
+    )
+
+    return redirect(
+        url_for("admin")
+    )
+
+
+# =========================================================
+# ADMIN ADD DISCOUNT
+# =========================================================
+
+@app.post(
+    "/admin/discount/add"
+)
+def admin_discount_add():
+
+    if not admin_required():
+
+        return redirect(
+            url_for("admin_login")
+        )
+
+    code = request.form.get(
+        "code",
+        ""
+    ).strip().upper()
+
+    kind = request.form.get(
+        "kind",
+        "percent"
+    ).strip()
+
+    try:
+
+        value = int(
+            request.form.get(
+                "value",
+                "0"
+            ) or 0
+        )
+
+    except ValueError:
+
+        value = 0
+
+    start_date = request.form.get(
+        "start_date",
+        ""
+    ).strip()
+
+    end_date = request.form.get(
+        "end_date",
+        ""
+    ).strip()
+
+    try:
+
+        max_uses = int(
+            request.form.get(
+                "max_uses",
+                "0"
+            ) or 0
+        )
+
+    except ValueError:
+
+        max_uses = 0
+
+    service_id = request.form.get(
+        "service_id",
+        ""
+    ).strip()
+
+    if not code:
+
+        flash(
+            "کد تخفیف را وارد کنید."
+        )
+
+        return redirect(
+            url_for("admin")
+        )
+
+    if kind not in (
+        "percent",
+        "fixed"
+    ):
+
+        kind = "percent"
+
+    if value < 0:
+        value = 0
+
+    if kind == "percent" and value > 100:
+        value = 100
+
+    try:
+
+        service_id = (
+            int(service_id)
+            if service_id
+            else None
+        )
+
+    except ValueError:
+
+        service_id = None
+
+    con = db()
+
+    try:
+
+        con.execute(
+            """
+            INSERT INTO discount_codes
+            (
+                code,
+                kind,
+                value,
+                start_date,
+                end_date,
+                max_uses,
+                used_count,
+                service_id,
+                active
+            )
+            VALUES (?, ?, ?, ?, ?, ?, 0, ?, 1)
+            """,
+            (
+                code,
+                kind,
+                value,
+                start_date,
+                end_date,
+                max_uses,
+                service_id
+            )
+        )
+
+        con.commit()
+
+        flash(
+            "کد تخفیف با موفقیت ایجاد شد."
+        )
+
+    except sqlite3.IntegrityError:
+
+        flash(
+            "این کد تخفیف قبلاً ثبت شده است."
+        )
+
+    finally:
+
+        con.close()
 
     return redirect(
         url_for("admin")
@@ -1441,11 +1801,14 @@ def admin_service_save():
 def admin_request_status():
 
     if not admin_required():
+
         return redirect(
             url_for("admin_login")
         )
 
-    request_id = request.form.get("id")
+    request_id = request.form.get(
+        "id"
+    )
 
     status = request.form.get(
         "status",
@@ -1501,6 +1864,7 @@ def admin_request_status():
 def admin_request(rid):
 
     if not admin_required():
+
         return redirect(
             url_for("admin_login")
         )
@@ -1548,6 +1912,7 @@ def admin_request(rid):
     con.close()
 
     if not result:
+
         return "درخواست پیدا نشد.", 404
 
     return render_template(
@@ -1569,6 +1934,7 @@ def admin_request(rid):
 def admin_message(rid):
 
     if not admin_required():
+
         return redirect(
             url_for("admin_login")
         )
@@ -1579,6 +1945,7 @@ def admin_message(rid):
     ).strip()
 
     if not message:
+
         return redirect(
             url_for(
                 "admin_request",
@@ -1652,6 +2019,7 @@ def admin_message(rid):
 def admin_settings():
 
     if not admin_required():
+
         return redirect(
             url_for("admin_login")
         )
@@ -1731,6 +2099,7 @@ def admin_settings():
 def admin_password():
 
     if not admin_required():
+
         return redirect(
             url_for("admin_login")
         )
@@ -1769,39 +2138,6 @@ def admin_password():
 
 
 # =========================================================
-# ADMIN DELETE SERVICE
-# =========================================================
-
-@app.post(
-    "/admin/service/delete/<int:sid>"
-)
-def admin_service_delete(sid):
-
-    if not admin_required():
-        return redirect(
-            url_for("admin_login")
-        )
-
-    con = db()
-
-    con.execute(
-        """
-        UPDATE services
-        SET active = 0
-        WHERE id = ?
-        """,
-        (sid,)
-    )
-
-    con.commit()
-    con.close()
-
-    return redirect(
-        url_for("admin")
-    )
-
-
-# =========================================================
 # FILES
 # =========================================================
 
@@ -1820,7 +2156,9 @@ def uploaded_file(filename):
 # HEALTH
 # =========================================================
 
-@app.route("/health")
+@app.route(
+    "/health"
+)
 def health():
 
     return jsonify(
@@ -1843,4 +2181,4 @@ if __name__ == "__main__":
                 5000
             )
         )
-        )
+    )
