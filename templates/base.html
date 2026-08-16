@@ -2,495 +2,180 @@
 <html lang="fa" dir="rtl">
 
 <head>
-
     <meta charset="utf-8">
-
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1"
-    >
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <title>
-        {{ settings.get('site_name', 'کافی‌نت آنلاین نوین') if settings else 'کافی‌نت آنلاین نوین' }}
+        {{ settings.get('site_name','کافی‌نت آنلاین نوین') if settings else 'کافی‌نت آنلاین نوین' }}
     </title>
 
     <style>
-
-        :root {
-
-            --primary:
-                {{ settings.get('primary_color', '#1479d1') if settings else '#1479d1' }};
-
-            --secondary:
-                {{ settings.get('secondary_color', '#102a43') if settings else '#102a43' }};
-
-            --background:
-                {{ settings.get('background_color', '#f5f7fb') if settings else '#f5f7fb' }};
-
-            --text:
-                {{ settings.get('text_color', '#172033') if settings else '#172033' }};
-
-            --card:
-                {{ settings.get('card_color', '#ffffff') if settings else '#ffffff' }};
-
-        }
-
-
         * {
             box-sizing: border-box;
         }
 
-
         body {
-
-            font-family:
-                Tahoma,
-                Arial,
-                sans-serif;
-
-            background:
-                var(--background);
-
-            color:
-                var(--text);
-
-            margin:
-                0;
-
-            min-height:
-                100vh;
-
+            font-family: Tahoma, Arial, sans-serif;
+            background: {{ settings.get('background_color','#f5f7fb') if settings else '#f5f7fb' }};
+            color: {{ settings.get('text_color','#172033') if settings else '#172033' }};
+            margin: 0;
         }
 
-
-        .nav {
-
-            background:
-                var(--secondary);
-
-            color:
-                #fff;
-
-            padding:
-                14px 0;
-
-            box-shadow:
-                0 3px 15px #0002;
-
+        .topbar {
+            background: {{ settings.get('primary_color','#102a43') if settings else '#102a43' }};
+            color: #fff;
+            padding: 14px 20px;
         }
 
+        .topbar-inner {
+            max-width: 1100px;
+            margin: auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+        }
+
+        .topbar-title {
+            font-weight: bold;
+        }
+
+        .topbar-links {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .topbar-links a {
+            color: #fff;
+            text-decoration: none;
+            padding: 7px 10px;
+            border-radius: 7px;
+        }
+
+        .topbar-links a:hover {
+            background: rgba(255,255,255,.12);
+        }
 
         .wrap {
-
-            max-width:
-                1100px;
-
-            margin:
-                auto;
-
-            padding:
-                20px;
-
+            max-width: 1100px;
+            margin: auto;
+            padding: 20px;
         }
-
-
-        .nav .wrap {
-
-            display:
-                flex;
-
-            align-items:
-                center;
-
-            justify-content:
-                space-between;
-
-            gap:
-                15px;
-
-            flex-wrap:
-                wrap;
-
-        }
-
-
-        .brand {
-
-            display:
-                flex;
-
-            align-items:
-                center;
-
-            gap:
-                10px;
-
-            font-weight:
-                bold;
-
-            font-size:
-                18px;
-
-        }
-
-
-        .logo {
-
-            width:
-                45px;
-
-            height:
-                45px;
-
-            object-fit:
-                contain;
-
-            border-radius:
-                10px;
-
-            background:
-                #fff;
-
-        }
-
-
-        .nav-links {
-
-            display:
-                flex;
-
-            align-items:
-                center;
-
-            gap:
-                8px;
-
-            flex-wrap:
-                wrap;
-
-        }
-
-
-        .nav a {
-
-            color:
-                #fff;
-
-            text-decoration:
-                none;
-
-            padding:
-                8px 12px;
-
-            border-radius:
-                8px;
-
-        }
-
-
-        .nav a:hover {
-
-            background:
-                #ffffff18;
-
-        }
-
 
         .card {
-
-            background:
-                var(--card);
-
-            padding:
-                18px;
-
-            border-radius:
-                14px;
-
-            margin:
-                12px 0;
-
-            box-shadow:
-                0 4px 18px #12345612;
-
+            background: {{ settings.get('card_color','#ffffff') if settings else '#ffffff' }};
+            padding: 18px;
+            border-radius: 14px;
+            margin: 12px 0;
+            box-shadow: 0 4px 18px rgba(18,52,86,.08);
         }
-
 
         .btn {
-
-            background:
-                var(--primary);
-
-            color:
-                #fff;
-
-            border:
-                0;
-
-            border-radius:
-                9px;
-
-            padding:
-                10px 15px;
-
-            text-decoration:
-                none;
-
-            display:
-                inline-block;
-
-            cursor:
-                pointer;
-
+            background: {{ settings.get('secondary_color','#1479d1') if settings else '#1479d1' }};
+            color: #fff;
+            border: 0;
+            border-radius: 9px;
+            padding: 10px 15px;
+            text-decoration: none;
+            display: inline-block;
+            cursor: pointer;
         }
-
-
-        .btn:hover {
-
-            opacity:
-                .9;
-
-        }
-
 
         input,
         select,
         textarea {
-
-            width:
-                100%;
-
-            padding:
-                10px;
-
-            border:
-                1px solid #d5dce6;
-
-            border-radius:
-                9px;
-
-            box-sizing:
-                border-box;
-
-            font-family:
-                inherit;
-
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #d5dce6;
+            border-radius: 9px;
         }
-
 
         .field {
-
-            margin:
-                12px 0;
-
+            margin: 12px 0;
         }
-
 
         .notice {
-
-            background:
-                #fff8e6;
-
-            padding:
-                12px;
-
-            border-radius:
-                10px;
-
-            margin:
-                12px 0;
-
+            background: #fff8e6;
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 12px;
         }
 
-
-        .hero {
-
-            background:
-                linear-gradient(
-                    135deg,
-                    var(--secondary),
-                    var(--primary)
-                );
-
-            color:
-                #fff;
-
-            padding:
-                35px 25px;
-
-            border-radius:
-                18px;
-
-            margin:
-                15px 0;
-
-        }
-
-
-        .hero h1 {
-
-            margin-top:
-                0;
-
-        }
-
-
-        table {
-
-            border-collapse:
-                collapse;
-
-            width:
-                100%;
-
-        }
-
-
-        th,
-        td {
-
-            padding:
-                10px;
-
-            border-bottom:
-                1px solid #eee;
-
-            text-align:
-                right;
-
-        }
-
-
-        @media(max-width:700px) {
-
-            .nav .wrap {
-
-                align-items:
-                    flex-start;
-
+        @media (max-width: 700px) {
+            .topbar-inner {
+                align-items: flex-start;
+                flex-direction: column;
             }
-
-            .nav-links {
-
-                width:
-                    100%;
-
-            }
-
-            .nav-links a {
-
-                font-size:
-                    13px;
-
-                padding:
-                    7px 9px;
-
-            }
-
-            .wrap {
-
-                padding:
-                    12px;
-
-            }
-
         }
-
     </style>
-
 </head>
-
 
 <body>
 
+{% set is_admin = session.get('admin') %}
+{% set is_customer = session.get('customer_id') %}
 
-<header class="nav">
+{% if is_admin %}
 
-    <div class="wrap">
+    <!-- منوی مخصوص مدیر -->
+    <div class="topbar">
+        <div class="topbar-inner">
 
+            <div class="topbar-title">
+                پنل مدیریت — کافی‌نت آنلاین نوین
+            </div>
 
-        <div class="brand">
-
-
-            {% if settings and settings.get('logo') %}
-
-                <img
-                    class="logo"
-                    src="{{ settings.get('logo') }}"
-                    alt="لوگو"
-                >
-
-            {% endif %}
-
-
-            <span>
-
-                {{ settings.get(
-                    'site_name',
-                    'کافی‌نت آنلاین نوین'
-                ) if settings else 'کافی‌نت آنلاین نوین' }}
-
-            </span>
-
+            <div class="topbar-links">
+                <a href="{{ url_for('admin') }}">🏠 مدیریت</a>
+                <a href="{{ url_for('home') }}">🌐 مشاهده سایت</a>
+                <a href="{{ url_for('tracking') }}">🔎 پیگیری درخواست</a>
+                <a href="{{ url_for('admin_logout') }}">🚪 خروج</a>
+            </div>
 
         </div>
-
-
-        <nav class="nav-links">
-
-            <a href="/">
-                خدمات
-            </a>
-
-
-            <a href="/tracking">
-                پیگیری درخواست
-            </a>
-
-
-            <a href="/customer/login">
-                پنل مشتری
-            </a>
-
-
-            <a href="/admin/login">
-                پنل مدیریت
-            </a>
-
-        </nav>
-
-
     </div>
 
-</header>
+{% elif is_customer %}
+
+    <!-- منوی مخصوص مشتری -->
+    <div class="topbar">
+        <div class="topbar-inner">
+
+            <div class="topbar-title">
+                پنل مشتری — کافی‌نت آنلاین نوین
+            </div>
+
+            <div class="topbar-links">
+                <a href="{{ url_for('customer_dashboard') }}">🏠 پنل من</a>
+                <a href="{{ url_for('home') }}">🌐 خدمات</a>
+                <a href="{{ url_for('tracking') }}">🔎 پیگیری درخواست</a>
+                <a href="{{ url_for('customer_logout') }}">🚪 خروج</a>
+            </div>
+
+        </div>
+    </div>
+
+{% endif %}
 
 
 <main class="wrap">
 
-
     {% with messages = get_flashed_messages() %}
 
-        {% for message in messages %}
+        {% for m in messages %}
 
             <div class="notice">
-
-                {{ message }}
-
+                {{ m }}
             </div>
 
         {% endfor %}
 
     {% endwith %}
 
-
-    {% block content %}
-
-    {% endblock %}
-
+    {% block content %}{% endblock %}
 
 </main>
 
-
 </body>
-
 </html>
