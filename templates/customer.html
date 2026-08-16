@@ -1,33 +1,76 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
 
 {% block content %}
 
-<h1>پنل مشتری</h1>
-
 <div class="card">
-    <h2>سلام {{ customer.name }}</h2>
-    <p>شماره موبایل: {{ customer.phone }}</p>
+    <h1>👤 پنل مشتری</h1>
+    <p>خدمات موردنظر خود را انتخاب کنید.</p>
 
-    <a class="btn" href="/">خدمات سایت</a>
-    <a class="btn" href="/customer/logout">خروج از حساب</a>
+    <a
+        href="{{ url_for('tracking') }}"
+        class="btn"
+        style="margin-top:10px;"
+    >
+        🔎 پیگیری درخواست
+    </a>
+
+    <a
+        href="{{ url_for('customer_logout') }}"
+        class="btn"
+        style="margin-top:10px;background:#555;"
+    >
+        خروج
+    </a>
 </div>
 
-{% if notifications %}
-<h2>اعلان‌ها</h2>
 
-{% for n in notifications %}
+<h2>خدمات آنلاین</h2>
+
+{% for s in services %}
+
 <div class="card">
-    <h3>{{ n.title }}</h3>
-    <p>{{ n.message }}</p>
-    <small>{{ n.created_at }}</small>
+
+    <h2>{{ s.name }}</h2>
+
+    {% if s.description %}
+        <p>{{ s.description }}</p>
+    {% endif %}
+
+    {% if s.price %}
+        <p>
+            <strong>
+                قیمت:
+                {{ "{:,}".format(s.price) }}
+                ریال
+            </strong>
+        </p>
+    {% else %}
+        <p>
+            <strong>قیمت: تماس بگیرید</strong>
+        </p>
+    {% endif %}
+
+    <a
+        class="btn"
+        href="{{ url_for('service', sid=s.id) }}"
+    >
+        ثبت درخواست
+    </a>
+
 </div>
+
+{% else %}
+
+<div class="notice">
+    هنوز خدمتی فعال نشده است.
+</div>
+
 {% endfor %}
 
-{% endif %}
-
-<h2>درخواست‌های من</h2>
 
 {% if requests %}
+
+<h2>درخواست‌های من</h2>
 
 {% for r in requests %}
 
@@ -36,23 +79,13 @@
     <h3>{{ r.service_name }}</h3>
 
     <p>
-        <b>کد پیگیری:</b>
-        {{ r.tracking_code }}
+        کد پیگیری:
+        <strong>{{ r.tracking_code }}</strong>
     </p>
 
     <p>
-        <b>وضعیت:</b>
-        {{ r.status }}
-    </p>
-
-    <p>
-        <b>مبلغ:</b>
-        {{ "{:,}".format(r.total_price or 0) }} ریال
-    </p>
-
-    <p>
-        <b>پرداخت شده:</b>
-        {{ "{:,}".format(r.paid_price or 0) }} ریال
+        وضعیت:
+        <strong>{{ r.status }}</strong>
     </p>
 
     <a
@@ -65,12 +98,6 @@
 </div>
 
 {% endfor %}
-
-{% else %}
-
-<div class="notice">
-    هنوز هیچ درخواستی ثبت نکرده‌اید.
-</div>
 
 {% endif %}
 
