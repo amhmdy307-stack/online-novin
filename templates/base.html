@@ -1,1 +1,242 @@
-<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{{ settings.get('site_name','کافی‌نت آنلاین نوین') if settings else 'کافی‌نت آنلاین نوین' }}</title><style>body{font-family:Tahoma,Arial;background:#f5f7fb;margin:0;color:#172033}.wrap{max-width:1100px;margin:auto;padding:20px}.nav{background:#102a43;color:#fff;padding:14px}.nav a{color:#fff;margin-left:15px;text-decoration:none}.card{background:#fff;padding:18px;border-radius:14px;margin:12px 0;box-shadow:0 4px 18px #12345612}.btn{background:#1479d1;color:#fff;border:0;border-radius:9px;padding:10px 15px;text-decoration:none;display:inline-block}input,select,textarea{width:100%;padding:10px;border:1px solid #d5dce6;border-radius:9px;box-sizing:border-box}.field{margin:12px 0}.notice{background:#fff8e6;padding:12px;border-radius:10px}</style></head><body><div class="nav"><div class="wrap"><b>کافی‌نت آنلاین نوین</b> | <a href="/">خدمات</a> <a href="/tracking">پیگیری درخواست</a> <a href="/customer/login">ورود مشتری</a> <a href="/admin/login">پنل مدیریت</a></div></div><main class="wrap">{% with messages=get_flashed_messages() %}{% for m in messages %}<div class="notice">{{m}}</div>{% endfor %}{% endwith %}{% block content %}{% endblock %}</main></body></html>
+<!doctype html>
+<html lang="fa" dir="rtl">
+
+<head>
+
+<meta charset="utf-8">
+
+<meta
+name="viewport"
+content="width=device-width,initial-scale=1"
+>
+
+<title>
+{{ settings.get('site_name','کافی‌نت آنلاین نوین') if settings else 'کافی‌نت آنلاین نوین' }}
+</title>
+
+<style>
+
+body{
+    font-family:Tahoma,Arial,sans-serif;
+    background:#f5f7fb;
+    margin:0;
+    color:#172033;
+}
+
+.wrap{
+    max-width:1100px;
+    margin:auto;
+    padding:20px;
+}
+
+.nav{
+    background:#102a43;
+    color:#fff;
+    padding:14px 0;
+}
+
+.nav-inner{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:20px;
+    flex-wrap:wrap;
+}
+
+.logo-title{
+    font-size:20px;
+    font-weight:bold;
+}
+
+.nav-links{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    flex-wrap:wrap;
+}
+
+.nav a{
+    color:#fff;
+    text-decoration:none;
+    padding:9px 12px;
+    border-radius:8px;
+}
+
+.nav a:hover{
+    background:#ffffff18;
+}
+
+.customer-link{
+    background:#1479d1;
+}
+
+.admin-link{
+    background:#d97706;
+}
+
+.card{
+    background:#fff;
+    padding:18px;
+    border-radius:14px;
+    margin:12px 0;
+    box-shadow:0 4px 18px #12345612;
+}
+
+.btn{
+    background:#1479d1;
+    color:#fff;
+    border:0;
+    border-radius:9px;
+    padding:10px 15px;
+    text-decoration:none;
+    display:inline-block;
+    cursor:pointer;
+}
+
+input,
+select,
+textarea{
+    width:100%;
+    padding:10px;
+    border:1px solid #d5dce6;
+    border-radius:9px;
+    box-sizing:border-box;
+}
+
+.field{
+    margin:12px 0;
+}
+
+.notice{
+    background:#fff8e6;
+    padding:12px;
+    border-radius:10px;
+    margin-bottom:12px;
+}
+
+.panel-buttons{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    margin-top:10px;
+}
+
+.panel-buttons a{
+    text-decoration:none;
+    color:#fff;
+    padding:11px 16px;
+    border-radius:9px;
+}
+
+.customer-panel{
+    background:#1479d1;
+}
+
+.admin-panel{
+    background:#d97706;
+}
+
+@media(max-width:600px){
+
+    .nav-inner{
+        align-items:flex-start;
+        flex-direction:column;
+    }
+
+    .nav-links{
+        width:100%;
+    }
+
+    .nav-links a{
+        font-size:13px;
+    }
+
+}
+
+</style>
+
+</head>
+
+
+<body>
+
+
+<!-- =========================
+     نوار بالای سایت
+========================= -->
+
+<div class="nav">
+
+<div class="wrap nav-inner">
+
+
+<div class="logo-title">
+
+{{ settings.get('site_name','کافی‌نت آنلاین نوین') if settings else 'کافی‌نت آنلاین نوین' }}
+
+</div>
+
+
+<div class="nav-links">
+
+<a href="/">
+🏠 خدمات
+</a>
+
+<a href="/tracking">
+🔎 پیگیری درخواست
+</a>
+
+<a
+href="/customer/login"
+class="customer-link"
+>
+👤 پنل مشتری
+</a>
+
+<a
+href="/admin/login"
+class="admin-link"
+>
+🔐 پنل مدیریت
+</a>
+
+</div>
+
+
+</div>
+
+</div>
+
+
+<!-- =========================
+     محتوای اصلی
+========================= -->
+
+<main class="wrap">
+
+
+{% with messages=get_flashed_messages() %}
+
+{% for m in messages %}
+
+<div class="notice">
+{{ m }}
+</div>
+
+{% endfor %}
+
+{% endwith %}
+
+
+{% block content %}
+
+{% endblock %}
+
+
+</main>
+
+
+</body>
+
+</html>
