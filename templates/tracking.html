@@ -1,33 +1,41 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
 
 {% block content %}
 
-<h1>پیگیری درخواست</h1>
-
 <div class="card">
 
+    <h1>🔎 پیگیری پرونده</h1>
+
     <p>
-        کد پیگیری درخواست خود را وارد کنید.
+        کد پیگیری سه‌رقمی خود را وارد کنید.
     </p>
 
-    <form method="post">
+    <form method="get" action="{{ url_for('tracking') }}">
 
         <div class="field">
 
-            <label>کد پیگیری</label>
+            <label>
+                کد پیگیری
+            </label>
 
             <input
                 type="text"
                 name="code"
-                value="{{ request.args.get('code', '') }}"
-                placeholder="مثلاً NV-12345678"
+                inputmode="numeric"
+                maxlength="3"
+                pattern="[0-9]{3}"
+                placeholder="مثلاً 427"
+                value="{{ request.args.get('code','') }}"
                 required
             >
 
         </div>
 
-        <button class="btn" type="submit">
-            پیگیری
+        <button
+            class="btn"
+            type="submit"
+        >
+            🔎 پیگیری
         </button>
 
     </form>
@@ -39,62 +47,92 @@
 
 <div class="card">
 
-    <h2>اطلاعات درخواست</h2>
+    <h2>📁 وضعیت پرونده</h2>
 
     <p>
-        <b>نام مشتری:</b>
-        {{ result.customer_name }}
-    </p>
-
-    <p>
-        <b>خدمت:</b>
+        <strong>سامانه / خدمت:</strong>
         {{ result.service_name }}
     </p>
 
     <p>
-        <b>کد پیگیری:</b>
+        <strong>کد پیگیری:</strong>
         {{ result.tracking_code }}
     </p>
 
     <p>
-        <b>وضعیت:</b>
+        <strong>وضعیت پرونده:</strong>
         {{ result.status }}
     </p>
 
-    <p>
-        <b>مبلغ کل:</b>
-        {{ "{:,}".format(result.total_price or 0) }} ریال
-    </p>
+    {% if result.estimated_time %}
 
-    <p>
-        <b>مبلغ پرداخت‌شده:</b>
-        {{ "{:,}".format(result.paid_price or 0) }} ریال
-    </p>
+        <p>
+            <strong>زمان تقریبی:</strong>
+            {{ result.estimated_time }}
+        </p>
 
-    <p>
-        <b>تاریخ ثبت:</b>
-        {{ result.created_at }}
-    </p>
+    {% endif %}
+
+
+    {% if result.expert_name %}
+
+        <p>
+            <strong>کارشناس:</strong>
+            {{ result.expert_name }}
+        </p>
+
+    {% endif %}
+
+
+    {% if result.customer_note %}
+
+        <div class="notice">
+
+            <strong>
+                توضیحات:
+            </strong>
+
+            <br>
+
+            {{ result.customer_note }}
+
+        </div>
+
+    {% endif %}
+
+
+    <a
+        class="btn"
+        href="{{ url_for('customer_request', rid=result.id) }}"
+    >
+        💬 مشاهده پرونده و ارتباط با کارشناس
+    </a>
 
 </div>
 
-{% elif request.values.get('code') %}
 
-<div class="notice">
-    ❌ درخواست موردنظر با این کد پیگیری پیدا نشد.
+{% elif request.args.get('code') %}
+
+<div class="card">
+
+    <div class="notice">
+
+        ❌ پرونده‌ای با این کد پیگیری پیدا نشد.
+
+    </div>
+
 </div>
 
 {% endif %}
 
 
-<div style="margin-top:20px;">
+<div class="card">
 
-    <a class="btn" href="/">
-        بازگشت به خدمات
-    </a>
-
-    <a class="btn" href="/customer/login">
-        ورود مشتری
+    <a
+        class="btn"
+        href="{{ url_for('customer_login') }}"
+    >
+        👤 ورود به پنل مشتری
     </a>
 
 </div>
