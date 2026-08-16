@@ -1,7 +1,3 @@
-# app.py
-# نسخه توسعه‌یافته کافی‌نت آنلاین نوین
-# مدیریت ظاهر سایت از پنل مدیریت
-
 import os
 import json
 import sqlite3
@@ -25,7 +21,7 @@ from werkzeug.utils import secure_filename
 
 
 # =========================================================
-# تنظیمات اصلی
+# SETTINGS
 # =========================================================
 
 BASE = os.path.dirname(os.path.abspath(__file__))
@@ -221,10 +217,6 @@ def init_db():
 
     """)
 
-    # =====================================================
-    # مدیر اولیه
-    # =====================================================
-
     if not con.execute(
         "SELECT id FROM admins LIMIT 1"
     ).fetchone():
@@ -243,52 +235,38 @@ def init_db():
             )
         )
 
-
-    # =====================================================
-    # تنظیمات پیش‌فرض سایت
-    # =====================================================
-
     defaults = {
-
-        # اطلاعات اصلی
         "site_name": "کافی‌نت آنلاین نوین",
         "manager": "احمد محمدی مهر",
         "phone": "09920345139",
 
-        # ظاهر
         "logo": "",
+
         "primary_color": "#102a43",
         "secondary_color": "#1479d1",
         "background_color": "#f5f7fb",
         "card_color": "#ffffff",
         "text_color": "#172033",
 
-        # متن‌های سایت
         "hero_title": "خدمات آنلاین کافی‌نت نوین",
         "hero_text": "تمام خدمات کافی‌نت را به‌صورت غیرحضوری دریافت کنید.",
         "warning_text": "⚠️ پرداخت خدمات فقط از طریق درگاه رسمی سایت انجام می‌شود.",
 
-        # نمایش بخش‌ها
         "show_hero": "1",
         "show_services": "1",
         "show_tracking": "1",
         "show_customer_login": "1",
 
-        # رهگیری
         "tracking_prefix": "NV-",
         "tracking_digits": "8",
         "tracking_separator": "",
 
-        # ورود مشتری
         "customer_login_mode": "phone",
         "customer_otp_enabled": "0",
 
-        # امکانات
         "sms_enabled": "0",
         "payment_enabled": "0"
-
     }
-
 
     for key, value in defaults.items():
 
@@ -298,100 +276,61 @@ def init_db():
             (key, value)
             VALUES (?, ?)
             """,
-            (
-                key,
-                value
-            )
+            (key, value)
         )
-
-
-    # =====================================================
-    # تنظیم پیامک
-    # =====================================================
 
     con.execute(
         """
         INSERT OR IGNORE INTO sms_settings
-        (
-            id,
-            enabled,
-            provider,
-            api_key,
-            api_secret,
-            sender
-        )
+        (id, enabled, provider, api_key, api_secret, sender)
         VALUES (1, 0, '', '', '', '')
         """
     )
 
-
-    # =====================================================
-    # تنظیم درگاه
-    # =====================================================
-
     con.execute(
         """
         INSERT OR IGNORE INTO payment_settings
-        (
-            id,
-            enabled,
-            gateway,
-            merchant_id,
-            test_mode
-        )
+        (id, enabled, gateway, merchant_id, test_mode)
         VALUES (1, 0, '', '', 1)
         """
     )
-
-
-    # =====================================================
-    # خدمات اولیه
-    # =====================================================
 
     if not con.execute(
         "SELECT id FROM services LIMIT 1"
     ).fetchone():
 
         services = [
-
             (
                 "مسکن ملی",
                 "ثبت درخواست مسکن ملی و بارگذاری مدارک",
                 "مسکن"
             ),
-
             (
                 "ثبت‌نام سهام نوزاد",
                 "ثبت اطلاعات پدر و فرزند",
                 "سهام نوزاد"
             ),
-
             (
                 "ثبت‌نام خودرو",
                 "ایران‌خودرو، سایپا و بهمن موتور",
                 "خودرو"
             ),
-
             (
                 "چک صیادی",
                 "ثبت، تأیید یا رد چک صیادی",
                 "چک صیادی"
             ),
-
             (
                 "ثبت قرارداد",
                 "اجاره‌نامه و قولنامه",
                 "قرارداد"
             ),
-
             (
                 "جواز کسب",
                 "ثبت درخواست جواز کسب",
                 "جواز کسب"
             )
-
         ]
-
 
         for name, description, category in services:
 
@@ -426,7 +365,6 @@ def init_db():
                 )
             )
 
-
     con.commit()
     con.close()
 
@@ -439,7 +377,6 @@ init_db()
 # =========================================================
 
 def admin_required():
-
     return session.get("admin") is True
 
 
@@ -472,33 +409,24 @@ def generate_tracking_code():
     )
 
     try:
-
         digits = int(
             settings.get(
                 "tracking_digits",
                 "8"
             )
         )
-
     except ValueError:
-
         digits = 8
-
 
     digits = max(
         4,
-        min(
-            digits,
-            20
-        )
+        min(digits, 20)
     )
-
 
     separator = settings.get(
         "tracking_separator",
         ""
     )
-
 
     while True:
 
@@ -507,14 +435,7 @@ def generate_tracking_code():
             for _ in range(digits)
         )
 
-        code = (
-            prefix
-            +
-            separator
-            +
-            number
-        )
-
+        code = prefix + separator + number
 
         con = db()
 
@@ -529,9 +450,7 @@ def generate_tracking_code():
 
         con.close()
 
-
         if not exists:
-
             return code
 
 
@@ -546,44 +465,32 @@ def save_uploaded_files(
             field_name
         )
 
-
         for file in uploaded:
 
             if not file or not file.filename:
-
                 continue
-
 
             original_name = secure_filename(
                 file.filename
             )
 
-
             if not original_name:
-
                 continue
-
 
             stored_name = (
                 secrets.token_hex(8)
-                +
-                "_"
-                +
-                original_name
+                + "_"
+                + original_name
             )
-
 
             path = os.path.join(
                 UPLOADS,
                 stored_name
             )
 
-
             file.save(path)
 
-
             con = db()
-
 
             con.execute(
                 """
@@ -612,7 +519,6 @@ def save_uploaded_files(
                 )
             )
 
-
             con.commit()
             con.close()
 
@@ -624,7 +530,6 @@ def add_notification(
 ):
 
     con = db()
-
 
     con.execute(
         """
@@ -647,7 +552,6 @@ def add_notification(
         )
     )
 
-
     con.commit()
     con.close()
 
@@ -661,7 +565,6 @@ def home():
 
     con = db()
 
-
     services = con.execute(
         """
         SELECT *
@@ -671,17 +574,12 @@ def home():
         """
     ).fetchall()
 
-
     con.close()
-
-
-    settings = get_settings()
-
 
     return render_template(
         "home.html",
         services=services,
-        settings=settings
+        settings=get_settings()
     )
 
 
@@ -697,7 +595,6 @@ def service(sid):
 
     con = db()
 
-
     service_item = con.execute(
         """
         SELECT *
@@ -707,41 +604,27 @@ def service(sid):
         (sid,)
     ).fetchone()
 
-
     con.close()
 
-
     if not service_item:
-
         return "خدمت موردنظر پیدا نشد.", 404
 
-
     if not service_item["active"]:
-
         return "این خدمت فعال نیست.", 404
 
-
     try:
-
         fields = json.loads(
             service_item["fields_json"] or "[]"
         )
-
     except Exception:
-
         fields = []
 
-
     try:
-
         documents = json.loads(
             service_item["documents_json"] or "[]"
         )
-
     except Exception:
-
         documents = []
-
 
     if request.method == "POST":
 
@@ -750,48 +633,29 @@ def service(sid):
             ""
         ).strip()
 
-
         national_id = request.form.get(
             "national_id",
             ""
         ).strip()
-
 
         phone = request.form.get(
             "phone",
             ""
         ).strip()
 
-
         if not name:
-
-            flash(
-                "نام و نام خانوادگی الزامی است."
-            )
-
+            flash("نام و نام خانوادگی الزامی است.")
             return redirect(request.url)
-
 
         if not national_id:
-
-            flash(
-                "کد ملی الزامی است."
-            )
-
+            flash("کد ملی الزامی است.")
             return redirect(request.url)
-
 
         if not phone:
-
-            flash(
-                "شماره تلفن الزامی است."
-            )
-
+            flash("شماره تلفن الزامی است.")
             return redirect(request.url)
 
-
         con = db()
-
 
         customer = con.execute(
             """
@@ -807,11 +671,9 @@ def service(sid):
             )
         ).fetchone()
 
-
         if customer:
 
             customer_id = customer["id"]
-
 
             con.execute(
                 """
@@ -829,7 +691,6 @@ def service(sid):
                     customer_id
                 )
             )
-
 
         else:
 
@@ -850,12 +711,9 @@ def service(sid):
                 )
             )
 
-
             customer_id = cursor.lastrowid
 
-
         data = {}
-
 
         for key in request.form.keys():
 
@@ -864,14 +722,9 @@ def service(sid):
                 "national_id",
                 "phone"
             ):
-
                 continue
 
-
-            values = request.form.getlist(
-                key
-            )
-
+            values = request.form.getlist(key)
 
             data[key] = (
                 values
@@ -879,15 +732,9 @@ def service(sid):
                 else values[0]
             )
 
-
         tracking_code = generate_tracking_code()
 
-
-        total_price = (
-            service_item["price"]
-            or 0
-        )
-
+        total_price = service_item["price"] or 0
 
         cursor = con.execute(
             """
@@ -923,19 +770,15 @@ def service(sid):
             )
         )
 
-
         request_id = cursor.lastrowid
-
 
         con.commit()
         con.close()
-
 
         save_uploaded_files(
             request_id,
             customer_id
         )
-
 
         add_notification(
             customer_id,
@@ -943,12 +786,10 @@ def service(sid):
             f"درخواست شما با کد {tracking_code} ثبت شد."
         )
 
-
         return render_template(
             "success.html",
             code=tracking_code
         )
-
 
     return render_template(
         "service.html",
@@ -969,81 +810,41 @@ def service(sid):
 )
 def customer_login():
 
-    if request.method == "POST":
-
-        phone = request.form.get(
-            "phone",
-            ""
-        ).strip()
-
-
-        if not phone:
-
-            flash(
-                "شماره موبایل را وارد کنید."
-            )
-
-            return redirect(request.url)
-
-
-        con = db()
-
-
-        customer = con.execute(
-            """
-            SELECT *
-            FROM customers
-            WHERE phone = ?
-            """,
-            (phone,)
-        ).fetchone()
-
-
-        if customer:
-
-            customer_id = customer["id"]
-
-
-        else:
-
-            cursor = con.execute(
-                """
-                INSERT INTO customers
-                (
-                    name,
-                    national_id,
-                    phone
-                )
-                VALUES (?, ?, ?)
-                """,
-                (
-                    "مشتری جدید",
-                    "",
-                    phone
-                )
-            )
-
-
-            customer_id = cursor.lastrowid
-
-
-        con.commit()
-        con.close()
-
-
-        session["customer_id"] = customer_id
-
-
+    # اگر قبلاً وارد شده
+    if session.get("customer_id"):
         return redirect(
-            url_for(
-                "customer_dashboard"
-            )
+            url_for("customer_dashboard")
         )
 
+    # ورود مستقیم بدون شماره موبایل
+    con = db()
 
-    return render_template(
-        "customer_login.html",
-        settings=get_settings()
+    cursor = con.execute(
+        """
+        INSERT INTO customers
+        (
+            name,
+            national_id,
+            phone
+        )
+        VALUES (?, ?, ?)
+        """,
+        (
+            "مشتری",
+            "",
+            ""
+        )
+    )
+
+    customer_id = cursor.lastrowid
+
+    con.commit()
+    con.close()
+
+    session["customer_id"] = customer_id
+
+    return redirect(
+        url_for("customer_dashboard")
     )
 
 
@@ -1055,11 +856,8 @@ def customer_logout():
         None
     )
 
-
     return redirect(
-        url_for(
-            "customer_login"
-        )
+        url_for("home")
     )
 
 
@@ -1074,18 +872,12 @@ def customer_dashboard():
         "customer_id"
     )
 
-
     if not customer_id:
-
         return redirect(
-            url_for(
-                "customer_login"
-            )
+            url_for("customer_login")
         )
 
-
     con = db()
-
 
     customer = con.execute(
         """
@@ -1095,7 +887,6 @@ def customer_dashboard():
         """,
         (customer_id,)
     ).fetchone()
-
 
     requests_list = con.execute(
         """
@@ -1111,7 +902,6 @@ def customer_dashboard():
         (customer_id,)
     ).fetchall()
 
-
     notifications = con.execute(
         """
         SELECT *
@@ -1123,15 +913,24 @@ def customer_dashboard():
         (customer_id,)
     ).fetchall()
 
+    # خدمات فعال
+    services = con.execute(
+        """
+        SELECT *
+        FROM services
+        WHERE active = 1
+        ORDER BY sort_order ASC, id DESC
+        """
+    ).fetchall()
 
     con.close()
-
 
     return render_template(
         "customer.html",
         customer=customer,
         requests=requests_list,
         notifications=notifications,
+        services=services,
         settings=get_settings()
     )
 
@@ -1149,18 +948,12 @@ def customer_request(rid):
         "customer_id"
     )
 
-
     if not customer_id:
-
         return redirect(
-            url_for(
-                "customer_login"
-            )
+            url_for("customer_login")
         )
 
-
     con = db()
-
 
     result = con.execute(
         """
@@ -1179,7 +972,6 @@ def customer_request(rid):
         )
     ).fetchone()
 
-
     messages = con.execute(
         """
         SELECT *
@@ -1189,7 +981,6 @@ def customer_request(rid):
         """,
         (rid,)
     ).fetchall()
-
 
     files = con.execute(
         """
@@ -1201,14 +992,10 @@ def customer_request(rid):
         (rid,)
     ).fetchall()
 
-
     con.close()
 
-
     if not result:
-
         return "درخواست پیدا نشد.", 404
-
 
     return render_template(
         "customer_request.html",
@@ -1232,24 +1019,17 @@ def customer_message(rid):
         "customer_id"
     )
 
-
     if not customer_id:
-
         return redirect(
-            url_for(
-                "customer_login"
-            )
+            url_for("customer_login")
         )
-
 
     message = request.form.get(
         "message",
         ""
     ).strip()
 
-
     if not message:
-
         return redirect(
             url_for(
                 "customer_request",
@@ -1257,9 +1037,7 @@ def customer_message(rid):
             )
         )
 
-
     con = db()
-
 
     valid = con.execute(
         """
@@ -1273,7 +1051,6 @@ def customer_message(rid):
             customer_id
         )
     ).fetchone()
-
 
     if valid:
 
@@ -1300,12 +1077,9 @@ def customer_message(rid):
             )
         )
 
-
         con.commit()
 
-
     con.close()
-
 
     return redirect(
         url_for(
@@ -1327,17 +1101,14 @@ def tracking():
 
     result = None
 
-
     code = request.values.get(
         "code",
         ""
     ).strip()
 
-
     if code:
 
         con = db()
-
 
         result = con.execute(
             """
@@ -1355,9 +1126,7 @@ def tracking():
             (code,)
         ).fetchone()
 
-
         con.close()
-
 
     return render_template(
         "tracking.html",
@@ -1383,15 +1152,12 @@ def admin_login():
             ""
         ).strip()
 
-
         password = request.form.get(
             "password",
             ""
         )
 
-
         con = db()
-
 
         admin = con.execute(
             """
@@ -1403,9 +1169,7 @@ def admin_login():
             (username,)
         ).fetchone()
 
-
         con.close()
-
 
         if (
             admin
@@ -1419,16 +1183,13 @@ def admin_login():
             session["admin_id"] = admin["id"]
             session["admin_role"] = admin["role"]
 
-
             return redirect(
                 url_for("admin")
             )
 
-
         flash(
             "نام کاربری یا رمز عبور اشتباه است."
         )
-
 
     return render_template(
         "admin_login.html",
@@ -1441,11 +1202,8 @@ def admin_logout():
 
     session.clear()
 
-
     return redirect(
-        url_for(
-            "admin_login"
-        )
+        url_for("home")
     )
 
 
@@ -1457,16 +1215,11 @@ def admin_logout():
 def admin():
 
     if not admin_required():
-
         return redirect(
-            url_for(
-                "admin_login"
-            )
+            url_for("admin_login")
         )
 
-
     con = db()
-
 
     services = con.execute(
         """
@@ -1475,7 +1228,6 @@ def admin():
         ORDER BY sort_order ASC, id DESC
         """
     ).fetchall()
-
 
     customers = con.execute(
         """
@@ -1490,7 +1242,6 @@ def admin():
         ORDER BY c.id DESC
         """
     ).fetchall()
-
 
     requests_list = con.execute(
         """
@@ -1508,19 +1259,14 @@ def admin():
         """
     ).fetchall()
 
-
     con.close()
-
-
-    settings = get_settings()
-
 
     return render_template(
         "admin.html",
         services=services,
         customers=customers,
         requests=requests_list,
-        settings=settings
+        settings=get_settings()
     )
 
 
@@ -1534,73 +1280,54 @@ def admin():
 def admin_service_save():
 
     if not admin_required():
-
         return redirect(
-            url_for(
-                "admin_login"
-            )
+            url_for("admin_login")
         )
-
 
     sid = request.form.get(
         "id",
         ""
     ).strip()
 
-
     name = request.form.get(
         "name",
         ""
     ).strip()
-
 
     description = request.form.get(
         "description",
         ""
     ).strip()
 
-
     category = request.form.get(
         "category",
         ""
     ).strip()
-
 
     image = request.form.get(
         "image",
         ""
     ).strip()
 
-
     try:
-
         price = int(
             request.form.get(
                 "price",
                 "0"
-            )
-            or 0
+            ) or 0
         )
-
     except ValueError:
-
         price = 0
 
-
     try:
-
         sort_order = int(
             request.form.get(
                 "sort_order",
                 "0"
-            )
-            or 0
+            ) or 0
         )
-
     except ValueError:
-
         sort_order = 0
-
 
     active = (
         1
@@ -1608,39 +1335,27 @@ def admin_service_save():
         else 0
     )
 
-
     fields_json = request.form.get(
         "fields_json",
         "[]"
     )
-
 
     documents_json = request.form.get(
         "documents_json",
         "[]"
     )
 
-
     try:
-
         json.loads(fields_json)
-
     except Exception:
-
         fields_json = "[]"
 
-
     try:
-
         json.loads(documents_json)
-
     except Exception:
-
         documents_json = "[]"
 
-
     con = db()
-
 
     if sid:
 
@@ -1672,7 +1387,6 @@ def admin_service_save():
                 sid
             )
         )
-
 
     else:
 
@@ -1709,10 +1423,8 @@ def admin_service_save():
             )
         )
 
-
     con.commit()
     con.close()
-
 
     return redirect(
         url_for("admin")
@@ -1729,27 +1441,18 @@ def admin_service_save():
 def admin_request_status():
 
     if not admin_required():
-
         return redirect(
-            url_for(
-                "admin_login"
-            )
+            url_for("admin_login")
         )
 
-
-    request_id = request.form.get(
-        "id"
-    )
-
+    request_id = request.form.get("id")
 
     status = request.form.get(
         "status",
         "جدید"
     )
 
-
     con = db()
-
 
     row = con.execute(
         """
@@ -1759,7 +1462,6 @@ def admin_request_status():
         """,
         (request_id,)
     ).fetchone()
-
 
     con.execute(
         """
@@ -1773,10 +1475,8 @@ def admin_request_status():
         )
     )
 
-
     con.commit()
     con.close()
-
 
     if row:
 
@@ -1785,7 +1485,6 @@ def admin_request_status():
             "تغییر وضعیت درخواست",
             f"وضعیت درخواست شما به «{status}» تغییر کرد."
         )
-
 
     return redirect(
         url_for("admin")
@@ -1802,16 +1501,11 @@ def admin_request_status():
 def admin_request(rid):
 
     if not admin_required():
-
         return redirect(
-            url_for(
-                "admin_login"
-            )
+            url_for("admin_login")
         )
 
-
     con = db()
-
 
     result = con.execute(
         """
@@ -1831,7 +1525,6 @@ def admin_request(rid):
         (rid,)
     ).fetchone()
 
-
     messages = con.execute(
         """
         SELECT *
@@ -1841,7 +1534,6 @@ def admin_request(rid):
         """,
         (rid,)
     ).fetchall()
-
 
     files = con.execute(
         """
@@ -1853,14 +1545,10 @@ def admin_request(rid):
         (rid,)
     ).fetchall()
 
-
     con.close()
 
-
     if not result:
-
         return "درخواست پیدا نشد.", 404
-
 
     return render_template(
         "admin_request.html",
@@ -1881,22 +1569,16 @@ def admin_request(rid):
 def admin_message(rid):
 
     if not admin_required():
-
         return redirect(
-            url_for(
-                "admin_login"
-            )
+            url_for("admin_login")
         )
-
 
     message = request.form.get(
         "message",
         ""
     ).strip()
 
-
     if not message:
-
         return redirect(
             url_for(
                 "admin_request",
@@ -1904,9 +1586,7 @@ def admin_message(rid):
             )
         )
 
-
     con = db()
-
 
     request_item = con.execute(
         """
@@ -1916,7 +1596,6 @@ def admin_message(rid):
         """,
         (rid,)
     ).fetchone()
-
 
     if request_item:
 
@@ -1943,12 +1622,9 @@ def admin_message(rid):
             )
         )
 
-
         con.commit()
 
-
     con.close()
-
 
     if request_item:
 
@@ -1957,7 +1633,6 @@ def admin_message(rid):
             "پیام پشتیبانی",
             message
         )
-
 
     return redirect(
         url_for(
@@ -1977,22 +1652,14 @@ def admin_message(rid):
 def admin_settings():
 
     if not admin_required():
-
         return redirect(
-            url_for(
-                "admin_login"
-            )
+            url_for("admin_login")
         )
 
-
-    # تمام تنظیماتی که از پنل قابل تغییر هستند
-
     keys = (
-
         "site_name",
         "manager",
         "phone",
-
         "logo",
 
         "primary_color",
@@ -2019,12 +1686,9 @@ def admin_settings():
 
         "sms_enabled",
         "payment_enabled"
-
     )
 
-
     con = db()
-
 
     for key in keys:
 
@@ -2033,14 +1697,10 @@ def admin_settings():
             ""
         ).strip()
 
-
         con.execute(
             """
             INSERT OR REPLACE INTO settings
-            (
-                key,
-                value
-            )
+            (key, value)
             VALUES (?, ?)
             """,
             (
@@ -2049,15 +1709,12 @@ def admin_settings():
             )
         )
 
-
     con.commit()
     con.close()
-
 
     flash(
         "تنظیمات سایت با موفقیت ذخیره شد."
     )
-
 
     return redirect(
         url_for("admin")
@@ -2074,24 +1731,18 @@ def admin_settings():
 def admin_password():
 
     if not admin_required():
-
         return redirect(
-            url_for(
-                "admin_login"
-            )
+            url_for("admin_login")
         )
-
 
     new_password = request.form.get(
         "password",
         ""
     )
 
-
     if len(new_password) >= 6:
 
         con = db()
-
 
         con.execute(
             """
@@ -2105,15 +1756,12 @@ def admin_password():
             )
         )
 
-
         con.commit()
         con.close()
-
 
         flash(
             "رمز مدیریت تغییر کرد."
         )
-
 
     return redirect(
         url_for("admin")
@@ -2130,16 +1778,11 @@ def admin_password():
 def admin_service_delete(sid):
 
     if not admin_required():
-
         return redirect(
-            url_for(
-                "admin_login"
-            )
+            url_for("admin_login")
         )
 
-
     con = db()
-
 
     con.execute(
         """
@@ -2150,10 +1793,8 @@ def admin_service_delete(sid):
         (sid,)
     )
 
-
     con.commit()
     con.close()
-
 
     return redirect(
         url_for("admin")
@@ -2189,7 +1830,7 @@ def health():
 
 
 # =========================================================
-# LOCAL
+# RUN
 # =========================================================
 
 if __name__ == "__main__":
@@ -2202,4 +1843,4 @@ if __name__ == "__main__":
                 5000
             )
         )
-    )
+        )
