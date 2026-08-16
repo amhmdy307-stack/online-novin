@@ -3,128 +3,203 @@
 {% block content %}
 
 <style>
-    .request-box {
-        background: {{ settings.get('card_color','#ffffff') }};
-        border-radius: 18px;
+    .request-header {
+        background: #102a43;
+        color: white;
+        border-radius: 20px;
         padding: 22px;
         margin-bottom: 18px;
-        box-shadow: 0 5px 20px rgba(0,0,0,.07);
     }
 
-    .request-box h1,
-    .request-box h2 {
-        color: {{ settings.get('primary_color','#102a43') }};
+    .request-header h1 {
+        margin-top: 0;
     }
 
     .info-grid {
         display: grid;
         grid-template-columns: repeat(2, 1fr);
         gap: 12px;
+        margin-top: 15px;
     }
 
-    .info {
-        background: #f5f7fb;
+    .info-box {
+        background: rgba(255,255,255,.10);
+        border-radius: 12px;
         padding: 12px;
-        border-radius: 10px;
     }
 
-    .info strong {
-        display: block;
-        margin-top: 5px;
+    .card {
+        margin-bottom: 18px;
     }
 
     .status {
         display: inline-block;
-        padding: 8px 14px;
+        padding: 7px 13px;
         border-radius: 20px;
-        background: #e8f3ff;
-        color: #1479d1;
+        background: #e8f1fb;
+        color: #102a43;
         font-weight: bold;
     }
 
-    .chat {
-        background: {{ settings.get('card_color','#ffffff') }};
-        border-radius: 18px;
-        padding: 20px;
-        box-shadow: 0 5px 20px rgba(0,0,0,.07);
-    }
-
     .message {
-        padding: 12px;
-        border-radius: 12px;
-        margin: 10px 0;
-        line-height: 1.8;
-    }
-
-    .message.admin {
-        background: #e8f3ff;
-        border-right: 4px solid #1479d1;
+        padding: 13px;
+        border-radius: 14px;
+        margin-bottom: 10px;
+        max-width: 85%;
     }
 
     .message.customer {
-        background: #f3f4f6;
-        border-right: 4px solid #555;
+        background: #e9f5ff;
+        margin-right: auto;
+    }
+
+    .message.admin {
+        background: #eef2f5;
+        margin-left: auto;
     }
 
     .message small {
         display: block;
+        margin-top: 7px;
         color: #777;
-        margin-top: 5px;
+        font-size: 11px;
+    }
+
+    .file-list {
+        margin-top: 12px;
     }
 
     .file-item {
+        padding: 10px;
         border-bottom: 1px solid #eee;
-        padding: 12px 0;
     }
 
-    @media(max-width:700px) {
+    .file-item a {
+        text-decoration: none;
+    }
+
+    textarea {
+        width: 100%;
+        box-sizing: border-box;
+        min-height: 100px;
+        padding: 12px;
+        border-radius: 12px;
+        border: 1px solid #ddd;
+        font-family: inherit;
+        resize: vertical;
+    }
+
+    input[type="file"] {
+        width: 100%;
+        margin: 10px 0;
+    }
+
+    .btn {
+        display: inline-block;
+        border: 0;
+        border-radius: 10px;
+        padding: 11px 16px;
+        text-decoration: none;
+        cursor: pointer;
+        font-weight: bold;
+        background: #1479d1;
+        color: white !important;
+    }
+
+    .btn-dark {
+        background: #102a43;
+    }
+
+    .btn-green {
+        background: #159957;
+    }
+
+    .btn-gray {
+        background: #555;
+    }
+
+    @media(max-width:650px) {
+
         .info-grid {
             grid-template-columns: 1fr;
         }
+
+        .message {
+            max-width: 95%;
+        }
+
     }
 </style>
 
 
-<!-- =====================================================
-     اطلاعات پرونده
-===================================================== -->
+<!-- =========================================================
+     HEADER پرونده
+========================================================= -->
 
-<div class="request-box">
+<div class="request-header">
 
     <h1>
-        📁 پرونده من
+        📁 پرونده خدمات
     </h1>
+
+    <h2>
+        {{ request_item.service_name }}
+    </h2>
+
 
     <div class="info-grid">
 
-        <div class="info">
-            نام سامانه
+        <div class="info-box">
+
             <strong>
-                {{ request_item.service_name }}
+                کد پیگیری
             </strong>
+
+            <br>
+
+            {{ request_item.tracking_code }}
+
         </div>
 
-        <div class="info">
-            کد پیگیری
+
+        <div class="info-box">
+
             <strong>
-                {{ request_item.tracking_code }}
+                وضعیت پرونده
             </strong>
+
+            <br>
+
+            <span class="status">
+                {{ request_item.status }}
+            </span>
+
         </div>
 
-        <div class="info">
-            وضعیت پرونده
+
+        <div class="info-box">
+
             <strong>
-                <span class="status">
-                    {{ request_item.status }}
-                </span>
+                نام کارشناس
             </strong>
+
+            <br>
+
+            {{ request_item.expert_name or 'هنوز تعیین نشده' }}
+
         </div>
 
-        <div class="info">
-            تاریخ ثبت درخواست
+
+        <div class="info-box">
+
             <strong>
-                {{ request_item.created_at }}
+                زمان تقریبی انجام
             </strong>
+
+            <br>
+
+            {{ request_item.estimated_time or 'هنوز تعیین نشده' }}
+
         </div>
 
     </div>
@@ -132,95 +207,26 @@
 </div>
 
 
-<!-- =====================================================
-     اطلاعات مالی
-===================================================== -->
+<!-- =========================================================
+     توضیحات پرونده
+========================================================= -->
 
-<div class="request-box">
-
-    <h2>
-        💰 وضعیت پرداخت
-    </h2>
-
-    <p>
-        مبلغ خدمت:
-        <strong>
-            {{ "{:,}".format(request_item.total_price or 0) }}
-            ریال
-        </strong>
-    </p>
-
-    <p>
-        مبلغ پرداخت‌شده:
-        <strong>
-            {{ "{:,}".format(request_item.paid_price or 0) }}
-            ریال
-        </strong>
-    </p>
-
-    <p>
-        مبلغ باقی‌مانده:
-        <strong>
-            {{ "{:,}".format(
-                (request_item.total_price or 0)
-                -
-                (request_item.paid_price or 0)
-            ) }}
-            ریال
-        </strong>
-    </p>
-
-</div>
-
-
-<!-- =====================================================
-     فایل‌های پرونده
-===================================================== -->
-
-<div class="request-box">
+<div class="card">
 
     <h2>
-        📎 مدارک پرونده
+        📝 توضیحات پرونده
     </h2>
 
-    {% if files %}
+    {% if request_item.customer_note %}
 
-        {% for file in files %}
-
-        <div class="file-item">
-
-            <strong>
-                {{ file.original_name }}
-            </strong>
-
-            <br>
-
-            <small>
-                {{ file.created_at }}
-            </small>
-
-            <br>
-
-            <a
-                class="btn"
-                style="margin-top:8px;"
-                href="{{ url_for(
-                    'uploaded_file',
-                    filename=file.stored_name
-                ) }}"
-                target="_blank"
-            >
-                👁 مشاهده فایل
-            </a>
-
-        </div>
-
-        {% endfor %}
+        <p>
+            {{ request_item.customer_note }}
+        </p>
 
     {% else %}
 
         <p>
-            هنوز مدرکی برای این پرونده ثبت نشده است.
+            توضیحی برای این پرونده ثبت نشده است.
         </p>
 
     {% endif %}
@@ -228,69 +234,182 @@
 </div>
 
 
-<!-- =====================================================
-     ارتباط با کارشناس / مدیر
-===================================================== -->
+<!-- =========================================================
+     اطلاعات ثبت درخواست
+========================================================= -->
 
-<div class="chat">
+<div class="card">
+
+    <h2>
+        📄 اطلاعات درخواست
+    </h2>
+
+    {% if request_item.data_json %}
+
+        {% set data = request_item.data_json|from_json %}
+
+        {% for key, value in data.items() %}
+
+            <p>
+
+                <strong>
+                    {{ key }}:
+                </strong>
+
+                {{ value }}
+
+            </p>
+
+        {% else %}
+
+            <p>
+                اطلاعات تکمیلی ثبت نشده است.
+            </p>
+
+        {% endfor %}
+
+    {% else %}
+
+        <p>
+            اطلاعات تکمیلی ثبت نشده است.
+        </p>
+
+    {% endif %}
+
+</div>
+
+
+<!-- =========================================================
+     مدارک و فایل‌ها
+========================================================= -->
+
+<div class="card">
+
+    <h2>
+        📎 مدارک و فایل‌های پرونده
+    </h2>
+
+
+    {% if files %}
+
+        <div class="file-list">
+
+            {% for file in files %}
+
+                <div class="file-item">
+
+                    📄
+
+                    {{ file.original_name }}
+
+                    <br>
+
+                    <a
+                        class="btn"
+                        href="{{ url_for('uploaded_file', filename=file.stored_name) }}"
+                        target="_blank"
+                        download
+                        style="margin-top:8px;"
+                    >
+                        دانلود فایل
+                    </a>
+
+                </div>
+
+            {% endfor %}
+
+        </div>
+
+    {% else %}
+
+        <p>
+            هنوز فایلی برای این پرونده ثبت نشده است.
+        </p>
+
+    {% endif %}
+
+</div>
+
+
+<!-- =========================================================
+     ارتباط با کارشناس
+========================================================= -->
+
+<div class="card">
 
     <h2>
         💬 ارتباط با کارشناس
     </h2>
 
-    {% if messages %}
+    <p>
+        از این قسمت می‌توانید درباره پرونده با کارشناس یا مدیریت سایت در ارتباط باشید.
+    </p>
 
-        {% for message in messages %}
 
-        <div
-            class="message
-            {% if message.sender == 'admin' %}
-                admin
-            {% else %}
-                customer
-            {% endif %}"
-        >
+    <div style="margin-top:15px;">
 
-            <strong>
+        {% if messages %}
 
-                {% if message.sender == 'admin' %}
-                    👨‍💼 کارشناس / مدیریت
-                {% else %}
-                    👤 شما
-                {% endif %}
+            {% for message in messages %}
 
-            </strong>
+                <div
+                    class="message
+                    {% if message.sender == 'customer' %}
+                        customer
+                    {% else %}
+                        admin
+                    {% endif %}"
+                >
 
-            <div>
-                {{ message.message }}
-            </div>
+                    {% if message.sender == 'customer' %}
 
-            <small>
-                {{ message.created_at }}
-            </small>
+                        <strong>
+                            شما
+                        </strong>
 
-        </div>
+                    {% else %}
 
-        {% endfor %}
+                        <strong>
+                            کارشناس / مدیریت
+                        </strong>
 
-    {% else %}
+                    {% endif %}
 
-        <p>
-            هنوز پیامی ارسال نشده است.
-        </p>
 
-    {% endif %}
+                    <div style="margin-top:7px;">
+                        {{ message.message }}
+                    </div>
 
+
+                    <small>
+                        {{ message.created_at }}
+                    </small>
+
+                </div>
+
+            {% endfor %}
+
+        {% else %}
+
+            <p>
+                هنوز پیامی در این پرونده وجود ندارد.
+            </p>
+
+        {% endif %}
+
+    </div>
+
+
+    <!-- ارسال پیام و عکس -->
 
     <form
         method="post"
-        action="{{ url_for(
-            'customer_message',
-            rid=request_item.id
-        ) }}"
+        action="{{ url_for('customer_message', rid=request_item.id) }}"
+        enctype="multipart/form-data"
+        style="margin-top:20px;"
     >
 
-        <div class="field">
+        <div>
 
             <label>
                 پیام شما
@@ -298,16 +417,31 @@
 
             <textarea
                 name="message"
-                rows="5"
-                required
-                placeholder="پیام خود را برای کارشناس بنویسید..."
+                placeholder="پیام خود را بنویسید..."
             ></textarea>
 
         </div>
 
+
+        <div style="margin-top:12px;">
+
+            <label>
+                📷 ارسال عکس یا فایل
+            </label>
+
+            <input
+                type="file"
+                name="attachment"
+                accept="image/*,.pdf,.doc,.docx"
+            >
+
+        </div>
+
+
         <button
-            class="btn"
+            class="btn btn-green"
             type="submit"
+            style="margin-top:10px;"
         >
             📤 ارسال پیام
         </button>
@@ -317,13 +451,110 @@
 </div>
 
 
-<br>
+<!-- =========================================================
+     وضعیت پرداخت
+========================================================= -->
 
-<a
-    class="btn"
-    href="{{ url_for('customer_dashboard') }}"
->
-    ↩️ بازگشت به پنل مشتری
-</a>
+<div class="card">
+
+    <h2>
+        💳 وضعیت پرداخت
+    </h2>
+
+
+    <p>
+
+        مبلغ کل:
+
+        <strong>
+            {{ "{:,}".format(request_item.total_price or 0) }}
+            ریال
+        </strong>
+
+    </p>
+
+
+    <p>
+
+        مبلغ پرداخت‌شده:
+
+        <strong>
+            {{ "{:,}".format(request_item.paid_price or 0) }}
+            ریال
+        </strong>
+
+    </p>
+
+
+    {% set remaining =
+        (request_item.total_price or 0)
+        -
+        (request_item.paid_price or 0)
+    %}
+
+
+    <p>
+
+        مبلغ باقی‌مانده:
+
+        <strong>
+            {{ "{:,}".format(remaining if remaining > 0 else 0) }}
+            ریال
+        </strong>
+
+    </p>
+
+
+    {% if remaining > 0 %}
+
+        <a
+            class="btn btn-green"
+            href="{{ url_for('payment_start', rid=request_item.id) }}"
+        >
+            💳 پرداخت آنلاین
+        </a>
+
+    {% else %}
+
+        <span class="status">
+            ✅ تسویه شده
+        </span>
+
+    {% endif %}
+
+</div>
+
+
+<!-- =========================================================
+     اعلان‌ها
+========================================================= -->
+
+<div class="card">
+
+    <h2>
+        🔔 اعلان‌های پرونده
+    </h2>
+
+    <p>
+        تغییر وضعیت، پیام کارشناس و رویدادهای مهم پرونده از طریق اعلان به شما اطلاع داده می‌شود.
+    </p>
+
+</div>
+
+
+<!-- =========================================================
+     برگشت
+========================================================= -->
+
+<div style="margin:20px 0;">
+
+    <a
+        class="btn btn-dark"
+        href="{{ url_for('customer_dashboard') }}"
+    >
+        ↩️ بازگشت به پنل مشتری
+    </a>
+
+</div>
 
 {% endblock %}
