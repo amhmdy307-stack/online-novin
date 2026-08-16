@@ -1,311 +1,165 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
 
 {% block content %}
 
-<!-- =========================
-     بخش معرفی سایت
-========================= -->
+<style>
+    .landing {
+        min-height: 75vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
 
-<div class="card hero">
+    .landing-card {
+        width: 100%;
+        max-width: 650px;
+        background: #ffffff;
+        border-radius: 24px;
+        padding: 35px 25px;
+        text-align: center;
+        box-shadow: 0 10px 35px rgba(0,0,0,.10);
+    }
 
-    {% if settings.get('logo') %}
+    .landing-logo {
+        width: 110px;
+        height: 110px;
+        object-fit: contain;
+        margin-bottom: 15px;
+    }
 
-        <img
-            src="{{ settings.get('logo') }}"
-            alt="لوگو"
-            style="
-                max-width:120px;
-                max-height:120px;
-                border-radius:20px;
-                margin-bottom:15px;
-            "
-        >
+    .landing-card h1 {
+        margin: 5px 0 10px;
+        color: #102a43;
+        font-size: 28px;
+    }
 
-    {% endif %}
+    .landing-description {
+        color: #596579;
+        font-size: 16px;
+        margin-bottom: 8px;
+    }
 
+    .manager {
+        color: #333;
+        font-weight: bold;
+        margin: 18px 0 5px;
+    }
 
-    <h1>
-        {{ settings.get('site_name','کافی‌نت آنلاین نوین') }}
-    </h1>
+    .phone {
+        color: #1479d1;
+        font-weight: bold;
+        direction: ltr;
+        margin-bottom: 28px;
+    }
 
+    .landing-buttons {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+    }
 
-    <p style="font-size:17px">
-        ارائه خدمات اینترنتی و ثبت درخواست
-        به صورت آنلاین
-    </p>
+    .landing-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 58px;
+        border-radius: 12px;
+        text-decoration: none;
+        color: #fff !important;
+        font-weight: bold;
+        font-size: 14px;
+        transition: .2s;
+    }
 
+    .landing-btn:hover {
+        transform: translateY(-2px);
+        opacity: .9;
+    }
 
-    {% if settings.get('manager') %}
+    .customer-btn {
+        background: #1479d1;
+    }
 
-        <p>
-            مدیریت:
-            <strong>
-                {{ settings.get('manager') }}
-            </strong>
-        </p>
+    .admin-btn {
+        background: #102a43;
+    }
 
-    {% endif %}
+    .tracking-btn {
+        background: #263238;
+    }
 
+    @media (max-width: 650px) {
+        .landing {
+            min-height: 70vh;
+        }
 
-    {% if settings.get('phone') %}
+        .landing-card {
+            padding: 28px 18px;
+        }
 
-        <p>
-            📞
-            {{ settings.get('phone') }}
-        </p>
+        .landing-buttons {
+            grid-template-columns: 1fr;
+        }
 
-    {% endif %}
+        .landing-btn {
+            min-height: 55px;
+        }
+    }
+</style>
 
+<div class="landing">
 
-    <div class="panel-buttons">
+    <div class="landing-card">
 
-        <a
-            href="/customer/login"
-            class="customer-panel"
-        >
-            👤 ورود به پنل مشتری
-        </a>
-
-
-        <a
-            href="/admin/login"
-            class="admin-panel"
-        >
-            🔐 ورود مدیریت
-        </a>
-
-
-        <a
-            href="/tracking"
-            style="
-                background:#374151;
-                color:#fff;
-            "
-        >
-            🔎 پیگیری درخواست
-        </a>
-
-    </div>
-
-</div>
-
-
-<!-- =========================
-     هشدار پرداخت
-========================= -->
-
-{% if settings.get('warning_text') %}
-
-<div class="notice">
-
-    ⚠️
-
-    {{ settings.get('warning_text') }}
-
-</div>
-
-{% endif %}
-
-
-<!-- =========================
-     عنوان خدمات
-========================= -->
-
-<div
-    style="
-        display:flex;
-        justify-content:space-between;
-        align-items:center;
-        gap:10px;
-        flex-wrap:wrap;
-    "
->
-
-    <h2>
-        خدمات آنلاین
-    </h2>
-
-
-    <span
-        style="
-            background:#e8f1ff;
-            color:#1479d1;
-            padding:7px 12px;
-            border-radius:20px;
-            font-size:13px;
-        "
-    >
-        {{ services|length }}
-        خدمت فعال
-    </span>
-
-</div>
-
-
-<!-- =========================
-     خدمات
-========================= -->
-
-<div
-    style="
-        display:grid;
-        grid-template-columns:
-        repeat(auto-fit,minmax(250px,1fr));
-        gap:15px;
-    "
->
-
-{% for s in services %}
-
-<div
-    class="card"
-    style="
-        margin:0;
-        display:flex;
-        flex-direction:column;
-        justify-content:space-between;
-    "
->
-
-
-    {% if s.image %}
-
-        <img
-            src="{{ s.image }}"
-            alt="{{ s.name }}"
-            style="
-                width:100%;
-                height:170px;
-                object-fit:cover;
-                border-radius:12px;
-                margin-bottom:12px;
-            "
-        >
-
-    {% endif %}
-
-
-    <div>
-
-        {% if s.category %}
-
-            <span
-                style="
-                    display:inline-block;
-                    background:#f1f5f9;
-                    color:#475569;
-                    padding:5px 9px;
-                    border-radius:15px;
-                    font-size:12px;
-                    margin-bottom:8px;
-                "
+        {% if settings and settings.get('logo') %}
+            <img
+                class="landing-logo"
+                src="{{ url_for('uploaded_file', filename=settings.get('logo')) }}"
+                alt="لوگوی کافی‌نت آنلاین نوین"
             >
-                {{ s.category }}
-            </span>
-
         {% endif %}
 
+        <h1>کافی‌نت آنلاین نوین</h1>
 
-        <h2>
-            {{ s.name }}
-        </h2>
+        <div class="landing-description">
+            ارائه خدمات اینترنتی و ثبت درخواست به صورت آنلاین
+        </div>
 
+        <div class="manager">
+            مدیریت: احمد محمدی مهر
+        </div>
 
-        <p style="color:#64748b">
+        <div class="phone">
+            📞 09920345139
+        </div>
 
-            {{ s.description }}
+        <div class="landing-buttons">
 
-        </p>
+            <a
+                href="{{ url_for('customer_login') }}"
+                class="landing-btn customer-btn"
+            >
+                👤 ورود به پنل مشتری
+            </a>
 
+            <a
+                href="{{ url_for('admin_login') }}"
+                class="landing-btn admin-btn"
+            >
+                🔐 ورود مدیریت
+            </a>
 
-        <p>
+            <a
+                href="{{ url_for('tracking') }}"
+                class="landing-btn tracking-btn"
+            >
+                🔎 پیگیری درخواست
+            </a>
 
-            <strong>
-                {% if s.price and s.price > 0 %}
-
-                    {{ "{:,}".format(s.price) }}
-                    ریال
-
-                {% else %}
-
-                    استعلام قیمت
-
-                {% endif %}
-            </strong>
-
-        </p>
+        </div>
 
     </div>
 
-
-    <a
-        class="btn"
-        href="{{ url_for('service',sid=s.id) }}"
-        style="
-            text-align:center;
-            margin-top:10px;
-        "
-    >
-        ثبت درخواست
-    </a>
-
-
 </div>
-
-{% else %}
-
-<div class="card">
-
-    <h3>
-        هنوز خدمتی فعال نشده است.
-    </h3>
-
-    <p>
-        خدمات جدید به‌زودی در سایت قرار می‌گیرند.
-    </p>
-
-</div>
-
-{% endfor %}
-
-</div>
-
-
-<!-- =========================
-     اطلاعات تماس
-========================= -->
-
-<div
-    class="card"
-    style="
-        text-align:center;
-        margin-top:25px;
-    "
->
-
-    <h3>
-        نیاز به راهنمایی دارید؟
-    </h3>
-
-
-    <p>
-        برای پیگیری یا دریافت راهنمایی
-        از طریق اطلاعات تماس سایت اقدام کنید.
-    </p>
-
-
-    {% if settings.get('phone') %}
-
-        <a
-            class="btn"
-            href="tel:{{ settings.get('phone') }}"
-        >
-            📞 تماس با ما
-        </a>
-
-    {% endif %}
-
-</div>
-
 
 {% endblock %}
