@@ -11,26 +11,29 @@
     >
 
     <title>
-        {{ settings.get('site_name','کافی‌نت آنلاین نوین') }}
+        {{ settings.get('site_name', 'کافی‌نت آنلاین نوین') }}
     </title>
+
 
     <style>
 
         :root {
+
             --primary:
-                {{ settings.get('primary_color','#102a43') }};
+                {{ settings.get('primary_color', '#1479d1') }};
 
             --secondary:
-                {{ settings.get('secondary_color','#1479d1') }};
+                {{ settings.get('secondary_color', '#102a43') }};
 
             --background:
-                {{ settings.get('background_color','#f5f7fb') }};
+                {{ settings.get('background_color', '#f5f7fb') }};
 
             --card:
-                {{ settings.get('card_color','#ffffff') }};
+                {{ settings.get('card_color', '#ffffff') }};
 
             --text:
-                {{ settings.get('text_color','#172033') }};
+                {{ settings.get('text_color', '#172033') }};
+
         }
 
 
@@ -43,399 +46,495 @@
 
             margin: 0;
 
-            font-family:
-                Tahoma,
-                Arial,
-                sans-serif;
-
             background:
                 var(--background);
 
             color:
                 var(--text);
 
+            font-family:
+                Tahoma,
+                Arial,
+                sans-serif;
+
             line-height: 1.8;
         }
 
 
-        /* =================================================
-           نوار بالای سایت
-        ================================================= */
+        a {
+            color:
+                var(--primary);
+        }
+
 
         .topbar {
 
             background:
                 var(--secondary);
 
-            color: white;
+            color:
+                white;
 
-            padding: 12px 18px;
+            padding:
+                12px 18px;
 
-            box-shadow:
-                0 3px 12px rgba(0,0,0,.12);
-
-            position: sticky;
+            position:
+                sticky;
 
             top: 0;
 
             z-index: 1000;
+
+            box-shadow:
+                0 3px 12px rgba(0,0,0,.12);
         }
 
 
         .topbar-inner {
 
-            max-width: 1100px;
+            max-width:
+                1150px;
 
-            margin: auto;
+            margin:
+                auto;
 
-            display: flex;
+            display:
+                flex;
 
-            align-items: center;
+            align-items:
+                center;
 
-            justify-content: space-between;
+            justify-content:
+                space-between;
 
-            gap: 12px;
+            gap:
+                15px;
         }
 
 
-        .site-title {
+        .brand {
 
-            color: white;
+            color:
+                white;
 
-            text-decoration: none;
+            text-decoration:
+                none;
 
-            font-size: 18px;
+            font-weight:
+                bold;
 
-            font-weight: bold;
-
-            white-space: nowrap;
+            font-size:
+                18px;
         }
 
 
-        .top-links {
+        .nav {
 
-            display: flex;
+            display:
+                flex;
 
-            align-items: center;
+            align-items:
+                center;
 
-            gap: 7px;
+            gap:
+                7px;
 
-            flex-wrap: wrap;
+            flex-wrap:
+                wrap;
         }
 
 
-        .top-links a {
+        .nav a {
 
-            color: white;
+            color:
+                white;
 
-            text-decoration: none;
+            text-decoration:
+                none;
 
-            padding: 5px 9px;
+            padding:
+                7px 11px;
 
-            border-radius: 8px;
+            border-radius:
+                8px;
 
-            font-size: 13px;
-
-            transition: .2s;
+            font-size:
+                14px;
         }
 
 
-        .top-links a:hover {
+        .nav a:hover {
 
             background:
-                rgba(255,255,255,.18);
+                rgba(255,255,255,.12);
         }
 
-
-        /* =================================================
-           محتوای اصلی
-        ================================================= */
 
         .container {
 
-            width: 100%;
+            width:
+                min(1150px, 94%);
 
-            max-width: 1100px;
-
-            margin: auto;
-
-            padding: 25px 16px 50px;
+            margin:
+                25px auto 50px;
         }
 
-
-        /* =================================================
-           کارت
-        ================================================= */
 
         .card {
 
             background:
                 var(--card);
 
-            border-radius: 18px;
+            border-radius:
+                18px;
 
-            padding: 20px;
+            padding:
+                20px;
 
-            margin-bottom: 18px;
+            margin-bottom:
+                18px;
 
             box-shadow:
-                0 5px 20px rgba(0,0,0,.07);
+                0 5px 22px rgba(0,0,0,.06);
         }
 
 
-        /* =================================================
-           دکمه
-        ================================================= */
+        h1,
+        h2,
+        h3 {
+
+            color:
+                var(--text);
+        }
+
 
         .btn {
 
-            display: inline-flex;
+            display:
+                inline-block;
 
-            align-items: center;
+            border:
+                none;
 
-            justify-content: center;
+            border-radius:
+                10px;
 
-            border: 0;
-
-            border-radius: 10px;
-
-            padding: 10px 16px;
+            padding:
+                10px 16px;
 
             background:
-                var(--secondary);
+                var(--primary);
 
-            color: white !important;
+            color:
+                white !important;
 
-            text-decoration: none;
+            text-decoration:
+                none;
 
-            cursor: pointer;
+            cursor:
+                pointer;
 
-            font-family: inherit;
+            font-weight:
+                bold;
 
-            font-weight: bold;
-
-            transition: .2s;
+            font-family:
+                inherit;
         }
 
 
         .btn:hover {
 
-            opacity: .9;
-
-            transform:
-                translateY(-1px);
+            opacity:
+                .9;
         }
 
 
-        /* =================================================
-           فرم
-        ================================================= */
-
         .field {
 
-            margin-bottom: 15px;
+            margin-bottom:
+                15px;
         }
 
 
         .field label {
 
-            display: block;
+            display:
+                block;
 
-            margin-bottom: 6px;
+            font-weight:
+                bold;
 
-            font-weight: bold;
+            margin-bottom:
+                6px;
         }
 
 
         input,
-        textarea,
-        select {
+        select,
+        textarea {
 
-            width: 100%;
+            width:
+                100%;
 
-            padding: 11px;
+            padding:
+                11px;
 
             border:
-                1px solid #d8dee8;
+                1px solid #d9dee7;
 
-            border-radius: 10px;
+            border-radius:
+                10px;
 
-            background: white;
+            background:
+                white;
 
-            color: #172033;
+            color:
+                #172033;
 
-            font-family: inherit;
+            font-family:
+                inherit;
 
-            font-size: 14px;
+            font-size:
+                14px;
+        }
 
-            outline: none;
+
+        textarea {
+
+            resize:
+                vertical;
         }
 
 
         input:focus,
-        textarea:focus,
-        select:focus {
+        select:focus,
+        textarea:focus {
+
+            outline:
+                none;
 
             border-color:
-                var(--secondary);
+                var(--primary);
 
             box-shadow:
                 0 0 0 2px rgba(20,121,209,.10);
         }
 
 
-        textarea {
-
-            resize: vertical;
-        }
-
-
-        /* =================================================
-           اعلان
-        ================================================= */
-
-        .notice {
-
-            background: #fff8df;
-
-            border-right:
-                4px solid #e0a800;
-
-            padding: 14px;
-
-            border-radius: 10px;
-
-            margin-bottom: 18px;
-        }
-
-
-        /* =================================================
-           جدول
-        ================================================= */
-
         table {
 
-            width: 100%;
+            width:
+                100%;
 
-            border-collapse: collapse;
-
-            background:
-                var(--card);
+            border-collapse:
+                collapse;
         }
 
 
         th,
         td {
 
-            padding: 10px;
+            padding:
+                10px;
 
             border-bottom:
                 1px solid #eee;
 
-            text-align: right;
-
-            vertical-align: middle;
+            text-align:
+                right;
         }
 
 
         th {
 
             background:
-                #f1f4f8;
+                #f5f7fb;
         }
 
 
-        /* =================================================
-           پیام فلش
-        ================================================= */
+        .notice {
+
+            background:
+                #fff4d6;
+
+            border:
+                1px solid #f0d37a;
+
+            padding:
+                14px;
+
+            border-radius:
+                12px;
+
+            margin-bottom:
+                15px;
+        }
+
+
+        .warning {
+
+            background:
+                #fff4d6;
+
+            color:
+                #674d00;
+
+            border:
+                1px solid #f0d37a;
+
+            padding:
+                12px;
+
+            border-radius:
+                12px;
+
+            margin:
+                12px 0;
+        }
+
 
         .flash {
 
-            background: #e8f3ff;
+            background:
+                #e8f5e9;
 
-            color: #174a75;
+            color:
+                #176b2c;
 
-            border-right:
-                4px solid var(--secondary);
+            border:
+                1px solid #b8dfbf;
 
-            border-radius: 10px;
+            padding:
+                12px;
 
-            padding: 12px;
+            border-radius:
+                12px;
 
-            margin-bottom: 15px;
+            margin-bottom:
+                15px;
         }
 
 
-        /* =================================================
-           فوتر
-        ================================================= */
+        .footer {
 
-        footer {
+            background:
+                var(--secondary);
 
-            text-align: center;
+            color:
+                white;
 
-            padding: 25px 15px;
+            padding:
+                25px 15px;
 
-            color: #777;
+            margin-top:
+                40px;
 
-            font-size: 13px;
+            text-align:
+                center;
         }
 
 
-        /* =================================================
-           موبایل
-        ================================================= */
+        .footer a {
 
-        @media (max-width: 700px) {
+            color:
+                white;
+        }
+
+
+        .mobile-menu {
+
+            display:
+                none;
+
+            border:
+                none;
+
+            background:
+                transparent;
+
+            color:
+                white;
+
+            font-size:
+                25px;
+
+            cursor:
+                pointer;
+        }
+
+
+        @media(max-width:750px) {
 
             .topbar-inner {
 
-                align-items: flex-start;
+                align-items:
+                    flex-start;
 
-                flex-direction: column;
+                flex-direction:
+                    column;
             }
 
 
-            .top-links {
+            .mobile-menu {
 
-                width: 100%;
+                display:
+                    block;
+
+                position:
+                    absolute;
+
+                left:
+                    15px;
+
+                top:
+                    10px;
             }
 
 
-            .top-links a {
+            .nav {
 
-                flex: 1;
+                display:
+                    none;
 
-                text-align: center;
+                width:
+                    100%;
+
+                flex-direction:
+                    column;
+
+                align-items:
+                    stretch;
+            }
+
+
+            .nav.open {
+
+                display:
+                    flex;
+            }
+
+
+            .nav a {
+
+                background:
+                    rgba(255,255,255,.07);
             }
 
 
             .container {
 
-                padding:
-                    18px 12px 40px;
+                width:
+                    94%;
+
+                margin-top:
+                    18px;
             }
 
 
             table {
 
-                display: block;
-
-                overflow-x: auto;
-
-                white-space: nowrap;
-            }
-
-
-            h1 {
-
-                font-size: 24px;
-            }
-
-
-            h2 {
-
-                font-size: 20px;
+                min-width:
+                    650px;
             }
 
         }
@@ -448,17 +547,16 @@
 <body>
 
 
-<!-- =====================================================
-     نوار بالای سایت
-===================================================== -->
+<!-- =========================================================
+     TOP BAR
+========================================================= -->
 
 <header class="topbar">
 
     <div class="topbar-inner">
 
-
         <a
-            class="site-title"
+            class="brand"
             href="{{ url_for('home') }}"
         >
 
@@ -470,53 +568,87 @@
         </a>
 
 
-        <nav class="top-links">
+        <button
+            class="mobile-menu"
+            type="button"
+            onclick="toggleMenu()"
+        >
+            ☰
+        </button>
 
-            <a href="{{ url_for('home') }}">
+
+        <nav
+            class="nav"
+            id="mainNav"
+        >
+
+            <a
+                href="{{ url_for('home') }}"
+            >
                 🏠 خانه
             </a>
 
 
             {% if session.get('customer_id') %}
 
-            <a
-                href="{{ url_for('customer_dashboard') }}"
-            >
-                👤 پنل مشتری
-            </a>
+                <a
+                    href="{{ url_for('customer_dashboard') }}"
+                >
+                    👤 پنل مشتری
+                </a>
 
-            <a
-                href="{{ url_for('customer_logout') }}"
-            >
-                خروج
-            </a>
 
-            {% else %}
-
-            <a
-                href="{{ url_for('customer_login') }}"
-            >
-                👤 مشتری
-            </a>
+                <a
+                    href="{{ url_for('customer_logout') }}"
+                >
+                    خروج
+                </a>
 
             {% endif %}
 
 
             {% if session.get('admin') %}
 
-            <a
-                href="{{ url_for('admin') }}"
-            >
-                ⚙️ مدیریت
-            </a>
+                <a
+                    href="{{ url_for('admin') }}"
+                >
+                    🔐 مدیریت
+                </a>
 
-            <a
-                href="{{ url_for('admin_logout') }}"
-            >
-                خروج مدیریت
-            </a>
+
+                <a
+                    href="{{ url_for('admin_logout') }}"
+                >
+                    خروج مدیریت
+                </a>
 
             {% endif %}
+
+
+            {% if not session.get('customer_id')
+                  and not session.get('admin') %}
+
+                <a
+                    href="{{ url_for('customer_login') }}"
+                >
+                    👤 پنل مشتری
+                </a>
+
+
+                <a
+                    href="{{ url_for('admin_login') }}"
+                >
+                    🔐 مدیریت
+                </a>
+
+            {% endif %}
+
+
+            <a
+                href="{{ url_for('tracking') }}"
+            >
+                🔎 پیگیری درخواست
+            </a>
 
         </nav>
 
@@ -525,30 +657,43 @@
 </header>
 
 
-<!-- =====================================================
-     پیام‌ها
-===================================================== -->
+<!-- =========================================================
+     MAIN
+========================================================= -->
 
 <main class="container">
 
 
-    {% with messages = get_flashed_messages() %}
+    {% with messages =
+        get_flashed_messages()
+    %}
 
         {% if messages %}
 
             {% for message in messages %}
 
-            <div class="flash">
+                <div class="flash">
 
-                {{ message }}
+                    {{ message }}
 
-            </div>
+                </div>
 
             {% endfor %}
 
         {% endif %}
 
     {% endwith %}
+
+
+    {% if settings.get('warning_text') %}
+
+        <div class="warning">
+
+            {{ settings.get('warning_text') }}
+
+        </div>
+
+    {% endif %}
 
 
     {% block content %}
@@ -559,29 +704,81 @@
 </main>
 
 
-<footer>
+<!-- =========================================================
+     FOOTER
+========================================================= -->
 
-    {{ settings.get(
-        'site_name',
-        'کافی‌نت آنلاین نوین'
-    ) }}
+<footer class="footer">
 
-    <br>
+    <div>
 
-    مدیریت:
-    {{ settings.get(
-        'manager',
-        'احمد محمدی مهر'
-    ) }}
+        <strong>
+            {{ settings.get(
+                'site_name',
+                'کافی‌نت آنلاین نوین'
+            ) }}
+        </strong>
 
-    <br>
+    </div>
 
-    {{ settings.get(
-        'phone',
-        '09920345139'
-    ) }}
+
+    <div>
+
+        مدیریت:
+        {{ settings.get(
+            'manager',
+            'احمد محمدی مهر'
+        ) }}
+
+    </div>
+
+
+    {% if settings.get('phone') %}
+
+        <div
+            dir="ltr"
+            style="margin-top:5px;"
+        >
+
+            📞
+            {{ settings.get('phone') }}
+
+        </div>
+
+    {% endif %}
+
+
+    <div
+        style="
+            margin-top:10px;
+            font-size:12px;
+            opacity:.75;
+        "
+    >
+
+        تمامی حقوق محفوظ است.
+
+    </div>
 
 </footer>
+
+
+<script>
+
+function toggleMenu() {
+
+    const nav =
+        document.getElementById(
+            "mainNav"
+        );
+
+    nav.classList.toggle(
+        "open"
+    );
+
+}
+
+</script>
 
 
 </body>
