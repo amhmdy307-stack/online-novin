@@ -2,23 +2,164 @@
 
 {% block content %}
 
-<h1>پنل مدیریت</h1>
+<style>
 
-<p>
-    <a class="btn" href="/admin/logout">خروج</a>
-</p>
+    .admin-menu {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-bottom: 20px;
+    }
+
+    .admin-menu a {
+        text-decoration: none;
+        color: #fff;
+        padding: 10px 14px;
+        border-radius: 9px;
+        display: inline-block;
+    }
+
+    .admin-home {
+        background: #102a43;
+    }
+
+    .admin-site {
+        background: #1479d1;
+    }
+
+    .admin-tracking {
+        background: #263238;
+    }
+
+    .admin-logout {
+        background: #777;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+    }
+
+    th,
+    td {
+        padding: 10px;
+        border-bottom: 1px solid #e1e6ed;
+        text-align: right;
+        vertical-align: top;
+    }
+
+    th {
+        background: #f1f4f8;
+    }
+
+    .status-active {
+        color: green;
+        font-weight: bold;
+    }
+
+    .status-disabled {
+        color: red;
+        font-weight: bold;
+    }
+
+    .code-box {
+        background: #f5f7fb;
+        border-radius: 10px;
+        padding: 12px;
+        margin-top: 10px;
+    }
+
+    .tracking-number {
+        font-size: 20px;
+        font-weight: bold;
+        direction: ltr;
+        display: inline-block;
+        letter-spacing: 3px;
+    }
+
+    .danger {
+        background: #d33 !important;
+    }
+
+    .warning {
+        background: #e89b00 !important;
+    }
+
+    .success {
+        background: #218838 !important;
+    }
+
+    @media (max-width: 700px) {
+
+        table {
+            display: block;
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+
+        .admin-menu a {
+            flex: 1;
+            text-align: center;
+        }
+
+    }
+
+</style>
 
 
 <!-- =====================================================
-     مدیریت ظاهر سایت
+     منوی مدیر
+===================================================== -->
+
+<div class="admin-menu">
+
+    <a
+        class="admin-home"
+        href="{{ url_for('admin') }}"
+    >
+        🏠 مدیریت
+    </a>
+
+    <a
+        class="admin-site"
+        href="{{ url_for('home') }}"
+    >
+        🌐 مشاهده سایت
+    </a>
+
+    <a
+        class="admin-tracking"
+        href="{{ url_for('tracking') }}"
+    >
+        🔎 پیگیری درخواست
+    </a>
+
+    <a
+        class="admin-logout"
+        href="{{ url_for('admin_logout') }}"
+    >
+        🚪 خروج
+    </a>
+
+</div>
+
+
+<h1>⚙️ پنل مدیریت</h1>
+
+
+<!-- =====================================================
+     ظاهر سایت
 ===================================================== -->
 
 <h2>🎨 ظاهر و اطلاعات سایت</h2>
 
 <div class="card">
 
-<form method="post" action="/admin/settings">
-
+<form
+    method="post"
+    action="{{ url_for('admin_settings') }}"
+>
 
     <div class="field">
 
@@ -66,24 +207,6 @@
             placeholder="مثلاً /uploads/logo.png"
         >
 
-        <small>
-            آدرس تصویر لوگو را وارد کنید.
-        </small>
-
-    </div>
-
-
-    <div class="field">
-
-        <label>رنگ اصلی سایت</label>
-
-        <input
-            type="color"
-            name="primary_color"
-            value="{{ settings.get('primary_color','#1479d1') }}"
-            style="height:50px"
-        >
-
     </div>
 
 
@@ -93,8 +216,8 @@
 
         <input
             type="color"
-            name="secondary_color"
-            value="{{ settings.get('secondary_color','#102a43') }}"
+            name="primary_color"
+            value="{{ settings.get('primary_color','#102a43') }}"
             style="height:50px"
         >
 
@@ -103,26 +226,26 @@
 
     <div class="field">
 
-        <label>رنگ پس‌زمینه سایت</label>
+        <label>رنگ دکمه‌ها</label>
+
+        <input
+            type="color"
+            name="secondary_color"
+            value="{{ settings.get('secondary_color','#1479d1') }}"
+            style="height:50px"
+        >
+
+    </div>
+
+
+    <div class="field">
+
+        <label>رنگ پس‌زمینه</label>
 
         <input
             type="color"
             name="background_color"
             value="{{ settings.get('background_color','#f5f7fb') }}"
-            style="height:50px"
-        >
-
-    </div>
-
-
-    <div class="field">
-
-        <label>رنگ متن</label>
-
-        <input
-            type="color"
-            name="text_color"
-            value="{{ settings.get('text_color','#172033') }}"
             style="height:50px"
         >
 
@@ -145,22 +268,36 @@
 
     <div class="field">
 
+        <label>رنگ متن</label>
+
+        <input
+            type="color"
+            name="text_color"
+            value="{{ settings.get('text_color','#172033') }}"
+            style="height:50px"
+        >
+
+    </div>
+
+
+    <div class="field">
+
         <label>متن هشدار پرداخت</label>
 
         <textarea
             name="warning_text"
             rows="4"
-        >{{ settings.get('warning_text','توجه: پرداخت هزینه خدمات فقط از طریق درگاه رسمی همین سایت انجام می‌شود.') }}</textarea>
+        >{{ settings.get('warning_text','') }}</textarea>
 
     </div>
 
 
-    <button class="btn" type="submit">
-
-        💾 ذخیره تغییرات ظاهر سایت
-
+    <button
+        class="btn"
+        type="submit"
+    >
+        💾 ذخیره تنظیمات
     </button>
-
 
 </form>
 
@@ -168,89 +305,47 @@
 
 
 <!-- =====================================================
-     مدیریت کد رهگیری
+     کد رهگیری
 ===================================================== -->
 
-<h2>🔢 تنظیم کد رهگیری</h2>
+<h2>🔢 کد رهگیری</h2>
 
 <div class="card">
 
-<form method="post" action="/admin/settings">
+    <p>
+        کد رهگیری درخواست‌ها به صورت
+        <strong>۳ رقمی، عددی و تصادفی</strong>
+        ساخته می‌شود.
+    </p>
 
+    <p>
+        مثال:
+        <span class="tracking-number">
+            427
+        </span>
+    </p>
 
-    <div class="field">
-
-        <label>پیشوند کد رهگیری</label>
-
-        <input
-            name="tracking_prefix"
-            value="{{ settings.get('tracking_prefix','NV-') }}"
-            placeholder="NV-"
-        >
-
-    </div>
-
-
-    <div class="field">
-
-        <label>تعداد رقم کد رهگیری</label>
-
-        <input
-            type="number"
-            min="4"
-            max="20"
-            name="tracking_digits"
-            value="{{ settings.get('tracking_digits','8') }}"
-        >
-
-    </div>
-
-
-    <div class="field">
-
-        <label>جداکننده</label>
-
-        <input
-            name="tracking_separator"
-            value="{{ settings.get('tracking_separator','') }}"
-            placeholder="مثلاً -"
-        >
-
-    </div>
-
-
-    <button class="btn" type="submit">
-
-        💾 ذخیره تنظیمات کد رهگیری
-
-    </button>
-
-
-</form>
-
-<p style="color:#777;font-size:13px">
-
-مثال:
-اگر پیشوند <b>NV-</b> و تعداد رقم <b>8</b> باشد،
-کدهایی مانند
-<b>NV-58321476</b>
-ساخته می‌شوند.
-
-</p>
+    <p style="color:#777;font-size:13px">
+        پس از انجام، رد یا لغو شدن درخواست،
+        کد آن آزاد می‌شود و می‌تواند دوباره برای
+        درخواست دیگری استفاده شود.
+    </p>
 
 </div>
 
 
 <!-- =====================================================
-     خدمات
+     افزودن خدمت
 ===================================================== -->
 
-<h2>🛠 خدمات</h2>
+<h2>🛠 افزودن خدمت</h2>
 
 <div class="card">
 
-<form method="post" action="/admin/service/save">
-
+<form
+    method="post"
+    action="{{ url_for('admin_service_save') }}"
+>
 
     <div class="field">
 
@@ -258,7 +353,7 @@
 
         <input
             name="name"
-            placeholder="نام خدمت"
+            placeholder="مثلاً ثبت‌نام خودرو"
             required
         >
 
@@ -291,11 +386,11 @@
 
     <div class="field">
 
-        <label>تصویر خدمت</label>
+        <label>آدرس تصویر خدمت</label>
 
         <input
             name="image"
-            placeholder="آدرس تصویر"
+            placeholder="/uploads/service.jpg"
         >
 
     </div>
@@ -303,11 +398,12 @@
 
     <div class="field">
 
-        <label>قیمت (ریال)</label>
+        <label>قیمت خدمت (ریال)</label>
 
         <input
             name="price"
             type="number"
+            min="0"
             value="0"
         >
 
@@ -329,16 +425,16 @@
 
     <div class="field">
 
-        <label>فعال</label>
+        <label>وضعیت خدمت</label>
 
         <select name="active">
 
             <option value="1">
-                بله
+                فعال
             </option>
 
             <option value="0">
-                خیر
+                غیرفعال
             </option>
 
         </select>
@@ -358,6 +454,10 @@
             placeholder='[{"name":"birth","label":"تاریخ تولد","type":"date","required":true}]'
         ></textarea>
 
+        <small>
+            فیلدهای موردنیاز فرم را به صورت JSON وارد کنید.
+        </small>
+
     </div>
 
 
@@ -376,17 +476,23 @@
     </div>
 
 
-    <button class="btn" type="submit">
-
+    <button
+        class="btn"
+        type="submit"
+    >
         ➕ افزودن خدمت
-
     </button>
-
 
 </form>
 
 </div>
 
+
+<!-- =====================================================
+     لیست خدمات
+===================================================== -->
+
+<h2>📋 لیست خدمات</h2>
 
 {% for s in services %}
 
@@ -396,20 +502,30 @@
         {{ s.name }}
     </h3>
 
+
+    {% if s.description %}
+
     <p>
         {{ s.description }}
     </p>
 
+    {% endif %}
+
+
     <p>
 
-        دسته:
-        {{ s.category or '-' }}
+        دسته‌بندی:
+        <strong>
+            {{ s.category or '-' }}
+        </strong>
 
         <br>
 
         قیمت:
-        {{ "{:,}".format(s.price or 0) }}
-        ریال
+        <strong>
+            {{ "{:,}".format(s.price or 0) }}
+            ریال
+        </strong>
 
         <br>
 
@@ -417,38 +533,46 @@
 
         {% if s.active %}
 
-            <b style="color:green">
-                فعال
-            </b>
+        <span class="status-active">
+            فعال
+        </span>
 
         {% else %}
 
-            <b style="color:red">
-                غیرفعال
-            </b>
+        <span class="status-disabled">
+            غیرفعال
+        </span>
 
         {% endif %}
 
     </p>
 
 
+    {% if s.active %}
+
     <form
         method="post"
         action="/admin/service/delete/{{ s.id }}"
-        style="display:inline"
     >
 
         <button
-            class="btn"
-            style="background:#d33"
+            class="btn danger"
             type="submit"
         >
-
-            غیرفعال کردن
-
+            غیرفعال کردن خدمت
         </button>
 
     </form>
+
+    {% endif %}
+
+</div>
+
+{% else %}
+
+<div class="notice">
+
+    هنوز هیچ خدمتی اضافه نشده است.
 
 </div>
 
@@ -456,7 +580,296 @@
 
 
 <!-- =====================================================
-     درخواست ها
+     کد تخفیف
+===================================================== -->
+
+<h2>🎟 مدیریت کد تخفیف</h2>
+
+<div class="card">
+
+<form
+    method="post"
+    action="/admin/discount/save"
+>
+
+    <div class="field">
+
+        <label>کد تخفیف</label>
+
+        <input
+            name="code"
+            placeholder="مثلاً NOVIN20"
+            required
+        >
+
+    </div>
+
+
+    <div class="field">
+
+        <label>نوع تخفیف</label>
+
+        <select name="kind">
+
+            <option value="percent">
+                درصدی
+            </option>
+
+            <option value="fixed">
+                مبلغ ثابت
+            </option>
+
+        </select>
+
+    </div>
+
+
+    <div class="field">
+
+        <label>مقدار تخفیف</label>
+
+        <input
+            name="value"
+            type="number"
+            min="0"
+            value="0"
+            required
+        >
+
+    </div>
+
+
+    <div class="field">
+
+        <label>تاریخ شروع</label>
+
+        <input
+            name="start_date"
+            type="date"
+        >
+
+    </div>
+
+
+    <div class="field">
+
+        <label>تاریخ پایان</label>
+
+        <input
+            name="end_date"
+            type="date"
+        >
+
+    </div>
+
+
+    <div class="field">
+
+        <label>حداکثر تعداد استفاده</label>
+
+        <input
+            name="max_uses"
+            type="number"
+            min="0"
+            value="0"
+        >
+
+        <small>
+            عدد صفر یعنی بدون محدودیت.
+        </small>
+
+    </div>
+
+
+    <div class="field">
+
+        <label>مخصوص خدمت</label>
+
+        <select name="service_id">
+
+            <option value="0">
+                همه خدمات
+            </option>
+
+            {% for s in services %}
+
+            <option value="{{ s.id }}">
+                {{ s.name }}
+            </option>
+
+            {% endfor %}
+
+        </select>
+
+    </div>
+
+
+    <div class="field">
+
+        <label>وضعیت</label>
+
+        <select name="active">
+
+            <option value="1">
+                فعال
+            </option>
+
+            <option value="0">
+                غیرفعال
+            </option>
+
+        </select>
+
+    </div>
+
+
+    <button
+        class="btn success"
+        type="submit"
+    >
+        ➕ ایجاد کد تخفیف
+    </button>
+
+</form>
+
+</div>
+
+
+<!-- =====================================================
+     کدهای تخفیف موجود
+===================================================== -->
+
+{% if discount_codes %}
+
+<div class="card">
+
+<h3>کدهای ثبت‌شده</h3>
+
+<table>
+
+<tr>
+
+    <th>کد</th>
+
+    <th>نوع</th>
+
+    <th>مقدار</th>
+
+    <th>استفاده</th>
+
+    <th>وضعیت</th>
+
+    <th>عملیات</th>
+
+</tr>
+
+
+{% for d in discount_codes %}
+
+<tr>
+
+    <td>
+        <strong>
+            {{ d.code }}
+        </strong>
+    </td>
+
+
+    <td>
+
+        {% if d.kind == 'percent' %}
+            درصدی
+        {% else %}
+            مبلغ ثابت
+        {% endif %}
+
+    </td>
+
+
+    <td>
+
+        {{ d.value }}
+
+        {% if d.kind == 'percent' %}
+            درصد
+        {% else %}
+            ریال
+        {% endif %}
+
+    </td>
+
+
+    <td>
+
+        {{ d.used_count }}
+
+        /
+
+        {% if d.max_uses %}
+            {{ d.max_uses }}
+        {% else %}
+            ∞
+        {% endif %}
+
+    </td>
+
+
+    <td>
+
+        {% if d.active %}
+
+        <span class="status-active">
+            فعال
+        </span>
+
+        {% else %}
+
+        <span class="status-disabled">
+            غیرفعال
+        </span>
+
+        {% endif %}
+
+    </td>
+
+
+    <td>
+
+        <form
+            method="post"
+            action="/admin/discount/toggle/{{ d.id }}"
+        >
+
+            <button
+                class="btn warning"
+                type="submit"
+            >
+
+                {% if d.active %}
+                    غیرفعال کردن
+                {% else %}
+                    فعال کردن
+                {% endif %}
+
+            </button>
+
+        </form>
+
+    </td>
+
+</tr>
+
+{% endfor %}
+
+</table>
+
+</div>
+
+{% endif %}
+
+
+<!-- =====================================================
+     درخواست‌ها
 ===================================================== -->
 
 <h2>📋 درخواست‌ها</h2>
@@ -490,23 +903,32 @@
         {{ r.customer_name }}
     </td>
 
+
     <td>
         {{ r.customer_phone }}
     </td>
+
 
     <td>
         {{ r.service_name }}
     </td>
 
-    <td>
-        {{ r.status }}
-    </td>
 
     <td>
-        <b>
-            {{ r.tracking_code }}
-        </b>
+        <strong>
+            {{ r.status }}
+        </strong>
     </td>
+
+
+    <td>
+
+        <span class="tracking-number">
+            {{ r.tracking_code }}
+        </span>
+
+    </td>
+
 
     <td>
 
@@ -514,13 +936,13 @@
             class="btn"
             href="{{ url_for('admin_request', rid=r.id) }}"
         >
-            مشاهده
+            👁 مشاهده
         </a>
 
 
         <form
             method="post"
-            action="/admin/request/status"
+            action="{{ url_for('admin_request_status') }}"
             style="margin-top:8px"
         >
 
@@ -533,19 +955,47 @@
 
             <select name="status">
 
-                <option>جدید</option>
+                <option value="جدید"
+                    {% if r.status == 'جدید' %}selected{% endif %}
+                >
+                    جدید
+                </option>
 
-                <option>در حال بررسی</option>
+                <option value="در حال بررسی"
+                    {% if r.status == 'در حال بررسی' %}selected{% endif %}
+                >
+                    در حال بررسی
+                </option>
 
-                <option>منتظر مدارک</option>
+                <option value="منتظر مدارک"
+                    {% if r.status == 'منتظر مدارک' %}selected{% endif %}
+                >
+                    منتظر مدارک
+                </option>
 
-                <option>در حال انجام</option>
+                <option value="در حال انجام"
+                    {% if r.status == 'در حال انجام' %}selected{% endif %}
+                >
+                    در حال انجام
+                </option>
 
-                <option>انجام شده</option>
+                <option value="انجام شده"
+                    {% if r.status == 'انجام شده' %}selected{% endif %}
+                >
+                    انجام شده
+                </option>
 
-                <option>رد شده</option>
+                <option value="رد شده"
+                    {% if r.status == 'رد شده' %}selected{% endif %}
+                >
+                    رد شده
+                </option>
 
-                <option>لغو شده</option>
+                <option value="لغو شده"
+                    {% if r.status == 'لغو شده' %}selected{% endif %}
+                >
+                    لغو شده
+                </option>
 
             </select>
 
@@ -554,9 +1004,7 @@
                 class="btn"
                 type="submit"
             >
-
                 ثبت وضعیت
-
             </button>
 
         </form>
@@ -564,6 +1012,7 @@
     </td>
 
 </tr>
+
 
 {% else %}
 
@@ -615,19 +1064,23 @@
         {{ c.name }}
     </td>
 
+
     <td>
         {{ c.national_id }}
     </td>
 
+
     <td>
         {{ c.phone }}
     </td>
+
 
     <td>
         {{ c.request_count }}
     </td>
 
 </tr>
+
 
 {% else %}
 
@@ -658,7 +1111,7 @@
 
 <form
     method="post"
-    action="/admin/password"
+    action="{{ url_for('admin_password') }}"
 >
 
     <div class="field">
@@ -677,9 +1130,7 @@
         class="btn"
         type="submit"
     >
-
         تغییر رمز
-
     </button>
 
 </form>
