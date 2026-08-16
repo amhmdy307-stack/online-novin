@@ -1,44 +1,33 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
 
 {% block content %}
 
-<div class="card" style="max-width:500px;margin:40px auto;">
+<div style="max-width:500px;margin:40px auto;">
 
-    <h1>ورود مشتری</h1>
+    <div class="card" style="text-align:center;">
 
-    <p>
-        برای ورود به پنل مشتری، شماره موبایل خود را وارد کنید.
-    </p>
+        <h1>👤 پنل مشتری</h1>
 
-    <form method="post">
+        <p>
+            برای مشاهده خدمات و ثبت درخواست وارد پنل مشتری شوید.
+        </p>
 
-        <div class="field">
-            <label>شماره موبایل</label>
-
-            <input
-                type="tel"
-                name="phone"
-                placeholder="09xxxxxxxxx"
-                required
-                maxlength="11"
-            >
-        </div>
-
-        <button class="btn" type="submit">
+        <a
+            href="{{ url_for('customer_dashboard') }}"
+            class="btn"
+            style="
+                width:100%;
+                box-sizing:border-box;
+                text-align:center;
+                font-size:17px;
+                padding:14px;
+                margin-top:15px;
+            "
+        >
             ورود به پنل مشتری
-        </button>
+        </a>
 
-    </form>
-
-    <hr style="margin:25px 0;border:0;border-top:1px solid #ddd;">
-
-    <p style="font-size:14px;color:#666;">
-        اگر قبلاً درخواست ثبت کرده باشید، درخواست‌های شما در پنل مشتری نمایش داده می‌شود.
-    </p>
-
-    <a class="btn" href="/">
-        بازگشت به خدمات
-    </a>
+    </div>
 
 </div>
 
