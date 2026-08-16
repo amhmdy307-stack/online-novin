@@ -1,308 +1,589 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="fa" dir="rtl">
 
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
     <title>
-        {{ settings.get('site_name', 'کافی‌نت آنلاین نوین') if settings else 'کافی‌نت آنلاین نوین' }}
+        {{ settings.get('site_name','کافی‌نت آنلاین نوین') }}
     </title>
 
     <style>
+
+        :root {
+            --primary:
+                {{ settings.get('primary_color','#102a43') }};
+
+            --secondary:
+                {{ settings.get('secondary_color','#1479d1') }};
+
+            --background:
+                {{ settings.get('background_color','#f5f7fb') }};
+
+            --card:
+                {{ settings.get('card_color','#ffffff') }};
+
+            --text:
+                {{ settings.get('text_color','#172033') }};
+        }
+
+
         * {
             box-sizing: border-box;
         }
 
+
         body {
+
             margin: 0;
-            font-family: Tahoma, Arial, sans-serif;
-            background: {{ settings.get('background_color', '#f5f7fb') if settings else '#f5f7fb' }};
-            color: {{ settings.get('text_color', '#172033') if settings else '#172033' }};
+
+            font-family:
+                Tahoma,
+                Arial,
+                sans-serif;
+
+            background:
+                var(--background);
+
+            color:
+                var(--text);
+
+            line-height: 1.8;
         }
+
+
+        /* =================================================
+           نوار بالای سایت
+        ================================================= */
 
         .topbar {
-            background: {{ settings.get('primary_color', '#102a43') if settings else '#102a43' }};
-            color: #fff;
-            padding: 14px 20px;
+
+            background:
+                var(--secondary);
+
+            color: white;
+
+            padding: 12px 18px;
+
+            box-shadow:
+                0 3px 12px rgba(0,0,0,.12);
+
+            position: sticky;
+
+            top: 0;
+
+            z-index: 1000;
         }
+
 
         .topbar-inner {
+
             max-width: 1100px;
+
             margin: auto;
+
             display: flex;
+
             align-items: center;
+
             justify-content: space-between;
-            gap: 15px;
+
+            gap: 12px;
         }
 
-        .topbar-title {
+
+        .site-title {
+
+            color: white;
+
+            text-decoration: none;
+
+            font-size: 18px;
+
             font-weight: bold;
+
+            white-space: nowrap;
         }
 
-        .topbar-links {
+
+        .top-links {
+
             display: flex;
-            gap: 8px;
+
+            align-items: center;
+
+            gap: 7px;
+
             flex-wrap: wrap;
         }
 
-        .topbar-links a {
-            color: #fff;
+
+        .top-links a {
+
+            color: white;
+
             text-decoration: none;
-            padding: 8px 12px;
+
+            padding: 5px 9px;
+
             border-radius: 8px;
+
+            font-size: 13px;
+
+            transition: .2s;
         }
 
-        .topbar-links a:hover {
-            background: rgba(255,255,255,.15);
+
+        .top-links a:hover {
+
+            background:
+                rgba(255,255,255,.18);
         }
 
-        .wrap {
+
+        /* =================================================
+           محتوای اصلی
+        ================================================= */
+
+        .container {
+
+            width: 100%;
+
             max-width: 1100px;
+
             margin: auto;
-            padding: 20px;
+
+            padding: 25px 16px 50px;
         }
+
+
+        /* =================================================
+           کارت
+        ================================================= */
 
         .card {
-            background: {{ settings.get('card_color', '#ffffff') if settings else '#ffffff' }};
-            padding: 18px;
-            border-radius: 14px;
-            margin: 12px 0;
-            box-shadow: 0 4px 18px rgba(18,52,86,.08);
+
+            background:
+                var(--card);
+
+            border-radius: 18px;
+
+            padding: 20px;
+
+            margin-bottom: 18px;
+
+            box-shadow:
+                0 5px 20px rgba(0,0,0,.07);
         }
+
+
+        /* =================================================
+           دکمه
+        ================================================= */
 
         .btn {
-            background: {{ settings.get('secondary_color', '#1479d1') if settings else '#1479d1' }};
-            color: #fff;
+
+            display: inline-flex;
+
+            align-items: center;
+
+            justify-content: center;
+
             border: 0;
-            border-radius: 9px;
-            padding: 10px 15px;
+
+            border-radius: 10px;
+
+            padding: 10px 16px;
+
+            background:
+                var(--secondary);
+
+            color: white !important;
+
             text-decoration: none;
-            display: inline-block;
+
             cursor: pointer;
+
+            font-family: inherit;
+
+            font-weight: bold;
+
+            transition: .2s;
         }
+
 
         .btn:hover {
+
             opacity: .9;
+
+            transform:
+                translateY(-1px);
         }
 
-        input,
-        select,
-        textarea {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #d5dce6;
-            border-radius: 9px;
-            font-family: inherit;
-        }
 
-        textarea {
-            resize: vertical;
-        }
+        /* =================================================
+           فرم
+        ================================================= */
 
         .field {
-            margin: 12px 0;
+
+            margin-bottom: 15px;
         }
 
-        .notice {
-            background: #fff8e6;
-            padding: 12px;
-            border-radius: 10px;
-            margin-bottom: 12px;
-        }
 
-        .success {
-            background: #e8f7ee;
-            color: #176b3a;
-        }
+        .field label {
 
-        .danger {
-            background: #fdeaea;
-            color: #9b2226;
-        }
+            display: block;
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            background: #fff;
-        }
+            margin-bottom: 6px;
 
-        th,
-        td {
-            padding: 10px;
-            border-bottom: 1px solid #e5e9ef;
-            text-align: right;
-        }
-
-        th {
             font-weight: bold;
         }
 
-        .badge {
-            display: inline-block;
-            padding: 5px 9px;
-            border-radius: 20px;
-            font-size: 12px;
-            background: #edf2f7;
+
+        input,
+        textarea,
+        select {
+
+            width: 100%;
+
+            padding: 11px;
+
+            border:
+                1px solid #d8dee8;
+
+            border-radius: 10px;
+
+            background: white;
+
+            color: #172033;
+
+            font-family: inherit;
+
+            font-size: 14px;
+
+            outline: none;
         }
 
-        .admin-badge {
-            background: #102a43;
-            color: #fff;
+
+        input:focus,
+        textarea:focus,
+        select:focus {
+
+            border-color:
+                var(--secondary);
+
+            box-shadow:
+                0 0 0 2px rgba(20,121,209,.10);
         }
 
-        .customer-badge {
-            background: #1479d1;
-            color: #fff;
+
+        textarea {
+
+            resize: vertical;
         }
+
+
+        /* =================================================
+           اعلان
+        ================================================= */
+
+        .notice {
+
+            background: #fff8df;
+
+            border-right:
+                4px solid #e0a800;
+
+            padding: 14px;
+
+            border-radius: 10px;
+
+            margin-bottom: 18px;
+        }
+
+
+        /* =================================================
+           جدول
+        ================================================= */
+
+        table {
+
+            width: 100%;
+
+            border-collapse: collapse;
+
+            background:
+                var(--card);
+        }
+
+
+        th,
+        td {
+
+            padding: 10px;
+
+            border-bottom:
+                1px solid #eee;
+
+            text-align: right;
+
+            vertical-align: middle;
+        }
+
+
+        th {
+
+            background:
+                #f1f4f8;
+        }
+
+
+        /* =================================================
+           پیام فلش
+        ================================================= */
+
+        .flash {
+
+            background: #e8f3ff;
+
+            color: #174a75;
+
+            border-right:
+                4px solid var(--secondary);
+
+            border-radius: 10px;
+
+            padding: 12px;
+
+            margin-bottom: 15px;
+        }
+
+
+        /* =================================================
+           فوتر
+        ================================================= */
+
+        footer {
+
+            text-align: center;
+
+            padding: 25px 15px;
+
+            color: #777;
+
+            font-size: 13px;
+        }
+
+
+        /* =================================================
+           موبایل
+        ================================================= */
 
         @media (max-width: 700px) {
 
             .topbar-inner {
+
                 align-items: flex-start;
+
                 flex-direction: column;
             }
 
-            .topbar-links {
+
+            .top-links {
+
                 width: 100%;
             }
 
-            .topbar-links a {
+
+            .top-links a {
+
                 flex: 1;
+
                 text-align: center;
             }
 
-            .wrap {
-                padding: 12px;
+
+            .container {
+
+                padding:
+                    18px 12px 40px;
             }
 
+
             table {
+
                 display: block;
+
                 overflow-x: auto;
+
                 white-space: nowrap;
             }
+
+
+            h1 {
+
+                font-size: 24px;
+            }
+
+
+            h2 {
+
+                font-size: 20px;
+            }
+
         }
+
     </style>
+
 </head>
+
 
 <body>
 
-{% set is_admin = session.get('admin') %}
-{% set is_customer = session.get('customer_id') %}
 
+<!-- =====================================================
+     نوار بالای سایت
+===================================================== -->
 
-{% if is_admin %}
-
-<div class="topbar">
-
-    <div class="topbar-inner">
-
-        <div class="topbar-title">
-            پنل مدیریت — کافی‌نت آنلاین نوین
-        </div>
-
-        <div class="topbar-links">
-
-            <a href="{{ url_for('admin') }}">
-                🏠 مدیریت
-            </a>
-
-            <a href="{{ url_for('home') }}">
-                🌐 مشاهده سایت
-            </a>
-
-            <a href="{{ url_for('admin_logout') }}">
-                🚪 خروج
-            </a>
-
-        </div>
-
-    </div>
-
-</div>
-
-
-{% elif is_customer %}
-
-<div class="topbar">
+<header class="topbar">
 
     <div class="topbar-inner">
 
-        <div class="topbar-title">
-            پنل مشتری — کافی‌نت آنلاین نوین
-        </div>
 
-        <div class="topbar-links">
+        <a
+            class="site-title"
+            href="{{ url_for('home') }}"
+        >
 
-            <a href="{{ url_for('customer_dashboard') }}">
-                🏠 پنل من
-            </a>
+            {{ settings.get(
+                'site_name',
+                'کافی‌نت آنلاین نوین'
+            ) }}
+
+        </a>
+
+
+        <nav class="top-links">
 
             <a href="{{ url_for('home') }}">
-                📋 لیست سامانه‌های ثبت‌نامی
+                🏠 خانه
             </a>
 
-            <a href="{{ url_for('customer_logout') }}">
-                🚪 خروج
+
+            {% if session.get('customer_id') %}
+
+            <a
+                href="{{ url_for('customer_dashboard') }}"
+            >
+                👤 پنل مشتری
             </a>
 
-        </div>
+            <a
+                href="{{ url_for('customer_logout') }}"
+            >
+                خروج
+            </a>
+
+            {% else %}
+
+            <a
+                href="{{ url_for('customer_login') }}"
+            >
+                👤 مشتری
+            </a>
+
+            {% endif %}
+
+
+            {% if session.get('admin') %}
+
+            <a
+                href="{{ url_for('admin') }}"
+            >
+                ⚙️ مدیریت
+            </a>
+
+            <a
+                href="{{ url_for('admin_logout') }}"
+            >
+                خروج مدیریت
+            </a>
+
+            {% endif %}
+
+        </nav>
 
     </div>
 
-</div>
+</header>
 
 
-{% else %}
+<!-- =====================================================
+     پیام‌ها
+===================================================== -->
 
-<div class="topbar">
+<main class="container">
 
-    <div class="topbar-inner">
-
-        <div class="topbar-title">
-            {{ settings.get('site_name', 'کافی‌نت آنلاین نوین') if settings else 'کافی‌نت آنلاین نوین' }}
-        </div>
-
-        <div class="topbar-links">
-
-            <a href="{{ url_for('home') }}">
-                🏠 صفحه اصلی
-            </a>
-
-            <a href="{{ url_for('customer_login') }}">
-                👤 ورود مشتری
-            </a>
-
-            <a href="{{ url_for('admin_login') }}">
-                🔐 مدیریت
-            </a>
-
-        </div>
-
-    </div>
-
-</div>
-
-{% endif %}
-
-
-<main class="wrap">
 
     {% with messages = get_flashed_messages() %}
 
-        {% for m in messages %}
+        {% if messages %}
 
-            <div class="notice">
-                {{ m }}
+            {% for message in messages %}
+
+            <div class="flash">
+
+                {{ message }}
+
             </div>
 
-        {% endfor %}
+            {% endfor %}
+
+        {% endif %}
 
     {% endwith %}
 
-    {% block content %}{% endblock %}
+
+    {% block content %}
+
+    {% endblock %}
+
 
 </main>
 
+
+<footer>
+
+    {{ settings.get(
+        'site_name',
+        'کافی‌نت آنلاین نوین'
+    ) }}
+
+    <br>
+
+    مدیریت:
+    {{ settings.get(
+        'manager',
+        'احمد محمدی مهر'
+    ) }}
+
+    <br>
+
+    {{ settings.get(
+        'phone',
+        '09920345139'
+    ) }}
+
+</footer>
+
+
 </body>
+
 </html>
