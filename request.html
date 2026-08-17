@@ -1,0 +1,286 @@
+{% extends "base.html" %}
+
+{% block title %}
+پرونده {{ req["tracking_code"] }}
+{% endblock %}
+
+{% block content %}
+
+<div class="card">
+
+    <h1>پرونده درخواست</h1>
+
+    <div class="grid">
+
+        <div>
+            <strong>کد پیگیری:</strong>
+            <div style="
+                font-size:28px;
+                font-weight:bold;
+                direction:ltr;
+                margin-top:8px;
+            ">
+                {{ req["tracking_code"] }}
+            </div>
+        </div>
+
+        <div>
+            <strong>خدمت:</strong>
+            <div>
+                {{ req["service_name"] }}
+            </div>
+        </div>
+
+        <div>
+            <strong>نام مشتری:</strong>
+            <div>
+                {{ req["customer_name"] }}
+            </div>
+        </div>
+
+        <div>
+            <strong>شماره موبایل:</strong>
+            <div>
+                {{ req["customer_phone"] }}
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+
+<div class="card">
+
+    <h2>وضعیت پرونده</h2>
+
+    <p>
+        <span class="badge status">
+            {{ req["status"] }}
+        </span>
+    </p>
+
+    <div class="grid">
+
+        <div>
+            <strong>مدت زمان تقریبی انجام:</strong>
+
+            <p>
+                {% if req["estimated_time"] %}
+                    {{ req["estimated_time"] }}
+                {% else %}
+                    توسط کارشناس اعلام می‌شود
+                {% endif %}
+            </p>
+        </div>
+
+        <div>
+            <strong>مبلغ کل:</strong>
+
+            <p>
+                {{ "{:,}".format(req["total_price"] or 0) }}
+                تومان
+            </p>
+        </div>
+
+        <div>
+            <strong>مبلغ پرداخت‌شده:</strong>
+
+            <p>
+                {{ "{:,}".format(req["paid_price"] or 0) }}
+                تومان
+            </p>
+        </div>
+
+    </div>
+
+    {% if req["admin_note"] %}
+
+        <hr>
+
+        <h3>توضیحات</h3>
+
+        <div class="alert">
+            {{ req["admin_note"] }}
+        </div>
+
+    {% endif %}
+
+</div>
+
+
+<div class="card">
+
+    <h2>مدارک پرونده</h2>
+
+    {% if documents %}
+
+        <div class="table-wrapper">
+
+            <table>
+
+                <thead>
+                    <tr>
+                        <th>نام فایل</th>
+                        <th>تاریخ ارسال</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                    {% for document in documents %}
+
+                        <tr>
+                            <td>
+                                {{ document["original_name"] }}
+                            </td>
+
+                            <td>
+                                {{ document["uploaded_at"] }}
+                            </td>
+                        </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    {% else %}
+
+        <div class="alert">
+            هنوز مدرکی برای این پرونده ارسال نشده است.
+        </div>
+
+    {% endif %}
+
+
+    <hr>
+
+    <h3>ارسال مدارک جدید</h3>
+
+    <form
+        method="POST"
+        action="{{ url_for(
+            'customer_upload',
+            tracking_code=req['tracking_code']
+        ) }}"
+        enctype="multipart/form-data"
+    >
+
+        <input
+            type="file"
+            name="documents"
+            multiple
+            accept=".jpg,.jpeg,.png,.webp,.pdf"
+        >
+
+        <small>
+            فرمت‌های مجاز:
+            JPG، JPEG، PNG، WEBP و PDF
+            <br>
+            حداکثر حجم هر فایل ۱۰ مگابایت
+        </small>
+
+        <br><br>
+
+        <button type="submit" class="btn">
+            ارسال مدارک
+        </button>
+
+    </form>
+
+</div>
+
+
+<div class="card">
+
+    <h2>ارتباط با کارشناس</h2>
+
+    <div class="chat">
+
+        {% if messages %}
+
+            {% for message in messages %}
+
+                <div class="
+                    message
+                    {% if message['sender_type'] == 'customer' %}
+                        message-customer
+                    {% else %}
+                        message-admin
+                    {% endif %}
+                ">
+
+                    <div>
+                        {{ message["message"] }}
+                    </div>
+
+                    <small>
+                        {{ message["created_at"] }}
+                    </small>
+
+                </div>
+
+            {% endfor %}
+
+        {% else %}
+
+            <div class="alert">
+                هنوز پیامی ثبت نشده است.
+            </div>
+
+        {% endif %}
+
+    </div>
+
+    <br>
+
+    <form
+        method="POST"
+        action="{{ url_for(
+            'customer_message',
+            tracking_code=req['tracking_code']
+        ) }}"
+    >
+
+        <label>
+            پیام جدید
+        </label>
+
+        <textarea
+            name="message"
+            required
+            placeholder="پیام خود را برای کارشناس بنویسید..."
+        ></textarea>
+
+        <button type="submit" class="btn">
+            ارسال پیام
+        </button>
+
+    </form>
+
+</div>
+
+
+<div class="card">
+
+    <a
+        href="{{ url_for('tracking') }}"
+        class="btn btn-secondary"
+    >
+        بازگشت به پیگیری
+    </a>
+
+    <a
+        href="{{ url_for('home') }}"
+        class="btn btn-secondary"
+    >
+        صفحه اصلی
+    </a>
+
+</div>
+
+{% endblock %}
