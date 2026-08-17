@@ -27,6 +27,10 @@
 </div>
 
 
+<!-- =====================================================
+     آمار
+===================================================== -->
+
 <div class="grid">
 
     <div class="card">
@@ -62,6 +66,10 @@
 </div>
 
 
+<!-- =====================================================
+     درخواست ها
+===================================================== -->
+
 <div class="card">
 
     <h2>درخواست‌های مشتریان</h2>
@@ -73,6 +81,7 @@
             <table>
 
                 <thead>
+
                     <tr>
                         <th>کد پیگیری</th>
                         <th>مشتری</th>
@@ -81,6 +90,7 @@
                         <th>مبلغ</th>
                         <th>عملیات</th>
                     </tr>
+
                 </thead>
 
                 <tbody>
@@ -104,14 +114,21 @@
                             </td>
 
                             <td>
+
                                 <span class="badge">
                                     {{ req["status"] }}
                                 </span>
+
                             </td>
 
                             <td>
-                                {{ "{:,}".format(req["total_price"] or 0) }}
+
+                                {{ "{:,}".format(
+                                    req["total_price"] or 0
+                                ) }}
+
                                 تومان
+
                             </td>
 
                             <td>
@@ -149,13 +166,143 @@
 </div>
 
 
+<!-- =====================================================
+     تنظیمات سایت
+===================================================== -->
+
 <div class="card">
 
-    <h2>مدیریت خدمات</h2>
+    <h2>⚙️ تنظیمات سایت</h2>
 
     <p>
-        از این بخش می‌توانید خدمات سایت را مدیریت کنید.
+        اطلاعاتی که در قسمت‌های مختلف سایت نمایش داده می‌شوند
+        از این بخش قابل مدیریت هستند.
     </p>
+
+    <form
+        method="POST"
+        action="{{ url_for('admin_settings_save') }}"
+        enctype="multipart/form-data"
+    >
+
+        <label>
+            نام سایت
+        </label>
+
+        <input
+            type="text"
+            name="site_name"
+            value="{{ site_settings.get('site_name', 'کافی نت آنلاین نوین') }}"
+            placeholder="نام سایت"
+        >
+
+
+        <label>
+            نام مدیر
+        </label>
+
+        <input
+            type="text"
+            name="manager"
+            value="{{ site_settings.get('manager', 'احمد محمدی مهر') }}"
+            placeholder="نام مدیر"
+        >
+
+
+        <label>
+            شماره تلفن
+        </label>
+
+        <input
+            type="text"
+            name="phone"
+            value="{{ site_settings.get('phone', '') }}"
+            placeholder="مثلاً 09123456789"
+            inputmode="numeric"
+        >
+
+
+        <label>
+            متن زیر نام مدیر
+        </label>
+
+        <input
+            type="text"
+            name="manager_text"
+            value="{{ site_settings.get('manager_text', '') }}"
+            placeholder="مثلاً ارائه خدمات غیرحضوری"
+        >
+
+
+        <label>
+            متن صفحه اصلی
+        </label>
+
+        <textarea
+            name="home_text"
+            rows="4"
+            placeholder="متن اصلی صفحه اول سایت..."
+        >{{ site_settings.get('home_text', '') }}</textarea>
+
+
+        <label>
+            لوگوی سایت
+        </label>
+
+        <input
+            type="file"
+            name="logo"
+            accept=".png,.jpg,.jpeg,.webp"
+        >
+
+        {% if site_settings.get('logo') %}
+
+            <div style="margin-top:15px;">
+
+                <img
+                    src="{{ url_for(
+                        'static',
+                        filename='uploads/' ~ site_settings.get('logo')
+                    ) }}"
+                    alt="لوگو"
+                    style="
+                        max-width:150px;
+                        max-height:150px;
+                        border-radius:10px;
+                    "
+                >
+
+            </div>
+
+        {% endif %}
+
+
+        <br>
+
+        <button
+            type="submit"
+            class="btn"
+        >
+            ذخیره تنظیمات سایت
+        </button>
+
+    </form>
+
+</div>
+
+
+<!-- =====================================================
+     مدیریت خدمات
+===================================================== -->
+
+<div class="card">
+
+    <h2>🛠 مدیریت خدمات</h2>
+
+    <p>
+        تمام خدمات سایت از این قسمت اضافه و مدیریت می‌شوند.
+    </p>
+
 
     <form
         method="POST"
@@ -170,8 +317,9 @@
             type="text"
             name="name"
             required
-            placeholder="مثلاً ثبت نام خودرو"
+            placeholder="مثلاً جواز کسب"
         >
+
 
         <label>
             دسته‌بندی
@@ -180,8 +328,9 @@
         <input
             type="text"
             name="category"
-            placeholder="مثلاً ثبت نام"
+            placeholder="مثلاً خدمات اصناف"
         >
+
 
         <label>
             توضیحات
@@ -189,8 +338,10 @@
 
         <textarea
             name="description"
+            rows="4"
             placeholder="توضیحات خدمت..."
         ></textarea>
+
 
         <label>
             قیمت پایه
@@ -203,6 +354,7 @@
             value="0"
         >
 
+
         <label>
             ترتیب نمایش
         </label>
@@ -213,36 +365,91 @@
             value="0"
         >
 
+
         <label>
-            فعال بودن خدمت
+            وضعیت خدمت
         </label>
 
         <select name="active">
-            <option value="1">فعال</option>
-            <option value="0">غیرفعال</option>
+
+            <option value="1">
+                فعال
+            </option>
+
+            <option value="0">
+                غیرفعال
+            </option>
+
         </select>
 
-        <label>
-            فیلدهای فرم
-        </label>
 
-        <textarea
+        <!-- =================================================
+             فیلدهای اختصاصی
+        ================================================= -->
+
+        <h3 style="margin-top:30px;">
+            فیلدهای فرم مشتری
+        </h3>
+
+        <p>
+            فیلدهایی که مشتری هنگام ثبت درخواست باید تکمیل کند.
+        </p>
+
+
+        <div id="fields-container"></div>
+
+
+        <button
+            type="button"
+            class="btn btn-secondary"
+            onclick="addField()"
+        >
+            ➕ افزودن فیلد
+        </button>
+
+
+        <input
+            type="hidden"
             name="fields_json"
-            placeholder='["نام پدر","تاریخ تولد"]'
-        >[]</textarea>
+            id="fields_json"
+            value="[]"
+        >
 
-        <label>
+
+        <!-- =================================================
+             مدارک
+        ================================================= -->
+
+        <h3 style="margin-top:30px;">
             مدارک مورد نیاز
-        </label>
+        </h3>
 
-        <textarea
+        <div id="documents-container"></div>
+
+
+        <button
+            type="button"
+            class="btn btn-secondary"
+            onclick="addDocument()"
+        >
+            ➕ افزودن مدرک
+        </button>
+
+
+        <input
+            type="hidden"
             name="documents_json"
-            placeholder='["کارت ملی","شناسنامه"]'
-        >[]</textarea>
+            id="documents_json"
+            value="[]"
+        >
+
+
+        <br><br>
 
         <button
             type="submit"
             class="btn"
+            onclick="prepareServiceData()"
         >
             افزودن خدمت
         </button>
@@ -252,9 +459,13 @@
 </div>
 
 
+<!-- =====================================================
+     خدمات موجود
+===================================================== -->
+
 <div class="card">
 
-    <h2>خدمات موجود</h2>
+    <h2>📋 خدمات موجود</h2>
 
     {% if services %}
 
@@ -273,26 +484,41 @@
                     {{ service["name"] }}
                 </strong>
 
+
                 {% if service["category"] %}
+
                     <span class="badge">
                         {{ service["category"] }}
                     </span>
+
                 {% endif %}
 
-                <p>
-                    قیمت:
-                    {{ "{:,}".format(service["price"] or 0) }}
-                    تومان
-                </p>
 
                 <p>
+
+                    قیمت:
+
+                    {{ "{:,}".format(
+                        service["price"] or 0
+                    ) }}
+
+                    تومان
+
+                </p>
+
+
+                <p>
+
                     وضعیت:
+
                     {% if service["active"] %}
                         فعال
                     {% else %}
                         غیرفعال
                     {% endif %}
+
                 </p>
+
 
                 <form
                     method="POST"
@@ -347,9 +573,13 @@
 </div>
 
 
+<!-- =====================================================
+     کاربران
+===================================================== -->
+
 <div class="card">
 
-    <h2>افزودن کارشناس یا ادمین</h2>
+    <h2>👥 افزودن کارشناس یا ادمین</h2>
 
     {% if current_user and current_user["role"] == "admin" %}
 
@@ -368,6 +598,7 @@
                 required
             >
 
+
             <label>
                 رمز عبور
             </label>
@@ -378,6 +609,7 @@
                 minlength="6"
                 required
             >
+
 
             <label>
                 سطح دسترسی
@@ -394,6 +626,7 @@
                 </option>
 
             </select>
+
 
             <button
                 type="submit"
@@ -415,9 +648,13 @@
 </div>
 
 
+<!-- =====================================================
+     تغییر رمز
+===================================================== -->
+
 <div class="card">
 
-    <h2>تغییر رمز عبور</h2>
+    <h2>🔐 تغییر رمز عبور</h2>
 
     <form
         method="POST"
@@ -447,9 +684,13 @@
 </div>
 
 
+<!-- =====================================================
+     کد تخفیف
+===================================================== -->
+
 <div class="card">
 
-    <h2>کد تخفیف</h2>
+    <h2>🎟 کد تخفیف</h2>
 
     <form
         method="POST"
@@ -467,6 +708,7 @@
             placeholder="مثلاً NOVIN100"
         >
 
+
         <label>
             نوع تخفیف
         </label>
@@ -483,6 +725,7 @@
 
         </select>
 
+
         <label>
             مقدار تخفیف
         </label>
@@ -493,6 +736,7 @@
             min="0"
             required
         >
+
 
         <label>
             حداکثر تعداد استفاده
@@ -505,6 +749,7 @@
             value="1"
         >
 
+
         <label>
             تاریخ شروع
         </label>
@@ -514,6 +759,7 @@
             name="start_date"
         >
 
+
         <label>
             تاریخ پایان
         </label>
@@ -522,6 +768,7 @@
             type="date"
             name="end_date"
         >
+
 
         <button
             type="submit"
@@ -533,6 +780,385 @@
     </form>
 
 </div>
+
+
+<!-- =====================================================
+     JAVASCRIPT
+===================================================== -->
+
+<script>
+
+let fieldCounter = 0;
+
+let documentCounter = 0;
+
+
+/* =====================================================
+   افزودن فیلد
+===================================================== */
+
+function addField(
+    name = "",
+    label = "",
+    type = "text",
+    validation = "",
+    required = true
+) {
+
+    fieldCounter++;
+
+    const container =
+        document.getElementById(
+            "fields-container"
+        );
+
+
+    const div =
+        document.createElement("div");
+
+
+    div.className = "card";
+
+
+    div.style.marginTop = "15px";
+
+
+    div.innerHTML = `
+
+        <label>
+            نام فنی فیلد
+        </label>
+
+        <input
+            type="text"
+            class="field-name"
+            value="${name}"
+            placeholder="مثلاً national_id"
+        >
+
+
+        <label>
+            عنوان فیلد
+        </label>
+
+        <input
+            type="text"
+            class="field-label"
+            value="${label}"
+            placeholder="مثلاً کد ملی"
+        >
+
+
+        <label>
+            نوع فیلد
+        </label>
+
+        <select class="field-type">
+
+            <option value="text"
+                ${type === "text" ? "selected" : ""}>
+                متن
+            </option>
+
+            <option value="number"
+                ${type === "number" ? "selected" : ""}>
+                عدد
+            </option>
+
+            <option value="date"
+                ${type === "date" ? "selected" : ""}>
+                تاریخ
+            </option>
+
+            <option value="textarea"
+                ${type === "textarea" ? "selected" : ""}>
+                متن چندخطی
+            </option>
+
+        </select>
+
+
+        <label>
+            اعتبارسنجی
+        </label>
+
+        <select class="field-validation">
+
+            <option value=""
+                ${validation === "" ? "selected" : ""}>
+                بدون اعتبارسنجی
+            </option>
+
+            <option value="phone"
+                ${validation === "phone" ? "selected" : ""}>
+                تلفن همراه
+            </option>
+
+            <option value="national_id"
+                ${validation === "national_id" ? "selected" : ""}>
+                کد ملی
+            </option>
+
+            <option value="postal_code"
+                ${validation === "postal_code" ? "selected" : ""}>
+                کد پستی
+            </option>
+
+            <option value="national_card_serial"
+                ${validation === "national_card_serial" ? "selected" : ""}>
+                سریال کارت ملی
+            </option>
+
+            <option value="tax_code"
+                ${validation === "tax_code" ? "selected" : ""}>
+                کد مالیاتی
+            </option>
+
+        </select>
+
+
+        <label style="display:block;margin-top:10px;">
+
+            <input
+                type="checkbox"
+                class="field-required"
+                ${required ? "checked" : ""}
+            >
+
+            اجباری باشد
+
+        </label>
+
+
+        <button
+            type="button"
+            class="btn"
+            onclick="this.parentElement.remove()"
+        >
+            حذف فیلد
+        </button>
+
+    `;
+
+
+    container.appendChild(div);
+
+}
+
+
+/* =====================================================
+   افزودن مدرک
+===================================================== */
+
+function addDocument(
+    value = ""
+) {
+
+    documentCounter++;
+
+
+    const container =
+        document.getElementById(
+            "documents-container"
+        );
+
+
+    const div =
+        document.createElement("div");
+
+
+    div.style.marginTop = "10px";
+
+
+    div.innerHTML = `
+
+        <input
+            type="text"
+            class="document-name"
+            value="${value}"
+            placeholder="مثلاً تصویر کارت ملی"
+        >
+
+        <button
+            type="button"
+            class="btn btn-secondary"
+            onclick="this.parentElement.remove()"
+        >
+            حذف
+        </button>
+
+    `;
+
+
+    container.appendChild(div);
+
+}
+
+
+/* =====================================================
+   آماده سازی اطلاعات خدمت
+===================================================== */
+
+function prepareServiceData() {
+
+    const fields = [];
+
+
+    document
+        .querySelectorAll(
+            "#fields-container > .card"
+        )
+        .forEach(function(box) {
+
+
+            const name =
+                box.querySelector(
+                    ".field-name"
+                ).value.trim();
+
+
+            const label =
+                box.querySelector(
+                    ".field-label"
+                ).value.trim();
+
+
+            const type =
+                box.querySelector(
+                    ".field-type"
+                ).value;
+
+
+            const validation =
+                box.querySelector(
+                    ".field-validation"
+                ).value;
+
+
+            const required =
+                box.querySelector(
+                    ".field-required"
+                ).checked;
+
+
+            if (
+                name &&
+                label
+            ) {
+
+                fields.push({
+
+                    name: name,
+
+                    label: label,
+
+                    type: type,
+
+                    validation: validation,
+
+                    required: required
+
+                });
+
+            }
+
+        });
+
+
+    const documents = [];
+
+
+    document
+        .querySelectorAll(
+            ".document-name"
+        )
+        .forEach(function(input) {
+
+            const value =
+                input.value.trim();
+
+
+            if (value) {
+
+                documents.push(value);
+
+            }
+
+        });
+
+
+    document.getElementById(
+        "fields_json"
+    ).value =
+        JSON.stringify(fields);
+
+
+    document.getElementById(
+        "documents_json"
+    ).value =
+        JSON.stringify(documents);
+
+}
+
+
+/* =====================================================
+   نمونه فیلدهای جواز کسب
+===================================================== */
+
+/*
+برای تست می‌توانی موقتاً این بخش را
+در مرورگر اجرا کنی:
+
+addField(
+    "phone",
+    "تلفن بنام",
+    "text",
+    "phone",
+    true
+);
+
+addField(
+    "national_id",
+    "کد ملی",
+    "text",
+    "national_id",
+    true
+);
+
+addField(
+    "birth_date",
+    "تاریخ تولد",
+    "date",
+    "",
+    true
+);
+
+addField(
+    "postal_code",
+    "کد پستی",
+    "text",
+    "postal_code",
+    true
+);
+
+addField(
+    "national_card_serial",
+    "سریال کارت ملی",
+    "text",
+    "national_card_serial",
+    true
+);
+
+addField(
+    "tax_code",
+    "کد مالیاتی",
+    "text",
+    "tax_code",
+    false
+);
+*/
+
+</script>
 
 
 {% endblock %}
