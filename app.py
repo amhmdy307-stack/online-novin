@@ -1,8 +1,8 @@
 import os
 import json
 import uuid
-import sqlite3
 import random
+import sqlite3
 
 from functools import wraps
 from datetime import datetime
@@ -27,14 +27,14 @@ from werkzeug.security import (
 
 
 # =========================================================
-# APP
+# APP CONFIG
 # =========================================================
 
 app = Flask(__name__)
 
 app.secret_key = os.environ.get(
     "SECRET_KEY",
-    "CHANGE_THIS_SECRET_KEY"
+    "novin-secret-key-change-this"
 )
 
 SITE_NAME = os.environ.get(
@@ -75,11 +75,6 @@ ALLOWED_EXTENSIONS = {
 app.config["MAX_CONTENT_LENGTH"] = MAX_FILE_SIZE
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
-
-# =========================================================
-# FOLDERS
-# =========================================================
-
 os.makedirs(
     UPLOAD_FOLDER,
     exist_ok=True
@@ -101,7 +96,6 @@ STATUSES = [
     "انجام شد"
 ]
 
-
 NOTIFICATION_TYPES = {
     "new_request": "درخواست جدید",
     "status_change": "تغییر وضعیت",
@@ -117,23 +111,21 @@ NOTIFICATION_TYPES = {
 # =========================================================
 
 def get_db():
-
-    conn = sqlite3.connect(
+    db = sqlite3.connect(
         DATABASE,
         timeout=30
     )
 
-    conn.row_factory = sqlite3.Row
+    db.row_factory = sqlite3.Row
 
-    conn.execute(
+    db.execute(
         "PRAGMA foreign_keys = ON"
     )
 
-    return conn
+    return db
 
 
 def table_columns(db, table_name):
-
     rows = db.execute(
         f"PRAGMA table_info({table_name})"
     ).fetchall()
@@ -150,19 +142,16 @@ def add_column_if_missing(
     column_name,
     column_definition
 ):
-
     columns = table_columns(
         db,
         table_name
     )
 
     if column_name not in columns:
-
         db.execute(
             f"""
             ALTER TABLE {table_name}
-            ADD COLUMN {column_name}
-            {column_definition}
+            ADD COLUMN {column_name} {column_definition}
             """
         )
 
@@ -171,10 +160,7 @@ def create_tables():
 
     db = get_db()
 
-    # =====================================================
     # USERS
-    # =====================================================
-
     db.execute("""
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -186,10 +172,7 @@ def create_tables():
         )
     """)
 
-    # =====================================================
     # CUSTOMERS
-    # =====================================================
-
     db.execute("""
         CREATE TABLE IF NOT EXISTS customers (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -200,10 +183,7 @@ def create_tables():
         )
     """)
 
-    # =====================================================
     # SERVICES
-    # =====================================================
-
     db.execute("""
         CREATE TABLE IF NOT EXISTS services (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -225,10 +205,7 @@ def create_tables():
         )
     """)
 
-    # =====================================================
     # REQUESTS
-    # =====================================================
-
     db.execute("""
         CREATE TABLE IF NOT EXISTS requests (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -262,10 +239,7 @@ def create_tables():
         )
     """)
 
-    # =====================================================
     # DOCUMENTS
-    # =====================================================
-
     db.execute("""
         CREATE TABLE IF NOT EXISTS documents (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -281,10 +255,7 @@ def create_tables():
         )
     """)
 
-    # =====================================================
     # MESSAGES
-    # =====================================================
-
     db.execute("""
         CREATE TABLE IF NOT EXISTS messages (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -301,10 +272,7 @@ def create_tables():
         )
     """)
 
-    # =====================================================
     # DISCOUNTS
-    # =====================================================
-
     db.execute("""
         CREATE TABLE IF NOT EXISTS discounts (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -320,10 +288,7 @@ def create_tables():
         )
     """)
 
-    # =====================================================
     # DISCOUNT SERVICES
-    # =====================================================
-
     db.execute("""
         CREATE TABLE IF NOT EXISTS discount_services (
             discount_id INTEGER NOT NULL,
@@ -338,10 +303,7 @@ def create_tables():
         )
     """)
 
-    # =====================================================
     # SETTINGS
-    # =====================================================
-
     db.execute("""
         CREATE TABLE IF NOT EXISTS settings (
             key TEXT PRIMARY KEY,
@@ -349,10 +311,7 @@ def create_tables():
         )
     """)
 
-    # =====================================================
     # EXPERT SERVICES
-    # =====================================================
-
     db.execute("""
         CREATE TABLE IF NOT EXISTS expert_services (
             user_id INTEGER NOT NULL,
@@ -367,10 +326,7 @@ def create_tables():
         )
     """)
 
-    # =====================================================
     # NOTIFICATIONS
-    # =====================================================
-
     db.execute("""
         CREATE TABLE IF NOT EXISTS notifications (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -388,10 +344,7 @@ def create_tables():
         )
     """)
 
-    # =====================================================
     # FINANCIAL TRANSACTIONS
-    # =====================================================
-
     db.execute("""
         CREATE TABLE IF NOT EXISTS financial_transactions (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -411,10 +364,7 @@ def create_tables():
         )
     """)
 
-    # =====================================================
     # SAFE MIGRATION
-    # =====================================================
-
     add_column_if_missing(
         db,
         "services",
@@ -499,31 +449,7 @@ def create_tables():
         "INTEGER"
     )
 
-    add_column_if_missing(
-        db,
-        "messages",
-        "message",
-        "TEXT"
-    )
-
-    add_column_if_missing(
-        db,
-        "messages",
-        "attachment_name",
-        "TEXT"
-    )
-
-    add_column_if_missing(
-        db,
-        "messages",
-        "attachment_stored_name",
-        "TEXT"
-    )
-
-    # =====================================================
     # DEFAULT SETTINGS
-    # =====================================================
-
     defaults = {
         "site_name": SITE_NAME,
         "manager_name": MANAGER,
@@ -537,7 +463,6 @@ def create_tables():
     }
 
     for key, value in defaults.items():
-
         db.execute(
             """
             INSERT OR IGNORE INTO settings
@@ -550,10 +475,7 @@ def create_tables():
             )
         )
 
-    # =====================================================
     # DEFAULT ADMIN
-    # =====================================================
-
     admin = db.execute(
         """
         SELECT id
@@ -576,14 +498,16 @@ def create_tables():
             (
                 username,
                 password_hash,
-                role
+                role,
+                active
             )
-            VALUES (?, ?, ?)
+            VALUES (?, ?, ?, ?)
             """,
             (
                 "admin",
                 generate_password_hash(password),
-                "admin"
+                "admin",
+                1
             )
         )
 
@@ -617,10 +541,7 @@ def get_settings():
     }
 
 
-def get_setting(
-    key,
-    default=""
-):
+def get_setting(key, default=""):
 
     db = get_db()
 
@@ -704,7 +625,6 @@ def generate_tracking_code():
             ).fetchone()
 
             if not exists:
-
                 return code
 
         raise RuntimeError(
@@ -712,7 +632,6 @@ def generate_tracking_code():
         )
 
     finally:
-
         db.close()
 
 
@@ -758,6 +677,12 @@ def admin_required(func):
     def wrapper(*args, **kwargs):
 
         if not session.get("admin_id"):
+            return redirect(
+                url_for("admin_login")
+            )
+
+        if not current_user():
+            session.clear()
 
             return redirect(
                 url_for("admin_login")
@@ -806,26 +731,32 @@ def get_request(rid):
 def get_service_fields(service):
 
     try:
-
-        return json.loads(
+        data = json.loads(
             service["fields_json"] or "[]"
         )
 
-    except Exception:
+        return data if isinstance(
+            data,
+            list
+        ) else []
 
+    except Exception:
         return []
 
 
 def get_service_documents(service):
 
     try:
-
-        return json.loads(
+        data = json.loads(
             service["documents_json"] or "[]"
         )
 
-    except Exception:
+        return data if isinstance(
+            data,
+            list
+        ) else []
 
+    except Exception:
         return []
 
 
@@ -960,7 +891,6 @@ def calculate_discount(
 ):
 
     if not code:
-
         return {
             "valid": False,
             "amount": 0,
@@ -1137,434 +1067,6 @@ def record_payment(
     db.close()
 
 
-# =========================================================
-# HOME
-# =========================================================
-
-@app.route("/")
-def home():
-
-    db = get_db()
-
-    services = db.execute(
-        """
-        SELECT *
-        FROM services
-        WHERE active = 1
-        AND parent_id IS NULL
-        ORDER BY sort_order ASC, id DESC
-        """
-    ).fetchall()
-
-    db.close()
-
-    settings = get_settings()
-
-    return render_template(
-        "home.html",
-        services=services,
-        settings=settings,
-        site_name=settings.get(
-            "site_name",
-            SITE_NAME
-        ),
-        manager=settings.get(
-            "manager_name",
-            MANAGER
-        ),
-        phone=settings.get(
-            "phone",
-            PHONE
-        )
-    )
-
-
-# =========================================================
-# SERVICE
-# =========================================================
-
-@app.route(
-    "/service/<int:service_id>"
-)
-def service(service_id):
-
-    db = get_db()
-
-    service_row = db.execute(
-        """
-        SELECT *
-        FROM services
-        WHERE id = ?
-        AND active = 1
-        """,
-        (service_id,)
-    ).fetchone()
-
-    if not service_row:
-
-        db.close()
-
-        return "سامانه پیدا نشد", 404
-
-    subservices = db.execute(
-        """
-        SELECT *
-        FROM services
-        WHERE parent_id = ?
-        AND active = 1
-        ORDER BY sort_order ASC, id DESC
-        """,
-        (service_id,)
-    ).fetchall()
-
-    db.close()
-
-    fields = get_service_fields(
-        service_row
-    )
-
-    documents = get_service_documents(
-        service_row
-    )
-
-    return render_template(
-        "service.html",
-        service=service_row,
-        fields=fields,
-        documents=documents,
-        subservices=subservices
-    )
-
-
-# =========================================================
-# APPLY DISCOUNT
-# =========================================================
-
-@app.route(
-    "/service/<int:service_id>/discount",
-    methods=["POST"]
-)
-def service_discount(service_id):
-
-    db = get_db()
-
-    service_row = db.execute(
-        """
-        SELECT *
-        FROM services
-        WHERE id = ?
-        AND active = 1
-        """,
-        (service_id,)
-    ).fetchone()
-
-    db.close()
-
-    if not service_row:
-
-        return jsonify({
-            "valid": False,
-            "message": "خدمت پیدا نشد."
-        }), 404
-
-    code = request.form.get(
-        "code",
-        ""
-    )
-
-    result = calculate_discount(
-        service_id,
-        code,
-        service_row["price"] or 0
-    )
-
-    return jsonify(result)
-
-
-# =========================================================
-# CREATE REQUEST
-# =========================================================
-
-@app.route(
-    "/service/<int:service_id>/request",
-    methods=["POST"]
-)
-def create_request(service_id):
-
-    db = get_db()
-
-    service_row = db.execute(
-        """
-        SELECT *
-        FROM services
-        WHERE id = ?
-        AND active = 1
-        """,
-        (service_id,)
-    ).fetchone()
-
-    if not service_row:
-
-        db.close()
-
-        return "سامانه پیدا نشد", 404
-
-    selected_service_id = service_id
-
-    subservice_id = request.form.get(
-        "subservice_id",
-        type=int
-    )
-
-    if subservice_id:
-
-        subservice = db.execute(
-            """
-            SELECT *
-            FROM services
-            WHERE id = ?
-            AND parent_id = ?
-            AND active = 1
-            """,
-            (
-                subservice_id,
-                service_id
-            )
-        ).fetchone()
-
-        if subservice:
-
-            selected_service_id = subservice_id
-            service_row = subservice
-
-    name = request.form.get(
-        "name",
-        ""
-    ).strip()
-
-    national_id = request.form.get(
-        "national_id",
-        ""
-    ).strip()
-
-    phone = request.form.get(
-        "phone",
-        ""
-    ).strip()
-
-    customer_note = request.form.get(
-        "customer_note",
-        ""
-    ).strip()
-
-    discount_code = request.form.get(
-        "discount_code",
-        ""
-    ).strip()
-
-    if not name or not phone:
-
-        db.close()
-
-        flash(
-            "نام و شماره موبایل الزامی است.",
-            "error"
-        )
-
-        return redirect(
-            url_for(
-                "service",
-                service_id=service_id
-            )
-        )
-
-    customer = db.execute(
-        """
-        SELECT *
-        FROM customers
-        WHERE phone = ?
-        """,
-        (phone,)
-    ).fetchone()
-
-    if customer:
-
-        customer_id = customer["id"]
-
-        db.execute(
-            """
-            UPDATE customers
-            SET
-                name = ?,
-                national_id = ?
-            WHERE id = ?
-            """,
-            (
-                name,
-                national_id,
-                customer_id
-            )
-        )
-
-    else:
-
-        cursor = db.execute(
-            """
-            INSERT INTO customers
-            (
-                name,
-                national_id,
-                phone
-            )
-            VALUES (?, ?, ?)
-            """,
-            (
-                name,
-                national_id,
-                phone
-            )
-        )
-
-        customer_id = cursor.lastrowid
-
-    base_price = int(
-        service_row["price"] or 0
-    )
-
-    discount_result = calculate_discount(
-        selected_service_id,
-        discount_code,
-        base_price
-    )
-
-    discount_amount = 0
-
-    if discount_result["valid"]:
-
-        discount_amount = discount_result["amount"]
-
-    final_price = max(
-        0,
-        base_price - discount_amount
-    )
-
-    payment_status = (
-        "paid"
-        if final_price == 0
-        else "unpaid"
-    )
-
-    tracking_code = generate_tracking_code()
-
-    cursor = db.execute(
-        """
-        INSERT INTO requests
-        (
-            customer_id,
-            service_id,
-            tracking_code,
-            status,
-            customer_note,
-            total_price,
-            paid_price,
-            discount_amount,
-            payment_status
-        )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """,
-        (
-            customer_id,
-            selected_service_id,
-            tracking_code,
-            "جدید",
-            customer_note,
-            final_price,
-            0,
-            discount_amount,
-            payment_status
-        )
-    )
-
-    request_id = cursor.lastrowid
-
-    if final_price == 0:
-
-        db.execute(
-            """
-            UPDATE requests
-            SET
-                paid_price = 0,
-                payment_status = 'paid'
-            WHERE id = ?
-            """,
-            (request_id,)
-        )
-
-        if discount_result.get(
-            "discount_id"
-        ):
-
-            db.execute(
-                """
-                UPDATE discounts
-                SET used_count = used_count + 1
-                WHERE id = ?
-                """,
-                (
-                    discount_result["discount_id"],
-                )
-            )
-
-    db.commit()
-    db.close()
-
-    files = request.files.getlist(
-        "documents"
-    )
-
-    save_uploaded_files(
-        request_id,
-        files,
-        uploaded_by="customer",
-        uploaded_by_id=customer_id
-    )
-
-    notify_customer(
-        customer_id,
-        "درخواست شما ثبت شد",
-        f"کد پیگیری شما: {tracking_code}",
-        request_id,
-        "new_request"
-    )
-
-    notify_admins(
-        "درخواست جدید",
-        f"درخواست جدید با کد {tracking_code} ثبت شد.",
-        request_id,
-        "new_request"
-    )
-
-    if final_price == 0:
-
-        notify_admins(
-            "پرونده آماده پذیرش",
-            f"پرونده {tracking_code} بدون نیاز به پرداخت آماده پذیرش کارشناس است.",
-            request_id,
-            "payment"
-        )
-
-    return redirect(
-        url_for(
-            "request_success",
-            tracking_code=tracking_code
-        )
-    )
-
-
-# =========================================================
-# SAVE UPLOADS
-# =========================================================
-
 def save_uploaded_files(
     request_id,
     files,
@@ -1651,7 +1153,412 @@ def save_uploaded_files(
 
 
 # =========================================================
-# SUCCESS
+# HOME
+# =========================================================
+
+@app.route("/")
+def home():
+
+    db = get_db()
+
+    services = db.execute(
+        """
+        SELECT *
+        FROM services
+        WHERE active = 1
+        AND parent_id IS NULL
+        ORDER BY sort_order ASC, id DESC
+        """
+    ).fetchall()
+
+    db.close()
+
+    settings = get_settings()
+
+    return render_template(
+        "home.html",
+        services=services,
+        settings=settings,
+        site_name=settings.get(
+            "site_name",
+            SITE_NAME
+        ),
+        manager=settings.get(
+            "manager_name",
+            MANAGER
+        ),
+        phone=settings.get(
+            "phone",
+            PHONE
+        )
+    )
+
+
+# =========================================================
+# SERVICE
+# =========================================================
+
+@app.route(
+    "/service/<int:service_id>"
+)
+def service(service_id):
+
+    db = get_db()
+
+    service_row = db.execute(
+        """
+        SELECT *
+        FROM services
+        WHERE id = ?
+        AND active = 1
+        """,
+        (service_id,)
+    ).fetchone()
+
+    if not service_row:
+
+        db.close()
+
+        return "خدمت پیدا نشد", 404
+
+    subservices = db.execute(
+        """
+        SELECT *
+        FROM services
+        WHERE parent_id = ?
+        AND active = 1
+        ORDER BY sort_order ASC, id DESC
+        """,
+        (service_id,)
+    ).fetchall()
+
+    db.close()
+
+    return render_template(
+        "service.html",
+        service=service_row,
+        fields=get_service_fields(
+            service_row
+        ),
+        documents=get_service_documents(
+            service_row
+        ),
+        subservices=subservices
+    )
+
+
+# =========================================================
+# DISCOUNT API
+# =========================================================
+
+@app.route(
+    "/service/<int:service_id>/discount",
+    methods=["POST"]
+)
+def service_discount(service_id):
+
+    db = get_db()
+
+    service_row = db.execute(
+        """
+        SELECT *
+        FROM services
+        WHERE id = ?
+        AND active = 1
+        """,
+        (service_id,)
+    ).fetchone()
+
+    db.close()
+
+    if not service_row:
+
+        return jsonify({
+            "valid": False,
+            "message": "خدمت پیدا نشد."
+        }), 404
+
+    code = request.form.get(
+        "code",
+        ""
+    )
+
+    result = calculate_discount(
+        service_id,
+        code,
+        int(service_row["price"] or 0)
+    )
+
+    return jsonify(result)
+
+
+# =========================================================
+# CREATE REQUEST
+# =========================================================
+
+@app.route(
+    "/service/<int:service_id>/request",
+    methods=["POST"]
+)
+def create_request(service_id):
+
+    db = get_db()
+
+    service_row = db.execute(
+        """
+        SELECT *
+        FROM services
+        WHERE id = ?
+        AND active = 1
+        """,
+        (service_id,)
+    ).fetchone()
+
+    if not service_row:
+
+        db.close()
+
+        return "خدمت پیدا نشد", 404
+
+    selected_service_id = service_id
+
+    subservice_id = request.form.get(
+        "subservice_id",
+        type=int
+    )
+
+    if subservice_id:
+
+        subservice = db.execute(
+            """
+            SELECT *
+            FROM services
+            WHERE id = ?
+            AND parent_id = ?
+            AND active = 1
+            """,
+            (
+                subservice_id,
+                service_id
+            )
+        ).fetchone()
+
+        if subservice:
+
+            selected_service_id = subservice_id
+            service_row = subservice
+
+    name = request.form.get(
+        "name",
+        ""
+    ).strip()
+
+    national_id = request.form.get(
+        "national_id",
+        ""
+    ).strip()
+
+    phone = request.form.get(
+        "phone",
+        ""
+    ).strip()
+
+    customer_note = request.form.get(
+        "customer_note",
+        ""
+    ).strip()
+
+    description = request.form.get(
+        "description",
+        ""
+    ).strip()
+
+    discount_code = request.form.get(
+        "discount_code",
+        ""
+    ).strip()
+
+    if not name or not phone:
+
+        db.close()
+
+        flash(
+            "نام و شماره موبایل الزامی است.",
+            "error"
+        )
+
+        return redirect(
+            url_for(
+                "service",
+                service_id=service_id
+            )
+        )
+
+    customer = db.execute(
+        """
+        SELECT *
+        FROM customers
+        WHERE phone = ?
+        """,
+        (phone,)
+    ).fetchone()
+
+    if customer:
+
+        customer_id = customer["id"]
+
+        db.execute(
+            """
+            UPDATE customers
+            SET
+                name = ?,
+                national_id = ?
+            WHERE id = ?
+            """,
+            (
+                name,
+                national_id,
+                customer_id
+            )
+        )
+
+    else:
+
+        cursor = db.execute(
+            """
+            INSERT INTO customers
+            (
+                name,
+                national_id,
+                phone
+            )
+            VALUES (?, ?, ?)
+            """,
+            (
+                name,
+                national_id,
+                phone
+            )
+        )
+
+        customer_id = cursor.lastrowid
+
+    base_price = int(
+        service_row["price"] or 0
+    )
+
+    discount_result = calculate_discount(
+        selected_service_id,
+        discount_code,
+        base_price
+    )
+
+    discount_amount = 0
+    discount_id = None
+
+    if discount_result["valid"]:
+
+        discount_amount = discount_result["amount"]
+        discount_id = discount_result.get(
+            "discount_id"
+        )
+
+    final_price = max(
+        0,
+        base_price - discount_amount
+    )
+
+    payment_status = (
+        "paid"
+        if final_price == 0
+        else "unpaid"
+    )
+
+    tracking_code = generate_tracking_code()
+
+    cursor = db.execute(
+        """
+        INSERT INTO requests
+        (
+            customer_id,
+            service_id,
+            tracking_code,
+            status,
+            customer_note,
+            description,
+            total_price,
+            paid_price,
+            discount_amount,
+            payment_status
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            customer_id,
+            selected_service_id,
+            tracking_code,
+            "جدید",
+            customer_note,
+            description,
+            final_price,
+            0,
+            discount_amount,
+            payment_status
+        )
+    )
+
+    request_id = cursor.lastrowid
+
+    if final_price == 0 and discount_id:
+
+        db.execute(
+            """
+            UPDATE discounts
+            SET used_count = used_count + 1
+            WHERE id = ?
+            """,
+            (discount_id,)
+        )
+
+    db.commit()
+    db.close()
+
+    files = request.files.getlist(
+        "documents"
+    )
+
+    save_uploaded_files(
+        request_id,
+        files,
+        "customer",
+        customer_id
+    )
+
+    notify_customer(
+        customer_id,
+        "درخواست شما ثبت شد",
+        f"کد پیگیری شما: {tracking_code}",
+        request_id,
+        "new_request"
+    )
+
+    notify_admins(
+        "درخواست جدید",
+        f"درخواست جدید با کد {tracking_code} ثبت شد.",
+        request_id,
+        "new_request"
+    )
+
+    return redirect(
+        url_for(
+            "request_success",
+            tracking_code=tracking_code
+        )
+    )
+
+
+# =========================================================
+# REQUEST SUCCESS
 # =========================================================
 
 @app.route(
@@ -1691,6 +1598,7 @@ def tracking():
             SELECT
                 r.*,
                 c.name AS customer_name,
+                c.phone AS customer_phone,
                 s.name AS service_name
             FROM requests r
             JOIN customers c
@@ -1810,7 +1718,6 @@ def customer_upload(tracking_code):
     db.close()
 
     if not req:
-
         return "پرونده پیدا نشد", 404
 
     files = request.files.getlist(
@@ -1820,21 +1727,13 @@ def customer_upload(tracking_code):
     save_uploaded_files(
         req["id"],
         files,
-        uploaded_by="customer",
-        uploaded_by_id=req["customer_id"]
+        "customer",
+        req["customer_id"]
     )
 
     notify_admins(
         "مدرک جدید",
         f"برای پرونده {tracking_code} مدرک جدید ارسال شده است.",
-        req["id"],
-        "message"
-    )
-
-    notify_customer(
-        req["customer_id"],
-        "مدرک دریافت شد",
-        "مدرک شما با موفقیت دریافت شد.",
         req["id"],
         "message"
     )
@@ -1848,47 +1747,7 @@ def customer_upload(tracking_code):
 
 
 # =========================================================
-# DOWNLOAD DOCUMENT
-# =========================================================
-
-@app.route(
-    "/document/<int:document_id>"
-)
-@admin_required
-def download_document(document_id):
-
-    db = get_db()
-
-    document = db.execute(
-        """
-        SELECT *
-        FROM documents
-        WHERE id = ?
-        """,
-        (document_id,)
-    ).fetchone()
-
-    db.close()
-
-    if not document:
-
-        return "فایل پیدا نشد", 404
-
-    directory = os.path.join(
-        app.config["UPLOAD_FOLDER"],
-        str(document["request_id"])
-    )
-
-    return send_from_directory(
-        directory,
-        document["stored_name"],
-        as_attachment=True,
-        download_name=document["original_name"]
-    )
-
-
-# =========================================================
-# CUSTOMER CHAT
+# CUSTOMER MESSAGE
 # =========================================================
 
 @app.route(
@@ -1923,7 +1782,6 @@ def customer_message(tracking_code):
     db.close()
 
     if not req:
-
         return "پرونده پیدا نشد", 404
 
     attachment_name = None
@@ -2010,6 +1868,13 @@ def customer_message(tracking_code):
     db.commit()
     db.close()
 
+    notify_admins(
+        "پیام جدید مشتری",
+        f"برای پرونده {tracking_code} پیام جدید ارسال شده است.",
+        req["id"],
+        "message"
+    )
+
     if req["expert_id"]:
 
         notify_expert(
@@ -2020,61 +1885,11 @@ def customer_message(tracking_code):
             "message"
         )
 
-    notify_admins(
-        "پیام جدید مشتری",
-        f"برای پرونده {tracking_code} پیام جدید ارسال شده است.",
-        req["id"],
-        "message"
-    )
-
     return redirect(
         url_for(
             "customer_request",
             tracking_code=tracking_code
         )
-    )
-
-
-# =========================================================
-# MESSAGE ATTACHMENT
-# =========================================================
-
-@app.route(
-    "/message/file/<int:message_id>"
-)
-def message_file(message_id):
-
-    db = get_db()
-
-    message = db.execute(
-        """
-        SELECT *
-        FROM messages
-        WHERE id = ?
-        """,
-        (message_id,)
-    ).fetchone()
-
-    db.close()
-
-    if not message:
-
-        return "فایل پیدا نشد", 404
-
-    if not message["attachment_stored_name"]:
-
-        return "فایل وجود ندارد", 404
-
-    folder = os.path.join(
-        app.config["UPLOAD_FOLDER"],
-        str(message["request_id"])
-    )
-
-    return send_from_directory(
-        folder,
-        message["attachment_stored_name"],
-        as_attachment=False,
-        download_name=message["attachment_name"]
     )
 
 
@@ -2114,18 +1929,25 @@ def admin_login():
 
         db.close()
 
-        if user and check_password_hash(
-            user["password_hash"],
-            password
-        ):
+        if user:
 
-            session.clear()
+            try:
+                valid = check_password_hash(
+                    user["password_hash"],
+                    password
+                )
+            except Exception:
+                valid = False
 
-            session["admin_id"] = user["id"]
+            if valid:
 
-            return redirect(
-                url_for("admin")
-            )
+                session.clear()
+
+                session["admin_id"] = user["id"]
+
+                return redirect(
+                    url_for("admin")
+                )
 
         flash(
             "نام کاربری یا رمز عبور اشتباه است.",
@@ -2138,7 +1960,7 @@ def admin_login():
 
 
 # =========================================================
-# LOGOUT
+# ADMIN LOGOUT
 # =========================================================
 
 @app.route(
@@ -2217,6 +2039,21 @@ def admin():
         """
     ).fetchall()
 
+    discounts = db.execute(
+        """
+        SELECT *
+        FROM discounts
+        ORDER BY id DESC
+        """
+    ).fetchall()
+
+    expert_permissions = db.execute(
+        """
+        SELECT *
+        FROM expert_services
+        """
+    ).fetchall()
+
     total_income = db.execute(
         """
         SELECT COALESCE(
@@ -2244,24 +2081,28 @@ def admin():
         """
     ).fetchone()[0]
 
-    notifications = []
+    unread_notifications = db.execute(
+        """
+        SELECT COUNT(*) AS count
+        FROM notifications
+        WHERE recipient_type = 'admin'
+        AND recipient_id = ?
+        AND is_read = 0
+        """,
+        (user["id"],)
+    ).fetchone()["count"]
 
-    if user:
-
-        notifications = db.execute(
-            """
-            SELECT *
-            FROM notifications
-            WHERE recipient_type IN ('admin', 'system')
-            AND (
-                recipient_id = ?
-                OR recipient_id IS NULL
-            )
-            ORDER BY id DESC
-            LIMIT 30
-            """,
-            (user["id"],)
-        ).fetchall()
+    notifications = db.execute(
+        """
+        SELECT *
+        FROM notifications
+        WHERE recipient_type = 'admin'
+        AND recipient_id = ?
+        ORDER BY id DESC
+        LIMIT 50
+        """,
+        (user["id"],)
+    ).fetchall()
 
     settings_rows = db.execute(
         """
@@ -2284,7 +2125,10 @@ def admin():
         customers=customers,
         services=services,
         experts=experts,
+        discounts=discounts,
+        expert_permissions=expert_permissions,
         notifications=notifications,
+        unread_notifications=unread_notifications,
         total_income=total_income,
         total_debt=total_debt,
         current_user=user,
@@ -2306,7 +2150,6 @@ def admin_request(rid):
     req = get_request(rid)
 
     if not req:
-
         return "پرونده پیدا نشد", 404
 
     user = current_user()
@@ -2353,29 +2196,24 @@ def admin_request(rid):
 
     db.close()
 
-    can_view = False
-
-    if user and user["role"] == "admin":
-
+    if user["role"] == "admin":
         can_view = True
 
     elif (
-        user
-        and user["role"] == "expert"
+        user["role"] == "expert"
         and req["expert_id"] == user["id"]
     ):
-
         can_view = True
 
     elif (
-        user
-        and user["role"] == "expert"
+        user["role"] == "expert"
         and not req["expert_id"]
+        and req["payment_status"] == "paid"
     ):
+        can_view = True
 
-        if req["payment_status"] == "paid":
-
-            can_view = True
+    else:
+        can_view = False
 
     if not can_view:
 
@@ -2408,9 +2246,12 @@ def accept_request(rid):
 
     user = current_user()
 
-    if not user or user["role"] != "expert":
+    if user["role"] != "expert":
 
-        return "فقط کارشناس می‌تواند پرونده را پذیرش کند.", 403
+        return (
+            "فقط کارشناس می‌تواند پرونده را پذیرش کند.",
+            403
+        )
 
     db = get_db()
 
@@ -2507,14 +2348,6 @@ def accept_request(rid):
     db.commit()
     db.close()
 
-    notify_expert(
-        user["id"],
-        "پرونده به شما اختصاص یافت",
-        f"پرونده {req['tracking_code']} با موفقیت به شما اختصاص یافت.",
-        rid,
-        "assignment"
-    )
-
     notify_customer(
         req["customer_id"],
         "پرونده شما پذیرش شد",
@@ -2539,7 +2372,7 @@ def accept_request(rid):
 
 
 # =========================================================
-# ADMIN REQUEST STATUS
+# ADMIN STATUS
 # =========================================================
 
 @app.route(
@@ -2558,6 +2391,11 @@ def admin_request_status():
         "status",
         "جدید"
     )
+
+    if not rid:
+        return redirect(
+            url_for("admin")
+        )
 
     if status not in STATUSES:
 
@@ -2587,6 +2425,17 @@ def admin_request_status():
 
         return "پرونده پیدا نشد", 404
 
+    user = current_user()
+
+    if (
+        user["role"] == "expert"
+        and req["expert_id"] != user["id"]
+    ):
+
+        db.close()
+
+        return "دسترسی غیرمجاز", 403
+
     db.execute(
         """
         UPDATE requests
@@ -2608,13 +2457,6 @@ def admin_request_status():
         req["customer_id"],
         "تغییر وضعیت پرونده",
         f"وضعیت پرونده شما به «{status}» تغییر کرد.",
-        rid,
-        "status_change"
-    )
-
-    notify_admins(
-        "تغییر وضعیت پرونده",
-        f"وضعیت پرونده {req['tracking_code']} به «{status}» تغییر کرد.",
         rid,
         "status_change"
     )
@@ -2653,15 +2495,23 @@ def admin_request_update():
         type=int
     )
 
+    if not rid:
+        return redirect(
+            url_for("admin")
+        )
+
     total_price = request.form.get(
         "total_price",
         type=int
-    ) or 0
+    )
 
     paid_price = request.form.get(
         "paid_price",
         type=int
-    ) or 0
+    )
+
+    total_price = total_price or 0
+    paid_price = paid_price or 0
 
     admin_note = request.form.get(
         "admin_note",
@@ -2702,7 +2552,7 @@ def admin_request_update():
 
     user = current_user()
 
-    if user and user["role"] == "expert":
+    if user["role"] == "expert":
 
         if (
             req["expert_id"]
@@ -2715,29 +2565,31 @@ def admin_request_update():
 
         expert_id = user["id"]
 
-    if total_price < 0:
-        total_price = 0
+    total_price = max(
+        0,
+        total_price
+    )
 
-    if paid_price < 0:
-        paid_price = 0
+    paid_price = max(
+        0,
+        paid_price
+    )
 
-    if paid_price > total_price:
-        paid_price = total_price
+    paid_price = min(
+        paid_price,
+        total_price
+    )
 
     if total_price == 0:
-
         payment_status = "paid"
 
     elif paid_price >= total_price:
-
         payment_status = "paid"
 
     elif paid_price > 0:
-
         payment_status = "partial"
 
     else:
-
         payment_status = "unpaid"
 
     db.execute(
@@ -2773,7 +2625,10 @@ def admin_request_update():
 
     if paid_price > old_paid:
 
-        difference = paid_price - old_paid
+        difference = (
+            paid_price
+            - old_paid
+        )
 
         record_payment(
             rid,
@@ -2788,17 +2643,17 @@ def admin_request_update():
         and payment_status == "paid"
     ):
 
-        notify_admins(
-            "پرداخت انجام شد",
-            f"پرداخت پرونده {req['tracking_code']} تکمیل شد.",
-            rid,
-            "payment"
-        )
-
         notify_customer(
             req["customer_id"],
             "پرداخت تایید شد",
             "پرداخت پرونده شما با موفقیت ثبت شد.",
+            rid,
+            "payment"
+        )
+
+        notify_admins(
+            "پرداخت تکمیل شد",
+            f"پرداخت پرونده {req['tracking_code']} تکمیل شد.",
             rid,
             "payment"
         )
@@ -2956,23 +2811,6 @@ def admin_message():
         "message"
     )
 
-    if req["expert_id"]:
-
-        notify_expert(
-            req["expert_id"],
-            "پیام پرونده",
-            f"برای پرونده {req['tracking_code']} پیام جدید ثبت شد.",
-            rid,
-            "message"
-        )
-
-    notify_admins(
-        "پیام جدید پرونده",
-        f"برای پرونده {req['tracking_code']} پیام جدید ثبت شد.",
-        rid,
-        "message"
-    )
-
     return redirect(
         url_for(
             "admin_request",
@@ -2982,7 +2820,91 @@ def admin_message():
 
 
 # =========================================================
-# ADMIN ADD SERVICE
+# DOCUMENT DOWNLOAD
+# =========================================================
+
+@app.route(
+    "/document/<int:document_id>"
+)
+@admin_required
+def download_document(document_id):
+
+    db = get_db()
+
+    document = db.execute(
+        """
+        SELECT *
+        FROM documents
+        WHERE id = ?
+        """,
+        (document_id,)
+    ).fetchone()
+
+    db.close()
+
+    if not document:
+        return "فایل پیدا نشد", 404
+
+    directory = os.path.join(
+        app.config["UPLOAD_FOLDER"],
+        str(document["request_id"])
+    )
+
+    return send_from_directory(
+        directory,
+        document["stored_name"],
+        as_attachment=True,
+        download_name=document["original_name"]
+    )
+
+
+# =========================================================
+# MESSAGE FILE
+# =========================================================
+
+@app.route(
+    "/message/file/<int:message_id>"
+)
+def message_file(message_id):
+
+    db = get_db()
+
+    message = db.execute(
+        """
+        SELECT *
+        FROM messages
+        WHERE id = ?
+        """,
+        (message_id,)
+    ).fetchone()
+
+    db.close()
+
+    if not message:
+        return "فایل پیدا نشد", 404
+
+    stored_name = message[
+        "attachment_stored_name"
+    ]
+
+    if not stored_name:
+        return "فایل وجود ندارد", 404
+
+    folder = os.path.join(
+        app.config["UPLOAD_FOLDER"],
+        str(message["request_id"])
+    )
+
+    return send_from_directory(
+        folder,
+        stored_name,
+        as_attachment=False,
+        download_name=message["attachment_name"]
+    )
+
+
+# =========================================================
+# SERVICE SAVE
 # =========================================================
 
 @app.route(
@@ -2992,10 +2914,7 @@ def admin_message():
 @admin_required
 def admin_service_save():
 
-    user = current_user()
-
-    if not user or user["role"] != "admin":
-
+    if not is_admin():
         return "دسترسی غیرمجاز", 403
 
     name = request.form.get(
@@ -3061,9 +2980,15 @@ def admin_service_save():
 
     try:
 
-        json.loads(
+        data = json.loads(
             fields_json
         )
+
+        if not isinstance(
+            data,
+            list
+        ):
+            fields_json = "[]"
 
     except Exception:
 
@@ -3071,15 +2996,41 @@ def admin_service_save():
 
     try:
 
-        json.loads(
+        data = json.loads(
             documents_json
         )
+
+        if not isinstance(
+            data,
+            list
+        ):
+            documents_json = "[]"
 
     except Exception:
 
         documents_json = "[]"
 
+    if price < 0:
+        price = 0
+
+    if sort_order < 0:
+        sort_order = 0
+
     db = get_db()
+
+    if parent_id:
+
+        parent = db.execute(
+            """
+            SELECT id
+            FROM services
+            WHERE id = ?
+            """,
+            (parent_id,)
+        ).fetchone()
+
+        if not parent:
+            parent_id = None
 
     db.execute(
         """
@@ -3127,7 +3078,7 @@ def admin_service_save():
 
 
 # =========================================================
-# ADMIN UPDATE SERVICE
+# SERVICE UPDATE
 # =========================================================
 
 @app.route(
@@ -3138,7 +3089,6 @@ def admin_service_save():
 def update_service(service_id):
 
     if not is_admin():
-
         return "دسترسی غیرمجاز", 403
 
     name = request.form.get(
@@ -3149,4 +3099,1135 @@ def update_service(service_id):
     category = request.form.get(
         "category",
         ""
-   
+    ).strip()
+
+    description = request.form.get(
+        "description",
+        ""
+    ).strip()
+
+    price = request.form.get(
+        "price",
+        type=int
+    ) or 0
+
+    sort_order = request.form.get(
+        "sort_order",
+        type=int
+    ) or 0
+
+    active = request.form.get(
+        "active",
+        "0"
+    )
+
+    fields_json = request.form.get(
+        "fields_json",
+        "[]"
+    )
+
+    documents_json = request.form.get(
+        "documents_json",
+        "[]"
+    )
+
+    code = request.form.get(
+        "code",
+        ""
+    ).strip()
+
+    parent_id = request.form.get(
+        "parent_id",
+        type=int
+    )
+
+    if not name:
+
+        flash(
+            "نام خدمت الزامی است.",
+            "error"
+        )
+
+        return redirect(
+            url_for("admin")
+        )
+
+    price = max(
+        0,
+        price
+    )
+
+    sort_order = max(
+        0,
+        sort_order
+    )
+
+    try:
+
+        data = json.loads(
+            fields_json
+        )
+
+        if not isinstance(
+            data,
+            list
+        ):
+            fields_json = "[]"
+
+    except Exception:
+
+        fields_json = "[]"
+
+    try:
+
+        data = json.loads(
+            documents_json
+        )
+
+        if not isinstance(
+            data,
+            list
+        ):
+            documents_json = "[]"
+
+    except Exception:
+
+        documents_json = "[]"
+
+    db = get_db()
+
+    service_row = db.execute(
+        """
+        SELECT *
+        FROM services
+        WHERE id = ?
+        """,
+        (service_id,)
+    ).fetchone()
+
+    if not service_row:
+
+        db.close()
+
+        flash(
+            "خدمت پیدا نشد.",
+            "error"
+        )
+
+        return redirect(
+            url_for("admin")
+        )
+
+    if parent_id == service_id:
+        parent_id = None
+
+    if parent_id:
+
+        parent = db.execute(
+            """
+            SELECT id
+            FROM services
+            WHERE id = ?
+            """,
+            (parent_id,)
+        ).fetchone()
+
+        if not parent:
+            parent_id = None
+
+    db.execute(
+        """
+        UPDATE services
+        SET
+            name = ?,
+            category = ?,
+            description = ?,
+            price = ?,
+            sort_order = ?,
+            active = ?,
+            fields_json = ?,
+            documents_json = ?,
+            code = ?,
+            parent_id = ?,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = ?
+        """,
+        (
+            name,
+            category,
+            description,
+            price,
+            sort_order,
+            1 if active == "1" else 0,
+            fields_json,
+            documents_json,
+            code,
+            parent_id,
+            service_id
+        )
+    )
+
+    db.commit()
+    db.close()
+
+    flash(
+        "خدمت با موفقیت ویرایش شد.",
+        "success"
+    )
+
+    return redirect(
+        url_for("admin")
+    )
+
+
+# =========================================================
+# SERVICE DELETE
+# =========================================================
+
+@app.route(
+    "/admin/service/<int:service_id>/delete",
+    methods=["POST"]
+)
+@admin_required
+def delete_service(service_id):
+
+    if not is_admin():
+        return "دسترسی غیرمجاز", 403
+
+    db = get_db()
+
+    service_row = db.execute(
+        """
+        SELECT *
+        FROM services
+        WHERE id = ?
+        """,
+        (service_id,)
+    ).fetchone()
+
+    if not service_row:
+
+        db.close()
+
+        flash(
+            "خدمت پیدا نشد.",
+            "error"
+        )
+
+        return redirect(
+            url_for("admin")
+        )
+
+    request_count = db.execute(
+        """
+        SELECT COUNT(*) AS count
+        FROM requests
+        WHERE service_id = ?
+        """,
+        (service_id,)
+    ).fetchone()["count"]
+
+    if request_count > 0:
+
+        db.execute(
+            """
+            UPDATE services
+            SET
+                active = 0,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?
+            """,
+            (service_id,)
+        )
+
+        message = (
+            "این خدمت دارای پرونده است و "
+            "برای حفظ سوابق غیرفعال شد."
+        )
+
+    else:
+
+        db.execute(
+            """
+            DELETE FROM services
+            WHERE id = ?
+            """,
+            (service_id,)
+        )
+
+        message = "خدمت حذف شد."
+
+    db.commit()
+    db.close()
+
+    flash(
+        message,
+        "success"
+    )
+
+    return redirect(
+        url_for("admin")
+    )
+
+
+# =========================================================
+# SERVICE TOGGLE
+# =========================================================
+
+@app.route(
+    "/admin/service/<int:service_id>/toggle",
+    methods=["POST"]
+)
+@admin_required
+def toggle_service(service_id):
+
+    if not is_admin():
+        return "دسترسی غیرمجاز", 403
+
+    db = get_db()
+
+    service_row = db.execute(
+        """
+        SELECT active
+        FROM services
+        WHERE id = ?
+        """,
+        (service_id,)
+    ).fetchone()
+
+    if not service_row:
+
+        db.close()
+
+        flash(
+            "خدمت پیدا نشد.",
+            "error"
+        )
+
+        return redirect(
+            url_for("admin")
+        )
+
+    new_status = (
+        0
+        if service_row["active"]
+        else 1
+    )
+
+    db.execute(
+        """
+        UPDATE services
+        SET
+            active = ?,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = ?
+        """,
+        (
+            new_status,
+            service_id
+        )
+    )
+
+    db.commit()
+    db.close()
+
+    flash(
+        "وضعیت خدمت تغییر کرد.",
+        "success"
+    )
+
+    return redirect(
+        url_for("admin")
+    )
+
+
+# =========================================================
+# EXPERT SAVE
+# =========================================================
+
+@app.route(
+    "/admin/expert/save",
+    methods=["POST"]
+)
+@admin_required
+def admin_expert_save():
+
+    if not is_admin():
+        return "دسترسی غیرمجاز", 403
+
+    username = request.form.get(
+        "username",
+        ""
+    ).strip()
+
+    password = request.form.get(
+        "password",
+        ""
+    )
+
+    if not username or not password:
+
+        flash(
+            "نام کاربری و رمز عبور الزامی است.",
+            "error"
+        )
+
+        return redirect(
+            url_for("admin")
+        )
+
+    db = get_db()
+
+    existing = db.execute(
+        """
+        SELECT id
+        FROM users
+        WHERE username = ?
+        """,
+        (username,)
+    ).fetchone()
+
+    if existing:
+
+        db.close()
+
+        flash(
+            "این نام کاربری قبلاً وجود دارد.",
+            "error"
+        )
+
+        return redirect(
+            url_for("admin")
+        )
+
+    db.execute(
+        """
+        INSERT INTO users
+        (
+            username,
+            password_hash,
+            role,
+            active
+        )
+        VALUES (?, ?, ?, ?)
+        """,
+        (
+            username,
+            generate_password_hash(password),
+            "expert",
+            1
+        )
+    )
+
+    db.commit()
+    db.close()
+
+    flash(
+        "کارشناس با موفقیت اضافه شد.",
+        "success"
+    )
+
+    return redirect(
+        url_for("admin")
+    )
+
+
+# =========================================================
+# EXPERT TOGGLE
+# =========================================================
+
+@app.route(
+    "/admin/expert/<int:user_id>/toggle",
+    methods=["POST"]
+)
+@admin_required
+def toggle_expert(user_id):
+
+    if not is_admin():
+        return "دسترسی غیرمجاز", 403
+
+    db = get_db()
+
+    user = db.execute(
+        """
+        SELECT *
+        FROM users
+        WHERE id = ?
+        AND role = 'expert'
+        """,
+        (user_id,)
+    ).fetchone()
+
+    if not user:
+
+        db.close()
+
+        flash(
+            "کارشناس پیدا نشد.",
+            "error"
+        )
+
+        return redirect(
+            url_for("admin")
+        )
+
+    new_status = (
+        0
+        if user["active"]
+        else 1
+    )
+
+    db.execute(
+        """
+        UPDATE users
+        SET active = ?
+        WHERE id = ?
+        """,
+        (
+            new_status,
+            user_id
+        )
+    )
+
+    db.commit()
+    db.close()
+
+    flash(
+        "وضعیت کارشناس تغییر کرد.",
+        "success"
+    )
+
+    return redirect(
+        url_for("admin")
+    )
+
+
+# =========================================================
+# EXPERT SERVICE PERMISSIONS
+# =========================================================
+
+@app.route(
+    "/admin/expert/<int:user_id>/services",
+    methods=["POST"]
+)
+@admin_required
+def update_expert_services(user_id):
+
+    if not is_admin():
+        return "دسترسی غیرمجاز", 403
+
+    db = get_db()
+
+    expert = db.execute(
+        """
+        SELECT *
+        FROM users
+        WHERE id = ?
+        AND role = 'expert'
+        """,
+        (user_id,)
+    ).fetchone()
+
+    if not expert:
+
+        db.close()
+
+        flash(
+            "کارشناس پیدا نشد.",
+            "error"
+        )
+
+        return redirect(
+            url_for("admin")
+        )
+
+    service_ids = request.form.getlist(
+        "service_ids"
+    )
+
+    db.execute(
+        """
+        DELETE FROM expert_services
+        WHERE user_id = ?
+        """,
+        (user_id,)
+    )
+
+    for service_id in service_ids:
+
+        try:
+            service_id = int(
+                service_id
+            )
+        except (
+            TypeError,
+            ValueError
+        ):
+            continue
+
+        exists = db.execute(
+            """
+            SELECT id
+            FROM services
+            WHERE id = ?
+            """,
+            (service_id,)
+        ).fetchone()
+
+        if exists:
+
+            db.execute(
+                """
+                INSERT OR IGNORE INTO expert_services
+                (
+                    user_id,
+                    service_id
+                )
+                VALUES (?, ?)
+                """,
+                (
+                    user_id,
+                    service_id
+                )
+            )
+
+    db.commit()
+    db.close()
+
+    flash(
+        "خدمات کارشناس به‌روزرسانی شد.",
+        "success"
+    )
+
+    return redirect(
+        url_for("admin")
+    )
+
+
+# =========================================================
+# DISCOUNT SAVE
+# =========================================================
+
+@app.route(
+    "/admin/discount/save",
+    methods=["POST"]
+)
+@admin_required
+def admin_discount_save():
+
+    if not is_admin():
+        return "دسترسی غیرمجاز", 403
+
+    code = request.form.get(
+        "code",
+        ""
+    ).strip().upper()
+
+    kind = request.form.get(
+        "kind",
+        "percent"
+    ).strip()
+
+    value = request.form.get(
+        "value",
+        type=int
+    ) or 0
+
+    max_uses = request.form.get(
+        "max_uses",
+        type=int
+    ) or 0
+
+    start_date = request.form.get(
+        "start_date",
+        ""
+    ).strip()
+
+    end_date = request.form.get(
+        "end_date",
+        ""
+    ).strip()
+
+    service_ids = request.form.getlist(
+        "service_ids"
+    )
+
+    if not code:
+
+        flash(
+            "کد تخفیف الزامی است.",
+            "error"
+        )
+
+        return redirect(
+            url_for("admin")
+        )
+
+    if kind not in (
+        "percent",
+        "fixed"
+    ):
+        kind = "percent"
+
+    value = max(
+        0,
+        value
+    )
+
+    if kind == "percent":
+        value = min(
+            100,
+            value
+        )
+
+    max_uses = max(
+        0,
+        max_uses
+    )
+
+    db = get_db()
+
+    existing = db.execute(
+        """
+        SELECT id
+        FROM discounts
+        WHERE code = ?
+        """,
+        (code,)
+    ).fetchone()
+
+    if existing:
+
+        db.close()
+
+        flash(
+            "این کد تخفیف قبلاً ثبت شده است.",
+            "error"
+        )
+
+        return redirect(
+            url_for("admin")
+        )
+
+    cursor = db.execute(
+        """
+        INSERT INTO discounts
+        (
+            code,
+            kind,
+            value,
+            max_uses,
+            start_date,
+            end_date,
+            active
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            code,
+            kind,
+            value,
+            max_uses,
+            start_date or None,
+            end_date or None,
+            1
+        )
+    )
+
+    discount_id = cursor.lastrowid
+
+    for service_id in service_ids:
+
+        try:
+            service_id = int(
+                service_id
+            )
+        except (
+            TypeError,
+            ValueError
+        ):
+            continue
+
+        db.execute(
+            """
+            INSERT OR IGNORE INTO discount_services
+            (
+                discount_id,
+                service_id
+            )
+            VALUES (?, ?)
+            """,
+            (
+                discount_id,
+                service_id
+            )
+        )
+
+    db.commit()
+    db.close()
+
+    flash(
+        "کد تخفیف ایجاد شد.",
+        "success"
+    )
+
+    return redirect(
+        url_for("admin")
+    )
+
+
+# =========================================================
+# DISCOUNT TOGGLE
+# =========================================================
+
+@app.route(
+    "/admin/discount/<int:discount_id>/toggle",
+    methods=["POST"]
+)
+@admin_required
+def toggle_discount(discount_id):
+
+    if not is_admin():
+        return "دسترسی غیرمجاز", 403
+
+    db = get_db()
+
+    discount = db.execute(
+        """
+        SELECT active
+        FROM discounts
+        WHERE id = ?
+        """,
+        (discount_id,)
+    ).fetchone()
+
+    if not discount:
+
+        db.close()
+
+        flash(
+            "کد تخفیف پیدا نشد.",
+            "error"
+        )
+
+        return redirect(
+            url_for("admin")
+        )
+
+    db.execute(
+        """
+        UPDATE discounts
+        SET active = ?
+        WHERE id = ?
+        """,
+        (
+            0
+            if discount["active"]
+            else 1,
+            discount_id
+        )
+    )
+
+    db.commit()
+    db.close()
+
+    flash(
+        "وضعیت کد تخفیف تغییر کرد.",
+        "success"
+    )
+
+    return redirect(
+        url_for("admin")
+    )
+
+
+# =========================================================
+# SETTINGS SAVE
+# =========================================================
+
+@app.route(
+    "/admin/settings/save",
+    methods=["POST"]
+)
+@admin_required
+def admin_settings_save():
+
+    if not is_admin():
+        return "دسترسی غیرمجاز", 403
+
+    keys = [
+        "site_name",
+        "manager_name",
+        "phone",
+        "logo",
+        "site_description",
+        "home_title",
+        "home_text",
+        "card_color",
+        "primary_color"
+    ]
+
+    db = get_db()
+
+    for key in keys:
+
+        value = request.form.get(
+            key,
+            ""
+        ).strip()
+
+        db.execute(
+            """
+            INSERT INTO settings
+            (
+                key,
+                value
+            )
+            VALUES (?, ?)
+            ON CONFLICT(key)
+            DO UPDATE SET
+                value = excluded.value
+            """,
+            (
+                key,
+                value
+            )
+        )
+
+    db.commit()
+    db.close()
+
+    flash(
+        "تنظیمات سایت ذخیره شد.",
+        "success"
+    )
+
+    return redirect(
+        url_for("admin")
+    )
+
+
+# =========================================================
+# NOTIFICATION READ
+# =========================================================
+
+@app.route(
+    "/admin/notification/<int:notification_id>/read",
+    methods=["POST"]
+)
+@admin_required
+def notification_read(notification_id):
+
+    user = current_user()
+
+    db = get_db()
+
+    db.execute(
+        """
+        UPDATE notifications
+        SET is_read = 1
+        WHERE id = ?
+        AND recipient_id = ?
+        """,
+        (
+            notification_id,
+            user["id"]
+        )
+    )
+
+    db.commit()
+    db.close()
+
+    return redirect(
+        url_for("admin")
+    )
+
+
+# =========================================================
+# CUSTOMER NOTIFICATIONS API
+# =========================================================
+
+@app.route(
+    "/api/request/<tracking_code>/notifications"
+)
+def customer_notifications(tracking_code):
+
+    db = get_db()
+
+    req = db.execute(
+        """
+        SELECT id, customer_id
+        FROM requests
+        WHERE tracking_code = ?
+        """,
+        (tracking_code,)
+    ).fetchone()
+
+    if not req:
+
+        db.close()
+
+        return jsonify({
+            "success": False,
+            "message": "پرونده پیدا نشد."
+        }), 404
+
+    rows = db.execute(
+        """
+        SELECT
+            id,
+            type,
+            title,
+            message,
+            is_read,
+            created_at
+        FROM notifications
+        WHERE recipient_type = 'customer'
+        AND recipient_id = ?
+        AND (
+            request_id = ?
+            OR request_id IS NULL
+        )
+        ORDER BY id DESC
+        LIMIT 50
+        """,
+        (
+            req["customer_id"],
+            req["id"]
+        )
+    ).fetchall()
+
+    db.close()
+
+    return jsonify({
+        "success": True,
+        "notifications": [
+            dict(row)
+            for row in rows
+        ]
+    })
+
+
+# =========================================================
+# HEALTH
+# =========================================================
+
+@app.route("/health")
+def health():
+
+    try:
+
+        db = get_db()
+
+        db.execute(
+            "SELECT 1"
+        ).fetchone()
+
+        db.close()
+
+        return jsonify({
+            "status": "ok",
+            "database": "ok",
+            "site": SITE_NAME
+        })
+
+    except Exception as error:
+
+        return jsonify({
+            "status": "error",
+            "database": "error",
+            "message": str(error)
+        }), 500
+
+
+# =========================================================
+# API STATUS
+# =========================================================
+
+@app.route("/api/status")
+def api_status():
+
+    db = get_db()
+
+    services_count = db.execute(
+        """
+        SELECT COUNT(*)
+        FROM services
+        WHERE active = 1
+        """
+    ).fetchone()[0]
+
+    requests_count = db.execute(
+        """
+        SELECT COUNT(*)
+        FROM requests
+        """
+    ).fetchone()[0]
+
+    customers_count = db.execute(
+        """
+        SELECT COUNT(*)
+        FROM customers
+        """
+    ).fetchone()[0]
+
+    db.close()
+
+    return jsonify({
+        "success": True,
+        "site": SITE_NAME,
+        "services": services_count,
+        "requests": requests_count,
+        "customers": customers_count
+    })
+
+
+# =========================================================
+# ERROR HANDLERS
+# =========================================================
+
+@app.errorhandler(413)
+def file_too_large(error):
+
+    return (
+        "حجم فایل بیشتر از حد مجاز است.",
+        413
+    )
+
+
+@app.errorhandler(404)
+def page_not_found(error):
+
+    return (
+        "صفحه مورد نظر پیدا نشد.",
+        404
+    )
+
+
+@app.errorhandler(500)
+def internal_error(error):
+
+    return (
+        "خطای داخلی سرور.",
+        500
+    )
+
+
+# =========================================================
+# RUN
+# =========================================================
+
+if __name__ == "__main__":
+
+    port = int(
+        os.environ.get(
+            "PORT",
+            5000
+        )
+    )
+
+    app.run(
+        host="0.0.0.0",
+        port=port,
+        debug=False
+    )
