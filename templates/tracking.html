@@ -1,41 +1,42 @@
 {% extends "base.html" %}
 
+{% block title %}
+پیگیری درخواست
+{% endblock %}
+
 {% block content %}
 
 <div class="card">
 
-    <h1>🔎 پیگیری پرونده</h1>
+    <h1>پیگیری درخواست</h1>
 
     <p>
-        کد پیگیری سه‌رقمی خود را وارد کنید.
+        کد پیگیری ۴ رقمی خود را وارد کنید.
     </p>
 
-    <form method="get" action="{{ url_for('tracking') }}">
+    <form method="POST">
 
-        <div class="field">
+        <label>
+            کد پیگیری
+        </label>
 
-            <label>
-                کد پیگیری
-            </label>
-
-            <input
-                type="text"
-                name="code"
-                inputmode="numeric"
-                maxlength="3"
-                pattern="[0-9]{3}"
-                placeholder="مثلاً 427"
-                value="{{ request.args.get('code','') }}"
-                required
-            >
-
-        </div>
+        <input
+            type="text"
+            name="tracking_code"
+            inputmode="numeric"
+            pattern="[0-9]{4}"
+            maxlength="4"
+            minlength="4"
+            required
+            placeholder="مثلاً 4827"
+            style="direction:ltr;text-align:center;font-size:24px;"
+        >
 
         <button
-            class="btn"
             type="submit"
+            class="btn"
         >
-            🔎 پیگیری
+            مشاهده وضعیت
         </button>
 
     </form>
@@ -47,94 +48,87 @@
 
 <div class="card">
 
-    <h2>📁 وضعیت پرونده</h2>
+    <h2>
+        وضعیت پرونده
+    </h2>
 
-    <p>
-        <strong>سامانه / خدمت:</strong>
-        {{ result.service_name }}
-    </p>
+    <div class="grid">
 
-    <p>
-        <strong>کد پیگیری:</strong>
-        {{ result.tracking_code }}
-    </p>
+        <div>
+            <strong>کد پیگیری:</strong>
+            <br>
+            <span
+                class="badge"
+                style="direction:ltr;"
+            >
+                {{ result["tracking_code"] }}
+            </span>
+        </div>
 
-    <p>
-        <strong>وضعیت پرونده:</strong>
-        {{ result.status }}
-    </p>
+        <div>
+            <strong>نام مشتری:</strong>
+            <br>
+            {{ result["customer_name"] }}
+        </div>
 
-    {% if result.estimated_time %}
+        <div>
+            <strong>خدمت:</strong>
+            <br>
+            {{ result["service_name"] }}
+        </div>
 
-        <p>
-            <strong>زمان تقریبی:</strong>
-            {{ result.estimated_time }}
-        </p>
-
-    {% endif %}
-
-
-    {% if result.expert_name %}
-
-        <p>
-            <strong>کارشناس:</strong>
-            {{ result.expert_name }}
-        </p>
-
-    {% endif %}
-
-
-    {% if result.customer_note %}
-
-        <div class="notice">
-
-            <strong>
-                توضیحات:
-            </strong>
-
+        <div>
+            <strong>وضعیت:</strong>
             <br>
 
-            {{ result.customer_note }}
+            <span class="badge status">
+                {{ result["status"] }}
+            </span>
+        </div>
 
+        <div>
+            <strong>مدت زمان تقریبی انجام:</strong>
+            <br>
+
+            {% if result["estimated_time"] %}
+                {{ result["estimated_time"] }}
+            {% else %}
+                توسط کارشناس اعلام می‌شود
+            {% endif %}
+        </div>
+
+    </div>
+
+
+    {% if result["admin_note"] %}
+
+        <hr>
+
+        <h3>
+            توضیحات
+        </h3>
+
+        <div class="alert">
+            {{ result["admin_note"] }}
         </div>
 
     {% endif %}
 
 
+    <br>
+
     <a
+        href="{{ url_for(
+            'customer_request',
+            tracking_code=result['tracking_code']
+        ) }}"
         class="btn"
-        href="{{ url_for('customer_request', rid=result.id) }}"
     >
-        💬 مشاهده پرونده و ارتباط با کارشناس
+        ورود به پرونده و ارتباط با کارشناس
     </a>
-
-</div>
-
-
-{% elif request.args.get('code') %}
-
-<div class="card">
-
-    <div class="notice">
-
-        ❌ پرونده‌ای با این کد پیگیری پیدا نشد.
-
-    </div>
 
 </div>
 
 {% endif %}
-
-
-<div class="card">
-
-    <a
-        class="btn"
-        href="{{ url_for('customer_login') }}"
-    >
-        👤 ورود به پنل مشتری
-    </a>
-
-</div>
 
 {% endblock %}
