@@ -1,310 +1,106 @@
 {% extends "base.html" %}
 
+{% block title %}
+{{ site_name|default("کافی نت آنلاین نوین") }}
+{% endblock %}
+
 {% block content %}
 
-<style>
-    .home-box {
-        max-width: 900px;
-        margin: 25px auto;
-    }
+<div class="card" style="text-align:center;">
+    <h1>کافی نت آنلاین نوین</h1>
 
-    .hero {
-        background: {{ settings.get('card_color','#ffffff') }};
-        border-radius: 20px;
-        padding: 35px 25px;
-        text-align: center;
-        box-shadow: 0 8px 30px rgba(0,0,0,.08);
-        margin-bottom: 25px;
-    }
+    <p>
+        ارائه خدمات کافی‌نت به صورت غیرحضوری
+    </p>
 
-    .hero-logo {
-        width: 110px;
-        height: 110px;
-        object-fit: contain;
-        margin-bottom: 15px;
-    }
+    <p>
+        با مدیریت {{ manager|default("احمد محمدی مهر") }}
+    </p>
 
-    .hero h1 {
-        margin: 5px 0 12px;
-        color: {{ settings.get('primary_color','#102a43') }};
-    }
-
-    .hero p {
-        color: #667085;
-        line-height: 1.9;
-    }
-
-    .manager {
-        font-weight: bold;
-        margin-top: 15px;
-    }
-
-    .phone {
-        color: {{ settings.get('secondary_color','#1479d1') }};
-        font-weight: bold;
-        direction: ltr;
-        margin-top: 8px;
-    }
-
-    .actions {
-        display: grid;
-        grid-template-columns: repeat(2,1fr);
-        gap: 12px;
-        margin-top: 25px;
-    }
-
-    .action {
-        padding: 14px;
-        border-radius: 12px;
-        color: #fff;
-        text-decoration: none;
-        font-weight: bold;
-        text-align: center;
-    }
-
-    .customer {
-        background: {{ settings.get('secondary_color','#1479d1') }};
-    }
-
-    .admin {
-        background: {{ settings.get('primary_color','#102a43') }};
-    }
-
-    .services-title {
-        margin: 25px 0 15px;
-    }
-
-    .service-card {
-        background: {{ settings.get('card_color','#ffffff') }};
-        border-radius: 16px;
-        padding: 20px;
-        margin-bottom: 15px;
-        box-shadow: 0 5px 20px rgba(0,0,0,.07);
-    }
-
-    .service-card h2 {
-        margin-top: 0;
-    }
-
-    .service-category {
-        display: inline-block;
-        background: #edf2f7;
-        padding: 5px 10px;
-        border-radius: 20px;
-        font-size: 12px;
-        margin-bottom: 10px;
-    }
-
-    .service-description {
-        line-height: 1.8;
-        color: #667085;
-    }
-
-    .price {
-        font-weight: bold;
-        margin: 15px 0;
-    }
-
-    .service-btn {
-        display: inline-block;
-        background: {{ settings.get('secondary_color','#1479d1') }};
-        color: #fff;
-        text-decoration: none;
-        padding: 11px 18px;
-        border-radius: 9px;
-        font-weight: bold;
-    }
-
-    .empty {
-        text-align: center;
-        padding: 30px;
-        background: #fff8e6;
-        border-radius: 14px;
-    }
-
-    @media(max-width:650px) {
-        .actions {
-            grid-template-columns: 1fr;
-        }
-
-        .hero {
-            padding: 25px 15px;
-        }
-    }
-</style>
-
-
-<div class="home-box">
-
-
-    <!-- =========================
-         معرفی سایت
-    ========================== -->
-
-    {% if settings.get('show_hero','1') == '1' %}
-
-    <div class="hero">
-
-        {% if settings.get('logo') %}
-
-            <img
-                class="hero-logo"
-                src="{{ url_for('uploaded_file', filename=settings.get('logo')) }}"
-                alt="لوگوی کافی‌نت آنلاین نوین"
-            >
-
-        {% endif %}
-
-
-        <h1>
-            {{ settings.get('hero_title','کافی‌نت آنلاین نوین') }}
-        </h1>
-
-
-        <p>
-            {{ settings.get(
-                'hero_text',
-                'تمام خدمات ثبت‌نامی و سامانه‌های موردنیاز شما به‌صورت غیرحضوری انجام می‌شود.'
-            ) }}
-        </p>
-
-
-        <div class="manager">
-            مدیریت:
-            {{ settings.get('manager','احمد محمدی مهر') }}
-        </div>
-
-
-        {% if settings.get('phone') %}
-
-        <div class="phone">
-            📞 {{ settings.get('phone') }}
-        </div>
-
-        {% endif %}
-
-
-        <div class="actions">
-
-            {% if settings.get('show_customer_login','1') == '1' %}
-
-            <a
-                class="action customer"
-                href="{{ url_for('customer_login') }}"
-            >
-                👤 ورود به پنل مشتری
-            </a>
-
-            {% endif %}
-
-
-            <a
-                class="action admin"
-                href="{{ url_for('admin_login') }}"
-            >
-                🔐 ورود مدیریت
-            </a>
-
-        </div>
-
-    </div>
-
+    {% if phone %}
+        <p>شماره تماس: {{ phone }}</p>
     {% endif %}
+</div>
 
 
+<div class="card">
+    <h2>خدمات قابل ارائه</h2>
 
-    <!-- =========================
-         هشدار پرداخت
-    ========================== -->
+    {% if services %}
 
-    {% if settings.get('warning_text') %}
+        <div class="grid">
 
-    <div class="notice">
-        {{ settings.get('warning_text') }}
-    </div>
+            {% for item in services %}
 
-    {% endif %}
+                <div class="card" style="margin:0;">
 
+                    <h3>
+                        {{ item["name"] }}
+                    </h3>
 
+                    {% if item["category"] %}
+                        <div class="badge">
+                            {{ item["category"] }}
+                        </div>
+                    {% endif %}
 
-    <!-- =========================
-         لیست سامانه‌ها
-    ========================== -->
+                    {% if item["description"] %}
+                        <p>
+                            {{ item["description"] }}
+                        </p>
+                    {% endif %}
 
-    {% if settings.get('show_services','1') == '1' %}
+                    {% if item["price"] and item["price"] > 0 %}
+                        <div class="price">
+                            {{ "{:,}".format(item["price"]) }} تومان
+                        </div>
+                    {% else %}
+                        <div class="badge">
+                            استعلام قیمت
+                        </div>
+                    {% endif %}
 
-    <h2 class="services-title">
-        📋 لیست سامانه‌های ثبت‌نامی
-    </h2>
+                    <br><br>
 
+                    <a
+                        class="btn"
+                        href="{{ url_for('service', service_id=item['id']) }}"
+                    >
+                        ثبت درخواست
+                    </a>
 
-    {% for s in services %}
+                </div>
 
-    <div class="service-card">
+            {% endfor %}
 
-
-        {% if s.category %}
-
-        <div class="service-category">
-            {{ s.category }}
         </div>
-
-        {% endif %}
-
-
-        <h2>
-            {{ s.name }}
-        </h2>
-
-
-        {% if s.description %}
-
-        <div class="service-description">
-            {{ s.description }}
-        </div>
-
-        {% endif %}
-
-
-        {% if s.price and s.price > 0 %}
-
-        <div class="price">
-            💰 قیمت پایه:
-            {{ "{:,}".format(s.price) }}
-            ریال
-        </div>
-
-        {% else %}
-
-        <div class="price">
-            💰 قیمت:
-            توسط مدیریت تعیین می‌شود
-        </div>
-
-        {% endif %}
-
-
-        <a
-            class="service-btn"
-            href="{{ url_for('service', sid=s.id) }}"
-        >
-            📝 ثبت درخواست
-        </a>
-
-
-    </div>
-
 
     {% else %}
 
-    <div class="empty">
-        هنوز سامانه‌ای برای ثبت‌نام فعال نشده است.
-    </div>
-
-    {% endfor %}
+        <div class="alert">
+            در حال حاضر خدمتی برای نمایش ثبت نشده است.
+        </div>
 
     {% endif %}
 
+</div>
+
+
+<div class="card">
+
+    <h2>پیگیری درخواست</h2>
+
+    <p>
+        اگر قبلاً درخواست ثبت کرده‌اید،
+        با کد پیگیری خود وضعیت پرونده را مشاهده کنید.
+    </p>
+
+    <a
+        href="{{ url_for('tracking') }}"
+        class="btn btn-secondary"
+    >
+        پیگیری درخواست
+    </a>
 
 </div>
 
