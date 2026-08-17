@@ -1,41 +1,43 @@
 {% extends "base.html" %}
 
+{% block title %}
+{{ service["name"] }} - {{ site_name|default("کافی نت آنلاین نوین") }}
+{% endblock %}
+
 {% block content %}
 
 <div class="card">
 
-    <h1>
-        {{ service.name }}
-    </h1>
+    <a href="{{ url_for('home') }}" class="btn btn-secondary">
+        بازگشت
+    </a>
 
-    {% if service.description %}
+    <br><br>
+
+    <h1>{{ service["name"] }}</h1>
+
+    {% if service["category"] %}
+        <div class="badge">
+            {{ service["category"] }}
+        </div>
+    {% endif %}
+
+    {% if service["description"] %}
         <p>
-            {{ service.description }}
+            {{ service["description"] }}
         </p>
     {% endif %}
 
-    {% if service.category %}
-        <p>
-            <strong>دسته‌بندی:</strong>
-            {{ service.category }}
-        </p>
-    {% endif %}
-
-    {% if service.price %}
-        <p>
-            <strong>
-                قیمت پایه:
-                {{ "{:,}".format(service.price) }}
-                ریال
-            </strong>
-        </p>
+    {% if service["price"] and service["price"] > 0 %}
+        <div class="price">
+            قیمت پایه:
+            {{ "{:,}".format(service["price"]) }}
+            تومان
+        </div>
     {% else %}
-        <p>
-            <strong>
-                قیمت:
-            </strong>
-            پس از بررسی درخواست اعلام می‌شود.
-        </p>
+        <div class="badge">
+            قیمت پس از بررسی اعلام می‌شود
+        </div>
     {% endif %}
 
 </div>
@@ -43,232 +45,158 @@
 
 <div class="card">
 
-    <h2>📝 ثبت درخواست</h2>
+    <h2>ثبت درخواست</h2>
 
     <form
-        method="post"
+        action="{{ url_for('create_request', service_id=service['id']) }}"
+        method="POST"
         enctype="multipart/form-data"
     >
 
-        <div class="field">
+        <label>
+            نام و نام خانوادگی *
+        </label>
 
-            <label>
-                نام و نام خانوادگی
-            </label>
-
-            <input
-                type="text"
-                name="name"
-                required
-                placeholder="نام و نام خانوادگی"
-            >
-
-        </div>
+        <input
+            type="text"
+            name="name"
+            required
+            placeholder="نام و نام خانوادگی"
+        >
 
 
-        <div class="field">
+        <label>
+            کد ملی
+        </label>
 
-            <label>
-                کد ملی
-            </label>
-
-            <input
-                type="text"
-                name="national_id"
-                inputmode="numeric"
-                maxlength="10"
-                required
-                placeholder="کد ملی"
-            >
-
-        </div>
+        <input
+            type="text"
+            name="national_id"
+            maxlength="10"
+            placeholder="کد ملی"
+        >
 
 
-        <div class="field">
+        <label>
+            شماره موبایل *
+        </label>
 
-            <label>
-                شماره موبایل
-            </label>
-
-            <input
-                type="tel"
-                name="phone"
-                inputmode="tel"
-                required
-                placeholder="شماره موبایل"
-            >
-
-        </div>
+        <input
+            type="tel"
+            name="phone"
+            required
+            placeholder="09xxxxxxxxx"
+        >
 
 
         {% if fields %}
 
+            <hr>
+
             <h3>
-                اطلاعات موردنیاز
+                اطلاعات مورد نیاز
             </h3>
 
             {% for field in fields %}
 
-                <div class="field">
+                {% if field is string %}
 
                     <label>
-                        {{ field.get(
-                            'label',
-                            field.get('name','')
-                        ) }}
-
-                        {% if field.get('required') %}
-                            *
-                        {% endif %}
+                        {{ field }}
                     </label>
 
+                    <input
+                        type="text"
+                        name="field_{{ loop.index }}"
+                    >
 
-                    {% if field.get('type') == 'textarea' %}
+                {% elif field is mapping %}
+
+                    <label>
+                        {{ field.get("label", field.get("name", "اطلاعات")) }}
+                    </label>
+
+                    {% if field.get("type") == "textarea" %}
 
                         <textarea
-                            name="{{ field.get('name') }}"
-                            rows="4"
-                            {% if field.get('required') %}
-                                required
-                            {% endif %}
+                            name="{{ field.get('name', 'field_' ~ loop.index) }}"
                         ></textarea>
-
-
-                    {% elif field.get('type') == 'select' %}
-
-                        <select
-                            name="{{ field.get('name') }}"
-                            {% if field.get('required') %}
-                                required
-                            {% endif %}
-                        >
-
-                            <option value="">
-                                انتخاب کنید
-                            </option>
-
-                            {% for option in field.get(
-                                'options',
-                                []
-                            ) %}
-
-                                <option value="{{ option }}">
-                                    {{ option }}
-                                </option>
-
-                            {% endfor %}
-
-                        </select>
-
-
-                    {% elif field.get('type') == 'file' %}
-
-                        <input
-                            type="file"
-                            name="{{ field.get('name') }}"
-                            {% if field.get('required') %}
-                                required
-                            {% endif %}
-                        >
-
 
                     {% else %}
 
                         <input
-                            type="{{ field.get(
-                                'type',
-                                'text'
-                            ) }}"
-                            name="{{ field.get('name') }}"
-                            {% if field.get('required') %}
-                                required
-                            {% endif %}
+                            type="{{ field.get('type', 'text') }}"
+                            name="{{ field.get('name', 'field_' ~ loop.index) }}"
+                            {% if field.get("required") %}required{% endif %}
                         >
 
                     {% endif %}
 
-                </div>
+                {% endif %}
 
             {% endfor %}
 
         {% endif %}
 
 
+        <label>
+            توضیحات مشتری
+        </label>
+
+        <textarea
+            name="customer_note"
+            placeholder="اگر توضیحی درباره درخواست دارید اینجا بنویسید..."
+        ></textarea>
+
+
         {% if documents %}
 
+            <hr>
+
             <h3>
-                📎 مدارک موردنیاز
+                مدارک مورد نیاز
             </h3>
 
-            <div class="notice">
-
-                مدارک زیر را در صورت نیاز آماده کنید:
-
-                <ul>
-
-                    {% for document in documents %}
-
-                        <li>
-                            {{ document }}
-                        </li>
-
-                    {% endfor %}
-
-                </ul>
-
-            </div>
-
-
-            <div class="field">
-
-                <label>
-                    بارگذاری مدارک
-                </label>
-
-                <input
-                    type="file"
-                    name="documents"
-                    multiple
-                >
-
-            </div>
+            <ul>
+                {% for document in documents %}
+                    <li>
+                        {{ document }}
+                    </li>
+                {% endfor %}
+            </ul>
 
         {% endif %}
 
 
-        {% if settings.get('warning_text') %}
+        <label>
+            ارسال مدارک
+        </label>
 
-            <div class="warning">
+        <input
+            type="file"
+            name="documents"
+            multiple
+            accept=".jpg,.jpeg,.png,.webp,.pdf"
+        >
 
-                {{ settings.get(
-                    'warning_text'
-                ) }}
+        <small>
+            فرمت‌های مجاز:
+            JPG، JPEG، PNG، WEBP و PDF
+            <br>
+            حداکثر حجم هر فایل: ۱۰ مگابایت
+        </small>
 
-            </div>
 
-        {% endif %}
-
+        <br><br>
 
         <button
-            class="btn"
             type="submit"
+            class="btn btn-success"
         >
-            📤 ثبت درخواست
+            ثبت درخواست
         </button>
 
     </form>
-
-</div>
-
-
-<div class="card">
-
-    <a
-        class="btn"
-        href="{{ url_for('customer_dashboard') }}"
-    >
-        ⬅️ بازگشت به پنل مشتری
-    </a>
 
 </div>
 
