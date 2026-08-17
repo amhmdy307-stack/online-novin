@@ -1,74 +1,76 @@
 {% extends "base.html" %}
 
+{% block title %}
+ورود مدیریت
+{% endblock %}
+
 {% block content %}
 
 <div class="card" style="max-width:500px;margin:40px auto;">
 
-    <h1>🔐 ورود مدیریت</h1>
+    <h1 style="text-align:center;">
+        ورود به پنل مدیریت
+    </h1>
 
-    <p>
-        برای ورود به پنل مدیریت، اطلاعات ورود را وارد کنید.
+    <p style="text-align:center;">
+        کافی نت آنلاین نوین
     </p>
 
-    {% with messages = get_flashed_messages() %}
-        {% if messages %}
-            {% for message in messages %}
-                <div class="notice" style="margin:10px 0;">
-                    {{ message }}
-                </div>
-            {% endfor %}
-        {% endif %}
-    {% endwith %}
+    <form method="POST">
 
+        <label>
+            نام کاربری
+        </label>
 
-    <form
-        method="post"
-        action="{{ url_for('admin_login') }}"
-    >
+        <input
+            type="text"
+            name="username"
+            required
+            autocomplete="username"
+            placeholder="نام کاربری"
+        >
 
-        <div class="field">
+        <label>
+            رمز عبور
+        </label>
 
-            <label>
-                نام کاربری
-            </label>
-
-            <input
-                type="text"
-                name="username"
-                autocomplete="username"
-                required
-                placeholder="نام کاربری"
-            >
-
-        </div>
-
-
-        <div class="field">
-
-            <label>
-                رمز عبور
-            </label>
-
-            <input
-                type="password"
-                name="password"
-                autocomplete="current-password"
-                required
-                placeholder="رمز عبور"
-            >
-
-        </div>
-
+        <input
+            type="password"
+            name="password"
+            required
+            autocomplete="current-password"
+            placeholder="رمز عبور"
+        >
 
         <button
-            class="btn"
             type="submit"
+            class="btn"
             style="width:100%;"
         >
-            🔑 ورود به پنل مدیریت
+            ورود به پنل
         </button>
 
     </form>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+
+        {% if messages %}
+
+            <div style="margin-top:20px;">
+
+                {% for category, message in messages %}
+
+                    <div class="alert">
+                        {{ message }}
+                    </div>
+
+                {% endfor %}
+
+            </div>
+
+        {% endif %}
+
+    {% endwith %}
 
 </div>
 
