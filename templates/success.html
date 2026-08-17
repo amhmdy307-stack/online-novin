@@ -1,89 +1,61 @@
 {% extends "base.html" %}
 
+{% block title %}
+ثبت موفق درخواست
+{% endblock %}
+
 {% block content %}
 
-<div class="card" style="max-width:650px;margin:40px auto;text-align:center;">
+<div class="card" style="text-align:center;">
 
-    <div style="font-size:60px;">
-        ✅
-    </div>
-
-    <h1>
-        درخواست شما با موفقیت ثبت شد
-    </h1>
+    <h1>✅ درخواست شما با موفقیت ثبت شد</h1>
 
     <p>
-        درخواست شما در سامانه ثبت گردید.
+        درخواست شما در سامانه کافی نت آنلاین نوین ثبت گردید.
     </p>
 
-    {% if code %}
+    <p>
+        کد پیگیری شما:
+    </p>
 
-        <div
-            style="
-                margin:25px 0;
-                padding:20px;
-                border-radius:16px;
-                background:#f5f7fb;
-            "
-        >
-
-            <div style="color:#666;margin-bottom:8px;">
-                کد پیگیری شما
-            </div>
-
-            <div
-                style="
-                    font-size:42px;
-                    font-weight:bold;
-                    letter-spacing:6px;
-                    direction:ltr;
-                "
-            >
-                {{ code }}
-            </div>
-
-            <p style="color:#777;">
-                این کد را برای پیگیری درخواست خود نگه دارید.
-            </p>
-
-        </div>
-
-    {% endif %}
-
-
-    <div
-        class="notice"
-        style="text-align:right;"
-    >
-        برای مشاهده وضعیت پرونده و ارتباط با کارشناس،
-        وارد پنل مشتری شوید.
+    <div style="
+        font-size:42px;
+        font-weight:bold;
+        letter-spacing:8px;
+        background:#f1f5f9;
+        padding:20px;
+        border-radius:15px;
+        margin:20px 0;
+        direction:ltr;
+    ">
+        {{ tracking_code }}
     </div>
 
+    <p>
+        این کد را نزد خود نگه دارید.
+        برای مشاهده وضعیت پرونده و ارتباط با کارشناس به آن نیاز خواهید داشت.
+    </p>
+
+    <br>
 
     <a
+        href="{{ url_for('customer_request', tracking_code=tracking_code) }}"
         class="btn"
+    >
+        مشاهده پرونده و ارتباط با کارشناس
+    </a>
+
+    <a
         href="{{ url_for('tracking') }}"
-        style="margin-top:10px;"
+        class="btn btn-secondary"
     >
-        🔎 پیگیری درخواست
+        پیگیری درخواست
     </a>
 
+    <br><br>
 
-    <a
-        class="btn"
-        href="{{ url_for('customer_dashboard') }}"
-        style="margin-top:10px;"
-    >
-        👤 پنل مشتری
-    </a>
-
-
-    <a
-        class="btn"
-        href="{{ url_for('home') }}"
-        style="margin-top:10px;background:#555;"
-    >
-        🏠 صفحه اصلی
+    <a href="{{ url_for('home') }}">
+        بازگشت به صفحه اصلی
     </a>
 
 </div>
