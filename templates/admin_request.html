@@ -1,263 +1,110 @@
 {% extends "base.html" %}
 
+{% block title %}
+مدیریت پرونده
+{% endblock %}
+
 {% block content %}
 
-<style>
-    .request-header {
-        background: {{ settings.get('card_color','#ffffff') }};
-        padding: 22px;
-        border-radius: 18px;
-        margin-bottom: 18px;
-        box-shadow: 0 5px 20px rgba(0,0,0,.07);
-    }
+<div class="card">
 
-    .request-header h1 {
-        margin-top: 0;
-        color: {{ settings.get('primary_color','#102a43') }};
-    }
+    <h1>مدیریت پرونده</h1>
 
-    .info-grid {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 12px;
-    }
+    <p>
+        کد پیگیری:
+        <strong>{{ req["tracking_code"] }}</strong>
+    </p>
 
-    .info-item {
-        background: #f5f7fb;
-        padding: 12px;
-        border-radius: 10px;
-    }
+    <p>
+        مشتری:
+        <strong>{{ req["customer_name"] }}</strong>
+    </p>
 
-    .info-item strong {
-        display: block;
-        margin-top: 5px;
-    }
-
-    .section {
-        margin-top: 20px;
-    }
-
-    .chat {
-        background: {{ settings.get('card_color','#ffffff') }};
-        padding: 20px;
-        border-radius: 18px;
-        box-shadow: 0 5px 20px rgba(0,0,0,.07);
-    }
-
-    .message {
-        padding: 12px;
-        border-radius: 12px;
-        margin: 10px 0;
-        line-height: 1.8;
-    }
-
-    .message.admin {
-        background: #e8f3ff;
-        border-right: 4px solid #1479d1;
-    }
-
-    .message.customer {
-        background: #f3f4f6;
-        border-right: 4px solid #555;
-    }
-
-    .message small {
-        display: block;
-        color: #777;
-        margin-top: 5px;
-    }
-
-    .file-item {
-        padding: 10px;
-        border-bottom: 1px solid #eee;
-    }
-
-    .file-item a {
-        text-decoration: none;
-    }
-
-    @media(max-width:700px) {
-        .info-grid {
-            grid-template-columns: 1fr;
-        }
-    }
-</style>
-
-
-<!-- =====================================================
-     اطلاعات پرونده
-===================================================== -->
-
-<div class="request-header">
-
-    <h1>
-        📁 پرونده مشتری
-    </h1>
-
-    <div class="info-grid">
-
-        <div class="info-item">
-            نام مشتری
-            <strong>
-                {{ request_item.customer_name }}
-            </strong>
-        </div>
-
-
-        <div class="info-item">
-            سامانه
-            <strong>
-                {{ request_item.service_name }}
-            </strong>
-        </div>
-
-
-        <div class="info-item">
-            کد ملی
-            <strong>
-                {{ request_item.national_id }}
-            </strong>
-        </div>
-
-
-        <div class="info-item">
-            شماره تماس
-            <strong>
-                {{ request_item.phone }}
-            </strong>
-        </div>
-
-
-        <div class="info-item">
-            کد پیگیری
-            <strong>
-                {{ request_item.tracking_code }}
-            </strong>
-        </div>
-
-
-        <div class="info-item">
-            وضعیت فعلی
-            <strong>
-                {{ request_item.status }}
-            </strong>
-        </div>
-
-
-        <div class="info-item">
-            مبلغ کل
-            <strong>
-                {{ "{:,}".format(request_item.total_price or 0) }}
-                ریال
-            </strong>
-        </div>
-
-
-        <div class="info-item">
-            مبلغ پرداخت‌شده
-            <strong>
-                {{ "{:,}".format(request_item.paid_price or 0) }}
-                ریال
-            </strong>
-        </div>
-
-    </div>
+    <p>
+        خدمت:
+        <strong>{{ req["service_name"] }}</strong>
+    </p>
 
 </div>
 
 
+<div class="card">
 
-<!-- =====================================================
-     تغییر وضعیت
-===================================================== -->
-
-<div class="card section">
-
-    <h2>
-        📌 تغییر وضعیت پرونده
-    </h2>
+    <h2>تغییر وضعیت پرونده</h2>
 
     <form
-        method="post"
+        method="POST"
         action="{{ url_for('admin_request_status') }}"
     >
 
         <input
             type="hidden"
             name="id"
-            value="{{ request_item.id }}"
+            value="{{ req['id'] }}"
         >
 
+        <label>
+            وضعیت
+        </label>
 
-        <div class="field">
+        <select name="status">
 
-            <label>
-                وضعیت پرونده
-            </label>
+            <option
+                value="پذیرش شد"
+                {% if req["status"] == "پذیرش شد" %}selected{% endif %}
+            >
+                پذیرش شد
+            </option>
 
-            <select name="status">
+            <option
+                value="در حال بررسی"
+                {% if req["status"] == "در حال بررسی" %}selected{% endif %}
+            >
+                در حال بررسی
+            </option>
 
-                <option
-                    {% if request_item.status == 'جدید' %}selected{% endif %}
-                >
-                    جدید
-                </option>
+            <option
+                value="نقص مدارک"
+                {% if req["status"] == "نقص مدارک" %}selected{% endif %}
+            >
+                نقص مدارک
+            </option>
 
-                <option
-                    {% if request_item.status == 'پذیرش شد' %}selected{% endif %}
-                >
-                    پذیرش شد
-                </option>
+            <option
+                value="قطعی سامانه"
+                {% if req["status"] == "قطعی سامانه" %}selected{% endif %}
+            >
+                قطعی سامانه
+            </option>
 
-                <option
-                    {% if request_item.status == 'در حال بررسی' %}selected{% endif %}
-                >
-                    در حال بررسی
-                </option>
+            <option
+                value="رد شد"
+                {% if req["status"] == "رد شد" %}selected{% endif %}
+            >
+                رد شد
+            </option>
 
-                <option
-                    {% if request_item.status == 'نقص مدارک' %}selected{% endif %}
-                >
-                    نقص مدارک
-                </option>
+            <option
+                value="انصراف مشتری"
+                {% if req["status"] == "انصراف مشتری" %}selected{% endif %}
+            >
+                انصراف مشتری
+            </option>
 
-                <option
-                    {% if request_item.status == 'قطعی سامانه' %}selected{% endif %}
-                >
-                    قطعی سامانه
-                </option>
+            <option
+                value="انجام شد"
+                {% if req["status"] == "انجام شد" %}selected{% endif %}
+            >
+                انجام شد
+            </option>
 
-                <option
-                    {% if request_item.status == 'در حال انجام' %}selected{% endif %}
-                >
-                    در حال انجام
-                </option>
+        </select>
 
-                <option
-                    {% if request_item.status == 'انجام شد' %}selected{% endif %}
-                >
-                    انجام شد
-                </option>
-
-                <option
-                    {% if request_item.status == 'رد شد' %}selected{% endif %}
-                >
-                    رد شد
-                </option>
-
-                <option
-                    {% if request_item.status == 'لغو شد' %}selected{% endif %}
-                >
-                    لغو شد
-                </option>
-
-            </select>
-
-        </div>
-
-
-        <button class="btn" type="submit">
-            💾 ثبت وضعیت
+        <button
+            type="submit"
+            class="btn"
+        >
+            ثبت وضعیت
         </button>
 
     </form>
@@ -265,99 +112,155 @@
 </div>
 
 
+<div class="card">
 
-<!-- =====================================================
-     اطلاعات مالی
-===================================================== -->
+    <h2>اطلاعات مالی پرونده</h2>
 
-<div class="card section">
+    <form
+        method="POST"
+        action="{{ url_for('admin_request_update') }}"
+    >
 
-    <h2>
-        💰 اطلاعات مالی پرونده
-    </h2>
+        <input
+            type="hidden"
+            name="id"
+            value="{{ req['id'] }}"
+        >
 
-    <p>
-        مبلغ کل:
-        <strong>
-            {{ "{:,}".format(request_item.total_price or 0) }}
-            ریال
-        </strong>
-    </p>
+        <label>
+            مبلغ کل
+        </label>
 
-    <p>
-        پرداخت‌شده:
-        <strong>
-            {{ "{:,}".format(request_item.paid_price or 0) }}
-            ریال
-        </strong>
-    </p>
+        <input
+            type="number"
+            name="total_price"
+            min="0"
+            value="{{ req['total_price'] or 0 }}"
+        >
 
-    <p>
-        باقی‌مانده:
-        <strong>
-            {{ "{:,}".format(
-                (request_item.total_price or 0)
-                -
-                (request_item.paid_price or 0)
-            ) }}
-            ریال
-        </strong>
-    </p>
+        <label>
+            مبلغ پرداخت‌شده
+        </label>
+
+        <input
+            type="number"
+            name="paid_price"
+            min="0"
+            value="{{ req['paid_price'] or 0 }}"
+        >
+
+        <label>
+            مدت زمان تقریبی انجام
+        </label>
+
+        <input
+            type="text"
+            name="estimated_time"
+            placeholder="مثلاً ۲ روز کاری"
+            value="{{ req['estimated_time'] or '' }}"
+        >
+
+        <label>
+            توضیحات برای مشتری
+        </label>
+
+        <textarea
+            name="admin_note"
+            placeholder="توضیحات پرونده..."
+        >{{ req["admin_note"] or "" }}</textarea>
+
+        <button
+            type="submit"
+            class="btn"
+        >
+            ذخیره تغییرات
+        </button>
+
+    </form>
 
 </div>
 
 
+<div class="card">
 
-<!-- =====================================================
-     فایل‌های مشتری
-===================================================== -->
+    <h2>کارشناس پرونده</h2>
 
-<div class="card section">
+    <form
+        method="POST"
+        action="{{ url_for('admin_request_update') }}"
+    >
 
-    <h2>
-        📎 مدارک و فایل‌های مشتری
-    </h2>
+        <input
+            type="hidden"
+            name="id"
+            value="{{ req['id'] }}"
+        >
+
+        <label>
+            انتخاب کارشناس
+        </label>
+
+        <select name="expert_id">
+
+            <option value="">
+                بدون کارشناس
+            </option>
+
+            {% for expert in experts %}
+
+                <option
+                    value="{{ expert['id'] }}"
+                    {% if req["expert_id"] == expert["id"] %}
+                        selected
+                    {% endif %}
+                >
+                    {{ expert["username"] }}
+                </option>
+
+            {% endfor %}
+
+        </select>
+
+        <button
+            type="submit"
+            class="btn"
+        >
+            اختصاص پرونده
+        </button>
+
+    </form>
+
+</div>
 
 
-    {% if files %}
+<div class="card">
 
-        {% for file in files %}
+    <h2>مدارک مشتری</h2>
 
-        <div class="file-item">
+    {% if documents %}
 
-            <strong>
-                {{ file.original_name }}
-            </strong>
+        {% for document in documents %}
 
-            <br>
+            <div style="margin-bottom:10px;">
 
-            <small>
-                {{ file.field_name }}
-            </small>
+                <a
+                    href="{{ url_for(
+                        'download_document',
+                        document_id=document['id']
+                    ) }}"
+                    class="btn btn-secondary"
+                >
+                    {{ document["original_name"] }}
+                </a>
 
-            <br>
-
-            <a
-                class="btn"
-                style="margin-top:7px;"
-                href="{{ url_for(
-                    'uploaded_file',
-                    filename=file.stored_name
-                ) }}"
-                target="_blank"
-                download
-            >
-                ⬇️ دانلود فایل
-            </a>
-
-        </div>
+            </div>
 
         {% endfor %}
 
     {% else %}
 
         <p>
-            هنوز فایلی برای این پرونده ارسال نشده است.
+            مدرکی ارسال نشده است.
         </p>
 
     {% endif %}
@@ -365,91 +268,67 @@
 </div>
 
 
+<div class="card">
 
-<!-- =====================================================
-     ارتباط با مشتری / کارشناس
-===================================================== -->
-
-<div class="section chat">
-
-    <h2>
-        💬 ارتباط با مشتری
-    </h2>
-
+    <h2>گفتگو با مشتری</h2>
 
     {% if messages %}
 
         {% for message in messages %}
 
-        <div
-            class="message
-            {% if message.sender == 'admin' %}
-                admin
-            {% else %}
-                customer
-            {% endif %}"
-        >
+            <div class="alert">
 
-            <strong>
+                <strong>
+                    {% if message["sender_type"] == "customer" %}
+                        مشتری:
+                    {% else %}
+                        مدیریت:
+                    {% endif %}
+                </strong>
 
-                {% if message.sender == 'admin' %}
-                    مدیر / کارشناس
-                {% else %}
-                    مشتری
-                {% endif %}
+                {{ message["message"] }}
 
-            </strong>
+                <br>
 
-            <div>
-                {{ message.message }}
+                <small>
+                    {{ message["created_at"] }}
+                </small>
+
             </div>
-
-            <small>
-                {{ message.created_at }}
-            </small>
-
-        </div>
 
         {% endfor %}
 
     {% else %}
 
         <p>
-            هنوز پیامی در این پرونده وجود ندارد.
+            هنوز پیامی وجود ندارد.
         </p>
 
     {% endif %}
 
 
     <form
-        method="post"
-        action="{{ url_for(
-            'admin_message',
-            rid=request_item.id
-        ) }}"
+        method="POST"
+        action="{{ url_for('admin_message') }}"
     >
 
-        <div class="field">
+        <input
+            type="hidden"
+            name="id"
+            value="{{ req['id'] }}"
+        >
 
-            <label>
-                ارسال پیام
-            </label>
-
-            <textarea
-                name="message"
-                rows="5"
-                required
-                placeholder="پیام خود را برای مشتری بنویسید..."
-            ></textarea>
-
-        </div>
-
+        <textarea
+            name="message"
+            required
+            placeholder="پاسخ خود را بنویسید..."
+        ></textarea>
 
         <button
-            class="btn"
             type="submit"
+            class="btn"
         >
-            📤 ارسال پیام
+            ارسال پاسخ
         </button>
 
     </form>
@@ -457,14 +336,13 @@
 </div>
 
 
-
-<div style="margin-top:20px;">
+<div class="card">
 
     <a
-        class="btn"
         href="{{ url_for('admin') }}"
+        class="btn btn-secondary"
     >
-        ↩️ بازگشت به پنل مدیریت
+        بازگشت به پنل مدیریت
     </a>
 
 </div>
