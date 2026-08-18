@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block title %}
+{{ site_name|default("کافی نت آنلاین نوین") }}
+{% endblock %}
+
+{% block content %}
+
+<div class="card">
+    <h1>{{ site_name|default("کافی نت آنلاین نوین") }}</h1>
+
+    {% if settings.get('manager_text') %}
+        <p>{{ settings.get('manager_text') }}</p>
+    {% endif %}
+
+    {% if settings.get('home_text') %}
+        <p>{{ settings.get('home_text') }}</p>
+    {% endif %}
+</div>
+
+<div class="card">
+    <h2>خدمات ما</h2>
+
+    {% if services %}
+        <div class="grid">
+            {% for service in services %}
+                <div class="card" style="margin:0;">
+                    <h3>{{ service["name"] }}</h3>
+
+                    {% if service["category"] %}
+                        <span class="badge">{{ service["category"] }}</span>
+                    {% endif %}
+
+                    {% if service["description"] %}
+                        <p>{{ service["description"][:120] }}{% if service["description"]|length > 120 %}...{% endif %}</p>
+                    {% endif %}
+
+                    {% if service["price"] and service["price"] > 0 %}
+                        <div class="price">
+                            {{ "{:,}".format(service["price"]) }} تومان
+                        </div>
+                    {% else %}
+                        <div class="badge">قیمت پس از بررسی</div>
+                    {% endif %}
+
+                    <br>
+                    <a href="{{ url_for('service', service_id=service['id']) }}" class="btn">
+                        ثبت درخواست
+                    </a>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="alert">
+            هنوز خدمتی ثبت نشده است.
+        </div>
+    {% endif %}
+</div>
+
+{% endblock %}
