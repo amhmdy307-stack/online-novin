@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}
+پرونده {{ request_row["tracking_code"] }}
+{% endblock %}
+
+{% block content %}
+
+<div class="card">
+    <h1>پرونده شما</h1>
+
+    <p>
+        کد پیگیری:
+        <strong style="direction:ltr;">{{ request_row["tracking_code"] }}</strong>
+    </p>
+
+    <p>
+        خدمت:
+        <strong>{{ request_row["service_name"] }}</strong>
+    </p>
+
+    <p>
+        وضعیت:
+        <span class="badge status">{{ request_row["status"] }}</span>
+    </p>
+
+    {% if request_row["estimated_time"] %}
+        <p>
+            مدت زمان تقریبی:
+            <strong>{{ request_row["estimated_time"] }}</strong>
+        </p>
+    {% endif %}
+
+    {% if request_row["admin_note"] %}
+        <div class="alert">
+            <strong>توضیحات کارشناس:</strong><br>
+            {{ request_row["admin_note"] }}
+        </div>
+    {% endif %}
+</div>
+
+<div class="card">
+    <h2>گفتگو با کارشناس</h2>
+
+    <div class="chat">
+        {% if messages %}
+            {% for msg in messages %}
+                <div class="message {% if msg['sender'] == 'customer' %}message-customer{% else %}message-admin{% endif %}">
+                    <strong>
+                        {% if msg['sender'] == 'customer' %}
+                            شما:
+                        {% elif msg['sender'] == 'admin' %}
+                            کارشناس:
+                        {% else %}
+                            سیستم:
+                        {% endif %}
+                    </strong>
+                    <br>
+                    {{ msg["message"] }}
+
+                    {% if msg["file_path"] %}
+                        <br><br>
+                        <a href="{{ url_for('download_chat_file', filename=msg['file_path']) }}" class="btn btn-secondary">
+                            دانلود فایل ({{ msg["original_name"] }})
+                        </a>
+                    {% endif %}
+
+                    <br>
+                    <small>{{ msg["created_at"] }}</small>
+                </div>
+            {% endfor %}
+        {% else %}
+            <p>هنوز پیامی ارسال نشده است.</p>
+        {% endif %}
+    </div>
+
+    <br>
+
+    <form method="POST" enctype="multipart/form-data">
+        <label>پیام شما</label>
+        <textarea name="message" placeholder="پیام خود را بنویسید..."></textarea>
+
+        <label>ارسال عکس یا PDF</label>
+        <input type="file" name="file" accept=".jpg,.jpeg,.png,.webp,.pdf">
+
+        <br><br>
+        <button type="submit" class="btn btn-success">ارسال پیام</button>
+    </form>
+</div>
+
+{% if documents %}
+<div class="card">
+    <h2>مدارک ارسال‌شده</h2>
+    {% for doc in documents %}
+        <div style="margin-bottom:10px;">
+            <a href="{{ url_for('download_document', document_id=doc['id']) }}" class="btn btn-secondary">
+                {{ doc["original_name"] }}
+            </a>
+        </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<div class="card">
+    <a href="{{ url_for('tracking') }}" class="btn btn-secondary">بازگشت به پیگیری</a>
+</div>
+
+{% endblock %}
