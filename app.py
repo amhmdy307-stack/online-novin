@@ -3,9 +3,9 @@ import json
 import sqlite3
 import secrets
 import random
-import shutil
 from datetime import datetime
 from functools import wraps
+from zoneinfo import ZoneInfo
 
 from flask import (
     Flask, render_template, request, redirect, url_for,
@@ -47,6 +47,8 @@ app.config["MAX_CONTENT_LENGTH"] = 20 * 1024 * 1024
 SITE_NAME = "کافی نت آنلاین نوین"
 MANAGER = "احمد محمدی مهر"
 PHONE = ""
+
+IRAN_TIMEZONE = ZoneInfo("Asia/Tehran")
 
 
 ALLOWED_STATUSES = [
@@ -729,7 +731,6 @@ def notify_request(
     if not row:
         return
 
-    # مشتری
     if row["customer_id"]:
 
         create_notification(
@@ -740,8 +741,6 @@ def notify_request(
             body
         )
 
-
-    # کارشناس پرونده
     if row["expert_id"]:
 
         create_notification(
@@ -752,8 +751,6 @@ def notify_request(
             body
         )
 
-
-    # مدیر اصلی
     create_notification(
         "admin",
         None,
@@ -834,11 +831,9 @@ def expert_can_see_request(
     if user["role"] != "expert":
         return False
 
-    # پرونده‌ای که به کارشناس دیگری تعلق دارد
     if row["expert_id"]:
         return row["expert_id"] == user["id"]
 
-    # پرونده هنوز پذیرش نشده
     if row["service_id"]:
         return expert_has_service(
             user["id"],
@@ -852,7 +847,7 @@ def chat_is_open():
 
     settings = get_settings()
 
-    now = datetime.now()
+    now = datetime.now(IRAN_TIMEZONE)
 
     day = str(
         now.weekday()
@@ -882,12 +877,17 @@ def chat_is_open():
 
     current = now.strftime("%H:%M")
 
-    return start <= current <= end
+    if start <= end:
+        return start <= current <= end
+
+    return current >= start or current <= end
 
 
 def create_backup():
 
-    timestamp = datetime.now().strftime(
+    timestamp = datetime.now(
+        IRAN_TIMEZONE
+    ).strftime(
         "%Y%m%d_%H%M%S"
     )
 
@@ -904,12 +904,16 @@ def create_backup():
 
     backup = sqlite3.connect(destination)
 
-    with backup:
+    try:
 
-        source.backup(backup)
+        with backup:
+            source.backup(backup)
 
-    backup.close()
-    source.close()
+    finally:
+
+        backup.close()
+        source.close()
+
 
     conn = get_db()
 
@@ -924,6 +928,65 @@ def create_backup():
     conn.commit()
 
     return filename
+
+
+def get_request_for_user(
+    rid,
+    user
+):
+
+    conn = get_db()
+
+    row = conn.execute(
+        """
+        SELECT *
+        FROM requests
+        WHERE id = ?
+        """,
+        (rid,)
+    ).fetchone()
+
+    if not row:
+        return None
+
+    if not expert_can_see_request(
+        user,
+        row
+    ):
+        return None
+
+    return row
+
+
+def safe_download_path(base_folder, filename):
+
+    if not filename:
+        abort(404)
+
+    base = os.path.realpath(
+        base_folder
+    )
+
+    target = os.path.realpath(
+        os.path.join(
+            base_folder,
+            filename
+        )
+    )
+
+    if (
+        target != base
+        and
+        not target.startswith(
+            base + os.sep
+        )
+    ):
+        abort(404)
+
+    if not os.path.isfile(target):
+        abort(404)
+
+    return target
 
 
 # =========================================================
@@ -993,6 +1056,7 @@ def home():
 
 @app.route("/index")
 def index():
+
     return redirect(
         url_for("home")
     )
@@ -1118,10 +1182,6 @@ def create_request(service_id):
         )
 
 
-    # -----------------------------------------------------
-    # CUSTOMER
-    # -----------------------------------------------------
-
     customer = conn.execute(
         """
         SELECT *
@@ -1174,10 +1234,6 @@ def create_request(service_id):
         customer_id = cursor.lastrowid
 
 
-    # -----------------------------------------------------
-    # FORM DATA
-    # -----------------------------------------------------
-
     ignored = {
         "name",
         "phone",
@@ -1196,12 +1252,11 @@ def create_request(service_id):
             form_data[key] = request.form.get(key)
 
 
-    # -----------------------------------------------------
-    # PRICE
-    # -----------------------------------------------------
-
-    base_price = to_int(
-        service_row["price"]
+    base_price = max(
+        0,
+        to_int(
+            service_row["price"]
+        )
     )
 
     discount_amount = 0
@@ -1226,7 +1281,9 @@ def create_request(service_id):
 
         if discount:
 
-            today = datetime.now().strftime(
+            today = datetime.now(
+                IRAN_TIMEZONE
+            ).strftime(
                 "%Y-%m-%d"
             )
 
@@ -1296,6 +1353,10 @@ def create_request(service_id):
     )
 
 
+    if final_price == 0:
+        is_paid = 1
+
+
     tracking_code = generate_tracking_code()
 
 
@@ -1340,10 +1401,6 @@ def create_request(service_id):
     request_id = cursor.lastrowid
 
 
-    # -----------------------------------------------------
-    # DISCOUNT USE
-    # -----------------------------------------------------
-
     if discount_id:
 
         conn.execute(
@@ -1356,10 +1413,6 @@ def create_request(service_id):
             (discount_id,)
         )
 
-
-    # -----------------------------------------------------
-    # DOCUMENTS
-    # -----------------------------------------------------
 
     files = request.files.getlist(
         "documents"
@@ -1378,6 +1431,9 @@ def create_request(service_id):
         filename = secure_filename(
             file.filename
         )
+
+        if not filename:
+            continue
 
         new_name = (
             f"{secrets.token_hex(8)}_"
@@ -1410,10 +1466,6 @@ def create_request(service_id):
             )
         )
 
-
-    # -----------------------------------------------------
-    # SYSTEM MESSAGE
-    # -----------------------------------------------------
 
     conn.execute(
         """
@@ -1576,10 +1628,6 @@ def customer_request(
         abort(404)
 
 
-    # -----------------------------------------------------
-    # CUSTOMER MESSAGE
-    # -----------------------------------------------------
-
     if request.method == "POST":
 
         if not chat_is_open():
@@ -1623,21 +1671,23 @@ def customer_request(
                     file.filename
                 )
 
-                new_name = (
-                    f"{secrets.token_hex(8)}_"
-                    f"{filename}"
-                )
+                if filename:
 
-                path = os.path.join(
-                    CHAT_FOLDER,
-                    new_name
-                )
+                    new_name = (
+                        f"{secrets.token_hex(8)}_"
+                        f"{filename}"
+                    )
 
-                file.save(path)
+                    path = os.path.join(
+                        CHAT_FOLDER,
+                        new_name
+                    )
 
-                file_path = new_name
+                    file.save(path)
 
-                original_name = filename
+                    file_path = new_name
+
+                    original_name = filename
 
 
         if message or file_path:
@@ -1843,8 +1893,6 @@ def admin():
                         )
                     )
                 )
-
-                AND r.is_paid = 1
 
             ORDER BY r.id DESC
             """,
@@ -2076,18 +2124,24 @@ def admin_request(rid):
         ).strip()
 
 
-        total_price = to_int(
-            request.form.get(
-                "total_price",
-                row["total_price"]
+        total_price = max(
+            0,
+            to_int(
+                request.form.get(
+                    "total_price",
+                    row["total_price"]
+                )
             )
         )
 
 
-        paid_price = to_int(
-            request.form.get(
-                "paid_price",
-                row["paid_price"]
+        paid_price = max(
+            0,
+            to_int(
+                request.form.get(
+                    "paid_price",
+                    row["paid_price"]
+                )
             )
         )
 
@@ -2096,10 +2150,6 @@ def admin_request(rid):
 
             status = row["status"]
 
-
-        # -----------------------------------------------
-        # پذیرش توسط اولین کارشناس
-        # -----------------------------------------------
 
         expert_id = row["expert_id"]
 
@@ -2147,6 +2197,20 @@ def admin_request(rid):
                     "expert_id"
                 )
             )
+
+            expert_exists = conn.execute(
+                """
+                SELECT id
+                FROM users
+                WHERE id = ?
+                AND role = 'expert'
+                AND active = 1
+                """,
+                (expert_id,)
+            ).fetchone()
+
+            if not expert_exists:
+                expert_id = row["expert_id"]
 
 
         paid_price = max(
@@ -2351,7 +2415,6 @@ def admin_request_status():
     expert_id = row["expert_id"]
 
 
-    # اولین پذیرش
     if (
         user["role"] == "expert"
         and
@@ -2361,6 +2424,30 @@ def admin_request_status():
     ):
 
         expert_id = user["id"]
+
+
+    if (
+        user["role"] == "expert"
+        and
+        row["expert_id"]
+        and
+        row["expert_id"] != user["id"]
+    ):
+
+        flash(
+            "این پرونده قبلاً توسط کارشناس دیگری پذیرش شده است.",
+            "error"
+        )
+
+        return redirect(
+            url_for(
+                "admin_request",
+                rid=rid
+            )
+        )
+
+
+    old_status = row["status"]
 
 
     conn.execute(
@@ -2385,11 +2472,13 @@ def admin_request_status():
     conn.commit()
 
 
-    notify_request(
-        rid,
-        "تغییر وضعیت پرونده",
-        f"وضعیت جدید: {status}"
-    )
+    if status != old_status:
+
+        notify_request(
+            rid,
+            "تغییر وضعیت پرونده",
+            f"وضعیت جدید: {status}"
+        )
 
 
     flash(
@@ -2455,16 +2544,22 @@ def admin_request_update():
         )
 
 
-    total_price = to_int(
-        request.form.get(
-            "total_price"
+    total_price = max(
+        0,
+        to_int(
+            request.form.get(
+                "total_price"
+            )
         )
     )
 
 
-    paid_price = to_int(
-        request.form.get(
-            "paid_price"
+    paid_price = max(
+        0,
+        to_int(
+            request.form.get(
+                "paid_price"
+            )
         )
     )
 
@@ -2491,9 +2586,24 @@ def admin_request_update():
         )
 
         if requested_expert:
-            expert_id = to_int(
+
+            requested_expert_id = to_int(
                 requested_expert
             )
+
+            expert_exists = conn.execute(
+                """
+                SELECT id
+                FROM users
+                WHERE id = ?
+                AND role = 'expert'
+                AND active = 1
+                """,
+                (requested_expert_id,)
+            ).fetchone()
+
+            if expert_exists:
+                expert_id = requested_expert_id
 
 
     paid_price = max(
@@ -2649,21 +2759,23 @@ def admin_message():
                 file.filename
             )
 
-            new_name = (
-                f"{secrets.token_hex(8)}_"
-                f"{filename}"
-            )
+            if filename:
 
-            file.save(
-                os.path.join(
-                    CHAT_FOLDER,
-                    new_name
+                new_name = (
+                    f"{secrets.token_hex(8)}_"
+                    f"{filename}"
                 )
-            )
 
-            file_path = new_name
+                file.save(
+                    os.path.join(
+                        CHAT_FOLDER,
+                        new_name
+                    )
+                )
 
-            original_name = filename
+                file_path = new_name
+
+                original_name = filename
 
 
     if not message and not file_path:
@@ -2755,8 +2867,11 @@ def admin_service_save():
     ).strip()
 
 
-    price = to_int(
-        request.form.get("price")
+    price = max(
+        0,
+        to_int(
+            request.form.get("price")
+        )
     )
 
 
@@ -2808,7 +2923,15 @@ def admin_service_save():
 
     try:
 
-        json.loads(fields_json)
+        parsed_fields = json.loads(
+            fields_json
+        )
+
+        if not isinstance(
+            parsed_fields,
+            list
+        ):
+            fields_json = "[]"
 
     except Exception:
 
@@ -2817,7 +2940,15 @@ def admin_service_save():
 
     try:
 
-        json.loads(documents_json)
+        parsed_documents = json.loads(
+            documents_json
+        )
+
+        if not isinstance(
+            parsed_documents,
+            list
+        ):
+            documents_json = "[]"
 
     except Exception:
 
@@ -2837,6 +2968,21 @@ def admin_service_save():
 
 
     conn = get_db()
+
+
+    if parent_id:
+
+        parent = conn.execute(
+            """
+            SELECT id
+            FROM services
+            WHERE id = ?
+            """,
+            (parent_id,)
+        ).fetchone()
+
+        if not parent:
+            parent_id = None
 
 
     conn.execute(
@@ -2898,6 +3044,15 @@ def admin_service_save():
 def delete_service(service_id):
 
     conn = get_db()
+
+    conn.execute(
+        """
+        UPDATE services
+        SET parent_id = NULL
+        WHERE parent_id = ?
+        """,
+        (service_id,)
+    )
 
     conn.execute(
         """
@@ -2982,6 +3137,28 @@ def service_experts():
     conn = get_db()
 
 
+    service = conn.execute(
+        """
+        SELECT id
+        FROM services
+        WHERE id = ?
+        """,
+        (service_id,)
+    ).fetchone()
+
+
+    if not service:
+
+        flash(
+            "خدمت پیدا نشد.",
+            "error"
+        )
+
+        return redirect(
+            url_for("admin")
+        )
+
+
     conn.execute(
         """
         DELETE FROM service_experts
@@ -2999,20 +3176,33 @@ def service_experts():
 
         if expert_id:
 
-            conn.execute(
+            expert = conn.execute(
                 """
-                INSERT OR IGNORE INTO service_experts
-                (
-                    service_id,
-                    expert_id
-                )
-                VALUES (?, ?)
+                SELECT id
+                FROM users
+                WHERE id = ?
+                AND role = 'expert'
+                AND active = 1
                 """,
-                (
-                    service_id,
-                    expert_id
+                (expert_id,)
+            ).fetchone()
+
+            if expert:
+
+                conn.execute(
+                    """
+                    INSERT OR IGNORE INTO service_experts
+                    (
+                        service_id,
+                        expert_id
+                    )
+                    VALUES (?, ?)
+                    """,
+                    (
+                        service_id,
+                        expert_id
+                    )
                 )
-            )
 
 
     conn.commit()
@@ -3277,10 +3467,13 @@ def create_discount():
     )
 
 
-    max_uses = to_int(
-        request.form.get(
-            "max_uses",
-            0
+    max_uses = max(
+        0,
+        to_int(
+            request.form.get(
+                "max_uses",
+                0
+            )
         )
     )
 
@@ -3513,13 +3706,18 @@ def admin_settings_save():
                 logo.filename
             )
 
-            if os.path.splitext(
+            if (
                 filename
-            )[1].lower() in (
-                ".jpg",
-                ".jpeg",
-                ".png",
-                ".webp"
+                and
+                os.path.splitext(
+                    filename
+                )[1].lower()
+                in (
+                    ".jpg",
+                    ".jpeg",
+                    ".png",
+                    ".webp"
+                )
             ):
 
                 filename = (
@@ -3604,7 +3802,7 @@ def notifications_read():
 
 
 # =========================================================
-# DOWNLOADS
+# DOWNLOAD DOCUMENT
 # =========================================================
 
 @app.route(
@@ -3617,11 +3815,22 @@ def download_document(
 
     conn = get_db()
 
+    user = get_current_user()
+
+
     doc = conn.execute(
         """
-        SELECT *
-        FROM documents
-        WHERE id = ?
+        SELECT
+            d.*,
+            r.expert_id,
+            r.service_id
+
+        FROM documents d
+
+        INNER JOIN requests r
+            ON r.id = d.request_id
+
+        WHERE d.id = ?
         """,
         (document_id,)
     ).fetchone()
@@ -3629,6 +3838,19 @@ def download_document(
 
     if not doc:
         abort(404)
+
+
+    if not expert_can_see_request(
+        user,
+        doc
+    ):
+        abort(403)
+
+
+    safe_download_path(
+        DOCUMENTS_FOLDER,
+        doc["file_path"]
+    )
 
 
     return send_from_directory(
@@ -3639,16 +3861,65 @@ def download_document(
     )
 
 
+# =========================================================
+# DOWNLOAD CHAT FILE
+# =========================================================
+
 @app.route(
     "/download/chat/<path:filename>"
 )
 @login_required
 def download_chat_file(filename):
 
+    conn = get_db()
+
+    user = get_current_user()
+
+
+    message = conn.execute(
+        """
+        SELECT
+            m.*,
+            r.expert_id,
+            r.service_id
+
+        FROM messages m
+
+        INNER JOIN requests r
+            ON r.id = m.request_id
+
+        WHERE m.file_path = ?
+        """,
+        (filename,)
+    ).fetchone()
+
+
+    if not message:
+        abort(404)
+
+
+    if not expert_can_see_request(
+        user,
+        message
+    ):
+        abort(403)
+
+
+    safe_download_path(
+        CHAT_FOLDER,
+        filename
+    )
+
+
     return send_from_directory(
         CHAT_FOLDER,
         filename,
-        as_attachment=True
+        as_attachment=True,
+        download_name=(
+            message["original_name"]
+            or
+            filename
+        )
     )
 
 
@@ -3683,6 +3954,11 @@ def admin_backup():
 @admin_required
 def download_backup(filename):
 
+    safe_download_path(
+        BACKUP_FOLDER,
+        filename
+    )
+
     return send_from_directory(
         BACKUP_FOLDER,
         filename,
@@ -3701,6 +3977,15 @@ def not_found(error):
         "base.html",
         content="صفحه مورد نظر پیدا نشد."
     ), 404
+
+
+@app.errorhandler(403)
+def forbidden(error):
+
+    return render_template(
+        "base.html",
+        content="شما اجازه دسترسی به این بخش را ندارید."
+    ), 403
 
 
 @app.errorhandler(413)
