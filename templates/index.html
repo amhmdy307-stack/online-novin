@@ -1,117 +1,613 @@
 {% extends "base.html" %}
 
 {% block title %}
-{{ site_name }}
+{{ site_name|default("کافی نت آنلاین نوین") }}
 {% endblock %}
+
+{% block head %}
+<style>
+    .home-header {
+        background: linear-gradient(135deg, #0f172a, #1e3a8a);
+        color: #fff;
+        border-radius: 22px;
+        padding: 30px 20px;
+        margin-bottom: 25px;
+        text-align: center;
+    }
+
+    .home-logo {
+        max-width: 130px;
+        max-height: 100px;
+        object-fit: contain;
+        margin-bottom: 12px;
+        background: #fff;
+        padding: 8px;
+        border-radius: 15px;
+    }
+
+    .home-header h1 {
+        margin-bottom: 10px;
+        font-size: 28px;
+    }
+
+    .home-header p {
+        margin: 8px 0;
+        line-height: 2;
+    }
+
+    .manager-name {
+        font-weight: bold;
+        font-size: 18px;
+    }
+
+    .services-title {
+        text-align: center;
+        margin: 25px 0;
+    }
+
+    .services-title h2 {
+        margin-bottom: 8px;
+    }
+
+    .services-title p {
+        color: #64748b;
+    }
+
+    .service-categories {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 15px;
+        margin-bottom: 25px;
+    }
+
+    .category-button {
+        border: 0;
+        background: #fff;
+        color: #1f2937;
+        border-radius: 18px;
+        padding: 20px 10px;
+        min-height: 135px;
+        cursor: pointer;
+        box-shadow: 0 4px 18px rgba(0,0,0,.07);
+        transition: .2s;
+        font-family: inherit;
+    }
+
+    .category-button:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 7px 22px rgba(0,0,0,.11);
+    }
+
+    .category-icon {
+        display: block;
+        font-size: 42px;
+        margin-bottom: 10px;
+    }
+
+    .category-name {
+        display: block;
+        font-weight: bold;
+        font-size: 15px;
+    }
+
+    .services-panel {
+        display: none;
+        animation: fadeIn .25s ease;
+    }
+
+    .services-panel.active {
+        display: block;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(8px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .service-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 18px;
+    }
+
+    .service-card {
+        background: #fff;
+        border-radius: 18px;
+        padding: 20px;
+        box-shadow: 0 4px 18px rgba(0,0,0,.07);
+        border: 1px solid #eef2f7;
+        transition: .2s;
+    }
+
+    .service-card:hover {
+        transform: translateY(-3px);
+    }
+
+    .service-icon {
+        width: 58px;
+        height: 58px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #eff6ff;
+        border-radius: 16px;
+        font-size: 30px;
+        margin-bottom: 14px;
+    }
+
+    .service-card h3 {
+        margin-bottom: 8px;
+    }
+
+    .service-description {
+        color: #64748b;
+        line-height: 1.9;
+        min-height: 55px;
+    }
+
+    .service-price {
+        margin: 15px 0;
+        font-weight: bold;
+        color: #0f766e;
+    }
+
+    .service-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .tracking-box {
+        background: #fff;
+        border-radius: 18px;
+        padding: 22px;
+        margin-top: 25px;
+        box-shadow: 0 4px 18px rgba(0,0,0,.07);
+        text-align: center;
+    }
+
+    .tracking-box h2 {
+        margin-bottom: 8px;
+    }
+
+    .tracking-box p {
+        color: #64748b;
+    }
+
+    .tracking-form {
+        display: flex;
+        gap: 10px;
+        max-width: 600px;
+        margin: 15px auto 0;
+    }
+
+    .tracking-form input {
+        margin: 0;
+    }
+
+    .empty-services {
+        text-align: center;
+        padding: 35px;
+        color: #64748b;
+    }
+
+    .close-panel {
+        margin-bottom: 15px;
+    }
+
+    @media (max-width: 600px) {
+        .home-header h1 {
+            font-size: 23px;
+        }
+
+        .service-categories {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .category-button {
+            min-height: 120px;
+        }
+
+        .tracking-form {
+            flex-direction: column;
+        }
+    }
+</style>
+{% endblock %}
+
 
 {% block content %}
 
-<div class="card">
+<!-- =========================
+     هدر سایت
+========================= -->
+
+<div class="home-header">
+
+    {% if settings.get("logo") %}
+        <img
+            src="{{ url_for('uploaded_logo', filename=settings.get('logo')) }}"
+            class="home-logo"
+            alt="لوگوی {{ site_name }}"
+        >
+    {% endif %}
 
     <h1>
-        {{ site_name }}
+        {{ site_name|default("کافی نت آنلاین نوین") }}
     </h1>
 
-    <h3>
-        با مدیریت {{ manager }}
-    </h3>
+    <div class="manager-name">
+        با مدیریت {{ manager|default("احمد محمدی مهر") }}
+    </div>
 
-    <p>
-        {{ site_settings.get(
-            "home_text",
-            "تمام خدمات کافی‌نت آنلاین نوین را به صورت غیرحضوری دریافت کنید."
-        ) }}
-    </p>
+    {% if settings.get("manager_text") %}
+        <p>
+            {{ settings.get("manager_text") }}
+        </p>
+    {% endif %}
 
-</div>
-
-
-<div class="card">
-
-    <h2>
-        📋 خدمات
-    </h2>
-
-    {% if services %}
-
-        <div class="icon-grid">
-
-            {% for service in services %}
-
-                <a
-                    class="icon-card"
-                    href="{{ url_for(
-                        'service',
-                        service_id=service['id']
-                    ) }}"
-                >
-
-                    <div class="icon">
-                        📄
-                    </div>
-
-                    <strong>
-                        {{ service["name"] }}
-                    </strong>
-
-                    {% if service["category"] %}
-
-                        <div class="mini">
-                            {{ service["category"] }}
-                        </div>
-
-                    {% endif %}
-
-                </a>
-
-            {% endfor %}
-
-        </div>
-
-    {% else %}
-
-        <div class="alert">
-            هنوز خدمتی ثبت نشده است.
-        </div>
-
+    {% if settings.get("home_text") %}
+        <p>
+            {{ settings.get("home_text") }}
+        </p>
     {% endif %}
 
 </div>
 
 
-<div class="icon-grid">
+<!-- =========================
+     عنوان خدمات
+========================= -->
 
-    <a
-        href="{{ url_for('tracking') }}"
-        class="icon-card"
-    >
+<div class="services-title">
 
-        <div class="icon">
-            🔎
-        </div>
+    <h2>
+        خدمات کافی‌نت
+    </h2>
 
-        <strong>
-            پیگیری درخواست
-        </strong>
-
-    </a>
-
-
-    <a
-        href="{{ url_for('admin_login') }}"
-        class="icon-card"
-    >
-
-        <div class="icon">
-            🔐
-        </div>
-
-        <strong>
-            پنل مدیریت
-        </strong>
-
-    </a>
+    <p>
+        برای مشاهده خدمات، روی دسته موردنظر بزنید.
+    </p>
 
 </div>
+
+
+<!-- =========================
+     دسته‌بندی آیکونی
+========================= -->
+
+<div class="service-categories">
+
+    <button
+        type="button"
+        class="category-button"
+        onclick="openCategory('all')"
+    >
+        <span class="category-icon">📋</span>
+        <span class="category-name">همه خدمات</span>
+    </button>
+
+
+    <button
+        type="button"
+        class="category-button"
+        onclick="openCategory('وام')"
+    >
+        <span class="category-icon">💰</span>
+        <span class="category-name">وام و تسهیلات</span>
+    </button>
+
+
+    <button
+        type="button"
+        class="category-button"
+        onclick="openCategory('مجوز')"
+    >
+        <span class="category-icon">📄</span>
+        <span class="category-name">مجوزها</span>
+    </button>
+
+
+    <button
+        type="button"
+        class="category-button"
+        onclick="openCategory('ثبت نام')"
+    >
+        <span class="category-icon">📝</span>
+        <span class="category-name">ثبت‌نام‌ها</span>
+    </button>
+
+
+    <button
+        type="button"
+        class="category-button"
+        onclick="openCategory('بیمه')"
+    >
+        <span class="category-icon">🛡️</span>
+        <span class="category-name">بیمه</span>
+    </button>
+
+
+    <button
+        type="button"
+        class="category-button"
+        onclick="openCategory('خودرو')"
+    >
+        <span class="category-icon">🚗</span>
+        <span class="category-name">خودرو</span>
+    </button>
+
+
+    <button
+        type="button"
+        class="category-button"
+        onclick="openCategory('آموزشی')"
+    >
+        <span class="category-icon">🎓</span>
+        <span class="category-name">آموزشی</span>
+    </button>
+
+
+    <button
+        type="button"
+        class="category-button"
+        onclick="openCategory('سایر')"
+    >
+        <span class="category-icon">⚙️</span>
+        <span class="category-name">سایر خدمات</span>
+    </button>
+
+</div>
+
+
+<!-- =========================
+     پنل خدمات
+========================= -->
+
+<div
+    id="servicesPanel"
+    class="services-panel"
+>
+
+    <div class="card">
+
+        <div class="close-panel">
+            <button
+                type="button"
+                class="btn btn-secondary"
+                onclick="closeCategory()"
+            >
+                بستن
+            </button>
+        </div>
+
+        {% if services %}
+
+            <div
+                id="serviceGrid"
+                class="service-grid"
+            >
+
+                {% for service in services %}
+
+                    {% set category = service["category"]|default("")|lower %}
+
+                    <div
+                        class="service-card"
+                        data-category="{{ category }}"
+                    >
+
+                        <div class="service-icon">
+
+                            {% if "وام" in category %}
+                                💰
+                            {% elif "مجوز" in category %}
+                                📄
+                            {% elif "ثبت" in category %}
+                                📝
+                            {% elif "بیمه" in category %}
+                                🛡️
+                            {% elif "خودرو" in category %}
+                                🚗
+                            {% elif "آموز" in category %}
+                                🎓
+                            {% elif "مسکن" in category %}
+                                🏠
+                            {% else %}
+                                ⚙️
+                            {% endif %}
+
+                        </div>
+
+
+                        <h3>
+                            {{ service["name"] }}
+                        </h3>
+
+
+                        {% if service["category"] %}
+
+                            <span class="badge">
+                                {{ service["category"] }}
+                            </span>
+
+                        {% endif %}
+
+
+                        {% if service["description"] %}
+
+                            <div class="service-description">
+                                {{ service["description"] }}
+                            </div>
+
+                        {% else %}
+
+                            <div class="service-description">
+                                ثبت و انجام این خدمت به صورت غیرحضوری.
+                            </div>
+
+                        {% endif %}
+
+
+                        {% if service["price"] and service["price"] > 0 %}
+
+                            <div class="service-price">
+                                {{ "{:,}".format(service["price"]) }}
+                                تومان
+                            </div>
+
+                        {% else %}
+
+                            <div class="service-price">
+                                قیمت پس از بررسی اعلام می‌شود
+                            </div>
+
+                        {% endif %}
+
+
+                        <div class="service-actions">
+
+                            <a
+                                href="{{ url_for(
+                                    'service',
+                                    service_id=service['id']
+                                ) }}"
+                                class="btn"
+                            >
+                                مشاهده و ثبت درخواست
+                            </a>
+
+                        </div>
+
+                    </div>
+
+                {% endfor %}
+
+            </div>
+
+        {% else %}
+
+            <div class="empty-services">
+                هنوز خدمتی برای نمایش ثبت نشده است.
+            </div>
+
+        {% endif %}
+
+    </div>
+
+</div>
+
+
+<!-- =========================
+     پیگیری درخواست
+========================= -->
+
+<div class="tracking-box">
+
+    <h2>
+        🔎 پیگیری درخواست
+    </h2>
+
+    <p>
+        کد پیگیری خود را وارد کنید تا وضعیت درخواستتان را ببینید.
+    </p>
+
+    <form
+        method="GET"
+        action="{{ url_for('tracking') }}"
+        class="tracking-form"
+    >
+
+        <input
+            type="text"
+            name="code"
+            placeholder="کد پیگیری را وارد کنید"
+            required
+        >
+
+        <button
+            type="submit"
+            class="btn"
+        >
+            پیگیری
+        </button>
+
+    </form>
+
+</div>
+
+
+{% endblock %}
+
+
+{% block scripts %}
+
+<script>
+
+    function openCategory(category) {
+
+        const panel = document.getElementById("servicesPanel");
+        const cards = document.querySelectorAll(".service-card");
+
+        panel.classList.add("active");
+
+        cards.forEach(function(card) {
+
+            const cardCategory =
+                (card.dataset.category || "").toLowerCase();
+
+            if (category === "all") {
+
+                card.style.display = "block";
+                return;
+
+            }
+
+            const selected =
+                category.toLowerCase();
+
+            if (cardCategory.includes(selected)) {
+
+                card.style.display = "block";
+
+            } else {
+
+                card.style.display = "none";
+
+            }
+
+        });
+
+        panel.scrollIntoView({
+            behavior: "smooth",
+            block: "start"
+        });
+    }
+
+
+    function closeCategory() {
+
+        const panel = document.getElementById("servicesPanel");
+        const cards = document.querySelectorAll(".service-card");
+
+        panel.classList.remove("active");
+
+        cards.forEach(function(card) {
+            card.style.display = "block";
+        });
+
+        window.scrollTo({
+            top: 0,
+            behavior: "smooth"
+        });
+    }
+
+</script>
 
 {% endblock %}
