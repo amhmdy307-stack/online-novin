@@ -8,35 +8,34 @@
 
 <div class="card">
 
-    <h1>پیگیری درخواست</h1>
+    <h1>
+        🔎 پیگیری درخواست
+    </h1>
 
-    <p>
-        کد پیگیری ۴ رقمی خود را وارد کنید.
-    </p>
-
-    <form method="POST">
+    <form
+        method="POST"
+        action="{{ url_for('tracking') }}"
+    >
 
         <label>
-            کد پیگیری
+            کد پیگیری ۴ رقمی
         </label>
 
         <input
             type="text"
             name="tracking_code"
-            inputmode="numeric"
-            pattern="[0-9]{4}"
             maxlength="4"
             minlength="4"
+            inputmode="numeric"
             required
-            placeholder="مثلاً 4827"
-            style="direction:ltr;text-align:center;font-size:24px;"
+            placeholder="مثلاً 4821"
         >
 
         <button
             type="submit"
             class="btn"
         >
-            مشاهده وضعیت
+            پیگیری
         </button>
 
     </form>
@@ -52,49 +51,64 @@
         وضعیت پرونده
     </h2>
 
-    <div class="grid">
 
-        <div>
-            <strong>کد پیگیری:</strong>
-            <br>
-            <span
-                class="badge"
-                style="direction:ltr;"
-            >
-                {{ result["tracking_code"] }}
-            </span>
+    <div class="status-box">
+
+        <div class="status-title">
+            کد پیگیری
         </div>
 
-        <div>
-            <strong>نام مشتری:</strong>
-            <br>
-            {{ result["customer_name"] }}
+        <div class="status-value">
+            {{ result["tracking_code"] }}
         </div>
 
-        <div>
-            <strong>خدمت:</strong>
-            <br>
+    </div>
+
+
+    <div class="status-box">
+
+        <div class="status-title">
+            خدمت
+        </div>
+
+        <div class="status-value">
             {{ result["service_name"] }}
         </div>
 
-        <div>
-            <strong>وضعیت:</strong>
-            <br>
+    </div>
 
-            <span class="badge status">
-                {{ result["status"] }}
-            </span>
+
+    <div class="status-box">
+
+        <div class="status-title">
+            وضعیت
         </div>
 
-        <div>
-            <strong>مدت زمان تقریبی انجام:</strong>
-            <br>
+        <div class="status-value">
+            {{ result["status"] }}
+        </div>
+
+    </div>
+
+
+    <div class="status-box">
+
+        <div class="status-title">
+            مدت زمان تقریبی انجام
+        </div>
+
+        <div class="status-value">
 
             {% if result["estimated_time"] %}
+
                 {{ result["estimated_time"] }}
+
             {% else %}
-                توسط کارشناس اعلام می‌شود
+
+                در حال بررسی
+
             {% endif %}
+
         </div>
 
     </div>
@@ -102,20 +116,20 @@
 
     {% if result["admin_note"] %}
 
-        <hr>
-
-        <h3>
-            توضیحات
-        </h3>
-
         <div class="alert">
+
+            <strong>
+                توضیحات:
+            </strong>
+
+            <br>
+
             {{ result["admin_note"] }}
+
         </div>
 
     {% endif %}
 
-
-    <br>
 
     <a
         href="{{ url_for(
@@ -124,7 +138,7 @@
         ) }}"
         class="btn"
     >
-        ورود به پرونده و ارتباط با کارشناس
+        💬 ارتباط با کارشناس
     </a>
 
 </div>
