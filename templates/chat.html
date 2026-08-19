@@ -1,108 +1,222 @@
 {% extends "base.html" %}
 
 {% block title %}
-پرونده {{ request_row["tracking_code"] }}
+ارتباط با کارشناس
 {% endblock %}
 
 {% block content %}
 
 <div class="card">
-    <h1>پرونده شما</h1>
+
+    <h1>
+        💬 ارتباط با کارشناس
+    </h1>
 
     <p>
         کد پیگیری:
-        <strong style="direction:ltr;">{{ request_row["tracking_code"] }}</strong>
+        <strong>
+            {{ request_row["tracking_code"] }}
+        </strong>
     </p>
 
     <p>
         خدمت:
-        <strong>{{ request_row["service_name"] }}</strong>
+        <strong>
+            {{ request_row["service_name"] }}
+        </strong>
     </p>
 
-    <p>
-        وضعیت:
-        <span class="badge status">{{ request_row["status"] }}</span>
-    </p>
+    <div class="status-box">
 
-    {% if request_row["estimated_time"] %}
-        <p>
-            مدت زمان تقریبی:
-            <strong>{{ request_row["estimated_time"] }}</strong>
-        </p>
-    {% endif %}
-
-    {% if request_row["admin_note"] %}
-        <div class="alert">
-            <strong>توضیحات کارشناس:</strong><br>
-            {{ request_row["admin_note"] }}
+        <div class="status-title">
+            وضعیت پرونده
         </div>
-    {% endif %}
-</div>
 
-<div class="card">
-    <h2>گفتگو با کارشناس</h2>
+        <div class="status-value">
+            {{ request_row["status"] }}
+        </div>
 
-    <div class="chat">
-        {% if messages %}
-            {% for msg in messages %}
-                <div class="message {% if msg['sender'] == 'customer' %}message-customer{% else %}message-admin{% endif %}">
-                    <strong>
-                        {% if msg['sender'] == 'customer' %}
-                            شما:
-                        {% elif msg['sender'] == 'admin' %}
-                            کارشناس:
-                        {% else %}
-                            سیستم:
-                        {% endif %}
-                    </strong>
-                    <br>
-                    {{ msg["message"] }}
-
-                    {% if msg["file_path"] %}
-                        <br><br>
-                        <a href="{{ url_for('download_chat_file', filename=msg['file_path']) }}" class="btn btn-secondary">
-                            دانلود فایل ({{ msg["original_name"] }})
-                        </a>
-                    {% endif %}
-
-                    <br>
-                    <small>{{ msg["created_at"] }}</small>
-                </div>
-            {% endfor %}
-        {% else %}
-            <p>هنوز پیامی ارسال نشده است.</p>
-        {% endif %}
     </div>
 
-    <br>
 
-    <form method="POST" enctype="multipart/form-data">
-        <label>پیام شما</label>
-        <textarea name="message" placeholder="پیام خود را بنویسید..."></textarea>
+    {% if request_row["estimated_time"] %}
 
-        <label>ارسال عکس یا PDF</label>
-        <input type="file" name="file" accept=".jpg,.jpeg,.png,.webp,.pdf">
+        <div class="status-box">
 
-        <br><br>
-        <button type="submit" class="btn btn-success">ارسال پیام</button>
-    </form>
-</div>
+            <div class="status-title">
+                مدت زمان تقریبی
+            </div>
 
-{% if documents %}
-<div class="card">
-    <h2>مدارک ارسال‌شده</h2>
-    {% for doc in documents %}
-        <div style="margin-bottom:10px;">
-            <a href="{{ url_for('download_document', document_id=doc['id']) }}" class="btn btn-secondary">
-                {{ doc["original_name"] }}
-            </a>
+            <div class="status-value">
+                {{ request_row["estimated_time"] }}
+            </div>
+
         </div>
-    {% endfor %}
+
+    {% endif %}
+
 </div>
-{% endif %}
+
 
 <div class="card">
-    <a href="{{ url_for('tracking') }}" class="btn btn-secondary">بازگشت به پیگیری</a>
+
+    <h2>
+        گفتگو
+    </h2>
+
+
+    <div class="chat">
+
+        {% for message in messages %}
+
+            <div class="
+                message
+                message-{{ message['sender'] }}
+            ">
+
+                <strong>
+
+                    {% if message["sender"] == "customer" %}
+                        شما
+                    {% elif message["sender"] == "expert" %}
+                        کارشناس
+                    {% elif message["sender"] == "admin" %}
+                        مدیریت
+                    {% else %}
+                        سامانه
+                    {% endif %}
+
+                </strong>
+
+
+                {% if message["message"] %}
+
+                    <div style="margin-top:7px;">
+                        {{ message["message"] }}
+                    </div>
+
+                {% endif %}
+
+
+                {% if message["file_path"] %}
+
+                    <div style="margin-top:10px;">
+
+                        <a
+                            class="btn btn-secondary"
+                            href="{{ url_for(
+                                'download_chat_file',
+                                filename=message['file_path']
+                            ) }}"
+                        >
+                            📎
+                            {{ message["original_name"] }}
+                        </a>
+
+                    </div>
+
+                {% endif %}
+
+
+                <div class="mini">
+                    {{ message["created_at"] }}
+                </div>
+
+            </div>
+
+        {% else %}
+
+            <p>
+                هنوز پیامی وجود ندارد.
+            </p>
+
+        {% endfor %}
+
+    </div>
+
+</div>
+
+
+<div class="card">
+
+    {% if chat_open %}
+
+        <h2>
+            ارسال پیام
+        </h2>
+
+        <form
+            method="POST"
+            enctype="multipart/form-data"
+        >
+
+            <textarea
+                name="message"
+                placeholder="پیام خود را بنویسید..."
+            ></textarea>
+
+
+            <label>
+                ارسال عکس یا PDF
+            </label>
+
+            <input
+                type="file"
+                name="file"
+                accept=".jpg,.jpeg,.png,.webp,.pdf"
+            >
+
+
+            <button
+                type="submit"
+                class="btn btn-success"
+            >
+                ارسال
+            </button>
+
+        </form>
+
+    {% else %}
+
+        <div class="alert alert-error">
+
+            زمان پاسخگویی کارشناسان به پایان رسیده است.
+
+            <br><br>
+
+            زمان پاسخگویی:
+
+            {{ site_settings.get(
+                "chat_start",
+                "08:00"
+            ) }}
+
+            تا
+
+            {{ site_settings.get(
+                "chat_end",
+                "22:00"
+            ) }}
+
+        </div>
+
+    {% endif %}
+
+</div>
+
+
+<div class="card">
+
+    <a
+        href="{{ url_for(
+            'tracking',
+            code=request_row['tracking_code']
+        ) }}"
+        class="btn btn-secondary"
+    >
+        بازگشت به پیگیری
+    </a>
+
 </div>
 
 {% endblock %}
