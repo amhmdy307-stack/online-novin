@@ -8,21 +8,36 @@
 
 <div class="card">
 
-    <h1>مدیریت پرونده</h1>
+    <h1>
+        📁 مدیریت پرونده
+    </h1>
 
     <p>
         کد پیگیری:
-        <strong>{{ req["tracking_code"] }}</strong>
+        <strong>
+            {{ req["tracking_code"] }}
+        </strong>
     </p>
 
     <p>
         مشتری:
-        <strong>{{ req["customer_name"] }}</strong>
+        <strong>
+            {{ req["customer_name"] }}
+        </strong>
+    </p>
+
+    <p>
+        موبایل:
+        <strong>
+            {{ req["customer_phone"] }}
+        </strong>
     </p>
 
     <p>
         خدمت:
-        <strong>{{ req["service_name"] }}</strong>
+        <strong>
+            {{ req["service_name"] }}
+        </strong>
     </p>
 
 </div>
@@ -30,11 +45,15 @@
 
 <div class="card">
 
-    <h2>تغییر وضعیت پرونده</h2>
+    <h2>
+        وضعیت پرونده
+    </h2>
 
     <form
         method="POST"
-        action="{{ url_for('admin_request_status') }}"
+        action="{{ url_for(
+            'admin_request_status'
+        ) }}"
     >
 
         <input
@@ -43,62 +62,33 @@
             value="{{ req['id'] }}"
         >
 
-        <label>
-            وضعیت
-        </label>
 
         <select name="status">
 
-            <option
-                value="پذیرش شد"
-                {% if req["status"] == "پذیرش شد" %}selected{% endif %}
-            >
-                پذیرش شد
-            </option>
+            {% for status in [
+                "در انتظار بررسی",
+                "پذیرش شد",
+                "در حال بررسی",
+                "نقص مدارک",
+                "قطعی سامانه",
+                "رد شد",
+                "انصراف مشتری",
+                "انجام شد"
+            ] %}
 
-            <option
-                value="در حال بررسی"
-                {% if req["status"] == "در حال بررسی" %}selected{% endif %}
-            >
-                در حال بررسی
-            </option>
+                <option
+                    value="{{ status }}"
+                    {% if req["status"] == status %}
+                        selected
+                    {% endif %}
+                >
+                    {{ status }}
+                </option>
 
-            <option
-                value="نقص مدارک"
-                {% if req["status"] == "نقص مدارک" %}selected{% endif %}
-            >
-                نقص مدارک
-            </option>
-
-            <option
-                value="قطعی سامانه"
-                {% if req["status"] == "قطعی سامانه" %}selected{% endif %}
-            >
-                قطعی سامانه
-            </option>
-
-            <option
-                value="رد شد"
-                {% if req["status"] == "رد شد" %}selected{% endif %}
-            >
-                رد شد
-            </option>
-
-            <option
-                value="انصراف مشتری"
-                {% if req["status"] == "انصراف مشتری" %}selected{% endif %}
-            >
-                انصراف مشتری
-            </option>
-
-            <option
-                value="انجام شد"
-                {% if req["status"] == "انجام شد" %}selected{% endif %}
-            >
-                انجام شد
-            </option>
+            {% endfor %}
 
         </select>
+
 
         <button
             type="submit"
@@ -114,11 +104,15 @@
 
 <div class="card">
 
-    <h2>اطلاعات مالی پرونده</h2>
+    <h2>
+        💰 اطلاعات مالی
+    </h2>
 
     <form
         method="POST"
-        action="{{ url_for('admin_request_update') }}"
+        action="{{ url_for(
+            'admin_request_update'
+        ) }}"
     >
 
         <input
@@ -126,6 +120,7 @@
             name="id"
             value="{{ req['id'] }}"
         >
+
 
         <label>
             مبلغ کل
@@ -138,6 +133,7 @@
             value="{{ req['total_price'] or 0 }}"
         >
 
+
         <label>
             مبلغ پرداخت‌شده
         </label>
@@ -149,6 +145,7 @@
             value="{{ req['paid_price'] or 0 }}"
         >
 
+
         <label>
             مدت زمان تقریبی انجام
         </label>
@@ -156,76 +153,55 @@
         <input
             type="text"
             name="estimated_time"
-            placeholder="مثلاً ۲ روز کاری"
             value="{{ req['estimated_time'] or '' }}"
+            placeholder="مثلاً ۲ روز کاری"
         >
 
+
         <label>
-            توضیحات برای مشتری
+            توضیحات
         </label>
 
         <textarea
             name="admin_note"
-            placeholder="توضیحات پرونده..."
         >{{ req["admin_note"] or "" }}</textarea>
 
-        <button
-            type="submit"
-            class="btn"
-        >
-            ذخیره تغییرات
-        </button>
 
-    </form>
+        {% if current_user and current_user["role"] == "admin" %}
 
-</div>
+            <label>
+                کارشناس
+            </label>
 
+            <select name="expert_id">
 
-<div class="card">
-
-    <h2>کارشناس پرونده</h2>
-
-    <form
-        method="POST"
-        action="{{ url_for('admin_request_update') }}"
-    >
-
-        <input
-            type="hidden"
-            name="id"
-            value="{{ req['id'] }}"
-        >
-
-        <label>
-            انتخاب کارشناس
-        </label>
-
-        <select name="expert_id">
-
-            <option value="">
-                بدون کارشناس
-            </option>
-
-            {% for expert in experts %}
-
-                <option
-                    value="{{ expert['id'] }}"
-                    {% if req["expert_id"] == expert["id"] %}
-                        selected
-                    {% endif %}
-                >
-                    {{ expert["username"] }}
+                <option value="">
+                    بدون کارشناس
                 </option>
 
-            {% endfor %}
+                {% for expert in experts %}
 
-        </select>
+                    <option
+                        value="{{ expert['id'] }}"
+                        {% if req["expert_id"] == expert["id"] %}
+                            selected
+                        {% endif %}
+                    >
+                        {{ expert["username"] }}
+                    </option>
+
+                {% endfor %}
+
+            </select>
+
+        {% endif %}
+
 
         <button
             type="submit"
-            class="btn"
+            class="btn btn-success"
         >
-            اختصاص پرونده
+            ذخیره اطلاعات
         </button>
 
     </form>
@@ -235,27 +211,26 @@
 
 <div class="card">
 
-    <h2>مدارک مشتری</h2>
+    <h2>
+        📎 مدارک
+    </h2>
 
-    {% if documents %}
+    {% for document in documents %}
 
-        {% for document in documents %}
+        <div style="margin-bottom:10px;">
 
-            <div style="margin-bottom:10px;">
+            <a
+                href="{{ url_for(
+                    'download_document',
+                    document_id=document['id']
+                ) }}"
+                class="btn btn-secondary"
+            >
+                📄
+                {{ document["original_name"] }}
+            </a>
 
-                <a
-                    href="{{ url_for(
-                        'download_document',
-                        document_id=document['id']
-                    ) }}"
-                    class="btn btn-secondary"
-                >
-                    {{ document["original_name"] }}
-                </a>
-
-            </div>
-
-        {% endfor %}
+        </div>
 
     {% else %}
 
@@ -263,53 +238,89 @@
             مدرکی ارسال نشده است.
         </p>
 
-    {% endif %}
+    {% endfor %}
 
 </div>
 
 
 <div class="card">
 
-    <h2>گفتگو با مشتری</h2>
+    <h2>
+        💬 گفتگو
+    </h2>
 
-    {% if messages %}
+
+    <div class="chat">
 
         {% for message in messages %}
 
-            <div class="alert">
+            <div class="
+                message
+                message-{{ message['sender'] }}
+            ">
 
                 <strong>
-                    {% if message["sender_type"] == "customer" %}
-                        مشتری:
+
+                    {% if message["sender"] == "customer" %}
+                        مشتری
+                    {% elif message["sender"] == "expert" %}
+                        کارشناس
+                    {% elif message["sender"] == "admin" %}
+                        مدیریت
                     {% else %}
-                        مدیریت:
+                        سامانه
                     {% endif %}
+
                 </strong>
 
-                {{ message["message"] }}
 
-                <br>
+                {% if message["message"] %}
 
-                <small>
-                    {{ message["created_at"] }}
-                </small>
+                    <div style="margin-top:8px;">
+                        {{ message["message"] }}
+                    </div>
+
+                {% endif %}
+
+
+                {% if message["file_path"] %}
+
+                    <div style="margin-top:8px;">
+
+                        <a
+                            href="{{ url_for(
+                                'download_chat_file',
+                                filename=message['file_path']
+                            ) }}"
+                            class="btn btn-secondary"
+                        >
+                            📎
+                            {{ message["original_name"] }}
+                        </a>
+
+                    </div>
+
+                {% endif %}
 
             </div>
 
+        {% else %}
+
+            <p>
+                هنوز پیامی وجود ندارد.
+            </p>
+
         {% endfor %}
 
-    {% else %}
-
-        <p>
-            هنوز پیامی وجود ندارد.
-        </p>
-
-    {% endif %}
+    </div>
 
 
     <form
         method="POST"
-        action="{{ url_for('admin_message') }}"
+        action="{{ url_for(
+            'admin_message'
+        ) }}"
+        enctype="multipart/form-data"
     >
 
         <input
@@ -318,17 +329,29 @@
             value="{{ req['id'] }}"
         >
 
+
         <textarea
             name="message"
-            required
-            placeholder="پاسخ خود را بنویسید..."
+            placeholder="پاسخ..."
         ></textarea>
+
+
+        <label>
+            فایل
+        </label>
+
+        <input
+            type="file"
+            name="file"
+            accept=".jpg,.jpeg,.png,.webp,.pdf"
+        >
+
 
         <button
             type="submit"
             class="btn"
         >
-            ارسال پاسخ
+            ارسال
         </button>
 
     </form>
@@ -342,7 +365,7 @@
         href="{{ url_for('admin') }}"
         class="btn btn-secondary"
     >
-        بازگشت به پنل مدیریت
+        بازگشت به پنل
     </a>
 
 </div>
