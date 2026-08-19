@@ -6,56 +6,55 @@
 
 {% block content %}
 
-<div class="card" style="text-align:center;">
+<div
+    class="card"
+    style="text-align:center;"
+>
 
-    <h1>✅ درخواست شما با موفقیت ثبت شد</h1>
+    <div style="font-size:60px;">
+        ✅
+    </div>
 
-    <p>
-        درخواست شما در سامانه کافی نت آنلاین نوین ثبت گردید.
-    </p>
+    <h1>
+        درخواست با موفقیت ثبت شد
+    </h1>
 
     <p>
         کد پیگیری شما:
     </p>
 
-    <div style="
-        font-size:42px;
-        font-weight:bold;
-        letter-spacing:8px;
-        background:#f1f5f9;
-        padding:20px;
-        border-radius:15px;
-        margin:20px 0;
-        direction:ltr;
-    ">
+    <div
+        style="
+            font-size:42px;
+            font-weight:bold;
+            letter-spacing:8px;
+            margin:20px 0;
+        "
+    >
         {{ tracking_code }}
     </div>
 
     <p>
-        این کد را نزد خود نگه دارید.
-        برای مشاهده وضعیت پرونده و ارتباط با کارشناس به آن نیاز خواهید داشت.
+        این کد را برای پیگیری پرونده نزد خود نگه دارید.
     </p>
 
-    <br>
 
     <a
-        href="{{ url_for('customer_request', tracking_code=tracking_code) }}"
-        class="btn"
+        href="{{ url_for(
+            'tracking',
+            code=tracking_code
+        ) }}"
+        class="btn btn-success"
     >
-        مشاهده پرونده و ارتباط با کارشناس
+        🔎 مشاهده وضعیت پرونده
     </a>
 
+
     <a
-        href="{{ url_for('tracking') }}"
+        href="{{ url_for('home') }}"
         class="btn btn-secondary"
     >
-        پیگیری درخواست
-    </a>
-
-    <br><br>
-
-    <a href="{{ url_for('home') }}">
-        بازگشت به صفحه اصلی
+        🏠 صفحه اصلی
     </a>
 
 </div>
