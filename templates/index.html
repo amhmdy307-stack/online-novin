@@ -68,6 +68,8 @@
 
     .service-icon-card {
         background: white;
+        color: inherit;
+        text-decoration: none;
         border-radius: 18px;
         padding: 22px 15px;
         min-height: 175px;
@@ -84,6 +86,7 @@
     .service-icon-card:hover {
         transform: translateY(-4px);
         box-shadow: 0 8px 25px rgba(0,0,0,.12);
+        text-decoration: none;
     }
 
     .service-icon {
@@ -102,6 +105,7 @@
         font-size: 16px;
         margin: 0 0 8px;
         line-height: 1.7;
+        color: #0f172a;
     }
 
     .service-category {
@@ -153,6 +157,18 @@
         color: #64748b;
     }
 
+    .contact-card {
+        margin-top: 25px;
+        text-align: center;
+    }
+
+    .contact-phone {
+        display: inline-block;
+        margin-top: 10px;
+        font-weight: bold;
+        direction: ltr;
+    }
+
     @media (max-width: 600px) {
 
         .hero {
@@ -196,10 +212,6 @@
 
 {% block content %}
 
-<!-- =========================
-     معرفی سایت
-========================= -->
-
 <div class="hero">
 
     {% if settings.get("logo") %}
@@ -208,10 +220,11 @@
 
             <img
                 src="{{ url_for(
-                    'uploaded_logo',
+                    'uploaded_file',
                     filename=settings.get('logo')
                 ) }}"
                 alt="لوگوی {{ site_name }}"
+                loading="lazy"
             >
 
         </div>
@@ -223,10 +236,13 @@
     </h1>
 
     <div class="hero-manager">
+
         با مدیریت
+
         <strong>
             {{ manager|default("احمد محمدی مهر") }}
         </strong>
+
     </div>
 
     <div class="hero-text">
@@ -241,10 +257,6 @@
 </div>
 
 
-<!-- =========================
-     دسترسی سریع
-========================= -->
-
 <div class="section-title">
 
     <h2>
@@ -252,6 +264,7 @@
     </h2>
 
 </div>
+
 
 <div class="quick-grid">
 
@@ -307,10 +320,6 @@
 </div>
 
 
-<!-- =========================
-     خدمات
-========================= -->
-
 <div class="section-title">
 
     <h2>
@@ -318,7 +327,7 @@
     </h2>
 
     <p>
-        برای مشاهده جزئیات هر خدمت روی آیکون آن بزنید
+        برای مشاهده جزئیات هر خدمت روی آن بزنید
     </p>
 
 </div>
@@ -336,26 +345,30 @@
                     service_id=service['id']
                 ) }}"
                 class="service-icon-card"
+                aria-label="مشاهده {{ service['name'] }}"
             >
 
                 <div class="service-icon">
 
                     {% set service_name = service["name"]|lower %}
 
-                    {% if "وام" in service_name %}
-                        💰
-
-                    {% elif "ازدواج" in service_name %}
+                    {% if "ازدواج" in service_name %}
                         💍
 
                     {% elif "فرزند" in service_name %}
                         👶
+
+                    {% elif "وام" in service_name %}
+                        💰
 
                     {% elif "مسکن" in service_name or "خانه" in service_name %}
                         🏠
 
                     {% elif "بیمه" in service_name %}
                         🛡️
+
+                    {% elif "ثبت شرکت" in service_name %}
+                        🏢
 
                     {% elif "ثبت نام" in service_name or "ثبت‌نام" in service_name %}
                         📝
@@ -402,9 +415,6 @@
                     {% elif "عکس" in service_name %}
                         📷
 
-                    {% elif "ثبت شرکت" in service_name %}
-                        🏢
-
                     {% elif "دادگستری" in service_name %}
                         ⚖️
 
@@ -436,7 +446,7 @@
 
                     <div class="service-price">
 
-                        {{ "{:,}".format(service["price"]) }}
+                        {{ "{:,}".format(service["price"]|int) }}
                         تومان
 
                     </div>
@@ -483,11 +493,7 @@
 {% endif %}
 
 
-<!-- =========================
-     توضیحات پایانی
-========================= -->
-
-<div class="card" style="margin-top:25px;text-align:center;">
+<div class="card contact-card">
 
     <h3>
         💻 کافی‌نت آنلاین نوین
@@ -501,6 +507,17 @@
         با کد پیگیری وضعیت درخواست خود را مشاهده کنید.
 
     </p>
+
+    {% if phone %}
+
+        <a
+            href="tel:{{ phone }}"
+            class="contact-phone"
+        >
+            📞 {{ phone }}
+        </a>
+
+    {% endif %}
 
 </div>
 
