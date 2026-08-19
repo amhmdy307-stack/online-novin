@@ -5,13 +5,23 @@ import secrets
 import random
 from datetime import datetime
 from functools import wraps
-from zoneinfo import ZoneInfo
 
 from flask import (
-    Flask, render_template, request, redirect, url_for,
-    session, flash, send_from_directory, abort, g
+    Flask,
+    render_template,
+    request,
+    redirect,
+    url_for,
+    session,
+    flash,
+    send_from_directory,
+    abort,
+    g
 )
-from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.security import (
+    generate_password_hash,
+    check_password_hash
+)
 from werkzeug.utils import secure_filename
 
 
@@ -47,8 +57,6 @@ app.config["MAX_CONTENT_LENGTH"] = 20 * 1024 * 1024
 SITE_NAME = "کافی نت آنلاین نوین"
 MANAGER = "احمد محمدی مهر"
 PHONE = ""
-
-IRAN_TIMEZONE = ZoneInfo("Asia/Tehran")
 
 
 ALLOWED_STATUSES = [
@@ -102,12 +110,7 @@ def column_exists(conn, table, column):
     return any(row["name"] == column for row in rows)
 
 
-def add_column_if_missing(
-    conn,
-    table,
-    column,
-    definition
-):
+def add_column_if_missing(conn, table, column, definition):
     if not column_exists(conn, table, column):
         conn.execute(
             f"ALTER TABLE {table} ADD COLUMN {column} {definition}"
@@ -126,7 +129,6 @@ def create_tables():
         value TEXT DEFAULT ''
     );
 
-
     CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         username TEXT UNIQUE NOT NULL,
@@ -136,7 +138,6 @@ def create_tables():
         created_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
 
-
     CREATE TABLE IF NOT EXISTS customers (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
@@ -144,7 +145,6 @@ def create_tables():
         national_id TEXT DEFAULT '',
         created_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
-
 
     CREATE TABLE IF NOT EXISTS services (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -154,21 +154,16 @@ def create_tables():
         price INTEGER DEFAULT 0,
         sort_order INTEGER DEFAULT 0,
         active INTEGER DEFAULT 1,
-
         fields_json TEXT DEFAULT '[]',
         documents_json TEXT DEFAULT '[]',
-
         service_code TEXT DEFAULT '',
-
         parent_id INTEGER,
-
         created_at TEXT DEFAULT CURRENT_TIMESTAMP,
 
         FOREIGN KEY(parent_id)
             REFERENCES services(id)
             ON DELETE SET NULL
     );
-
 
     CREATE TABLE IF NOT EXISTS service_experts (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -186,13 +181,11 @@ def create_tables():
             ON DELETE CASCADE
     );
 
-
     CREATE TABLE IF NOT EXISTS requests (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
 
         customer_id INTEGER,
         service_id INTEGER,
-
         expert_id INTEGER,
 
         tracking_code TEXT UNIQUE NOT NULL,
@@ -232,16 +225,13 @@ def create_tables():
             ON DELETE SET NULL
     );
 
-
     CREATE TABLE IF NOT EXISTS documents (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
 
         request_id INTEGER NOT NULL,
-
         customer_id INTEGER,
 
         file_path TEXT NOT NULL,
-
         original_name TEXT NOT NULL,
 
         created_at TEXT DEFAULT CURRENT_TIMESTAMP,
@@ -255,12 +245,10 @@ def create_tables():
             ON DELETE CASCADE
     );
 
-
     CREATE TABLE IF NOT EXISTS messages (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
 
         customer_id INTEGER,
-
         request_id INTEGER,
 
         sender TEXT NOT NULL,
@@ -268,7 +256,6 @@ def create_tables():
         message TEXT DEFAULT '',
 
         file_path TEXT DEFAULT '',
-
         original_name TEXT DEFAULT '',
 
         created_at TEXT DEFAULT CURRENT_TIMESTAMP,
@@ -281,7 +268,6 @@ def create_tables():
             REFERENCES requests(id)
             ON DELETE CASCADE
     );
-
 
     CREATE TABLE IF NOT EXISTS discounts (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -297,14 +283,12 @@ def create_tables():
         used_count INTEGER DEFAULT 0,
 
         start_date TEXT DEFAULT '',
-
         end_date TEXT DEFAULT '',
 
         active INTEGER DEFAULT 1,
 
         created_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
-
 
     CREATE TABLE IF NOT EXISTS notifications (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -324,12 +308,10 @@ def create_tables():
         created_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
 
-
     CREATE TABLE IF NOT EXISTS finance (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
 
         request_id INTEGER,
-
         customer_id INTEGER,
 
         type TEXT NOT NULL,
@@ -349,7 +331,6 @@ def create_tables():
             ON DELETE SET NULL
     );
 
-
     CREATE TABLE IF NOT EXISTS backups (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
 
@@ -359,11 +340,6 @@ def create_tables():
     );
 
     """)
-
-
-    # -----------------------------------------------------
-    # MIGRATIONS
-    # -----------------------------------------------------
 
     add_column_if_missing(
         conn,
@@ -400,11 +376,6 @@ def create_tables():
         "INTEGER DEFAULT 0"
     )
 
-
-    # -----------------------------------------------------
-    # DEFAULT SETTINGS
-    # -----------------------------------------------------
-
     defaults = {
 
         "site_name": SITE_NAME,
@@ -424,40 +395,28 @@ def create_tables():
 
         "logo": "",
 
-        "chat_start":
-            "08:00",
+        "chat_start": "08:00",
 
-        "chat_end":
-            "22:00",
+        "chat_end": "22:00",
 
-        "chat_days":
-            "0,1,2,3,4,5,6",
+        "chat_days": "0,1,2,3,4,5,6",
 
-        "sms_enabled":
-            "0",
+        "sms_enabled": "0",
 
-        "sms_api":
-            "",
+        "sms_api": "",
 
-        "sms_sender":
-            "",
+        "sms_sender": "",
 
-        "payment_enabled":
-            "0",
+        "payment_enabled": "0",
 
-        "payment_gateway":
-            "",
+        "payment_gateway": "",
 
-        "payment_api":
-            "",
+        "payment_api": "",
 
-        "payment_callback":
-            "",
+        "payment_callback": "",
 
-        "maintenance_mode":
-            "0"
+        "maintenance_mode": "0"
     }
-
 
     for key, value in defaults.items():
 
@@ -470,16 +429,14 @@ def create_tables():
             (key, value)
         )
 
-
-    # -----------------------------------------------------
-    # ADMIN
-    # -----------------------------------------------------
-
     admin = conn.execute(
-        "SELECT id FROM users WHERE username = ?",
+        """
+        SELECT id
+        FROM users
+        WHERE username = ?
+        """,
         ("admin",)
     ).fetchone()
-
 
     if not admin:
 
@@ -499,7 +456,6 @@ def create_tables():
                 )
             )
         )
-
 
     conn.commit()
 
@@ -562,6 +518,7 @@ def get_current_user():
         return None
 
     if not user["active"]:
+        session.clear()
         return None
 
     return user
@@ -622,8 +579,7 @@ def to_int(value, default=0):
             .strip()
         )
 
-    except Exception:
-
+    except (ValueError, TypeError):
         return default
 
 
@@ -639,7 +595,7 @@ def parse_json_list(value):
         if isinstance(result, list):
             return result
 
-    except Exception:
+    except (ValueError, TypeError):
         pass
 
     return []
@@ -649,7 +605,7 @@ def generate_tracking_code():
 
     conn = get_db()
 
-    while True:
+    for _ in range(100):
 
         code = str(
             random.randint(1000, 9999)
@@ -666,6 +622,10 @@ def generate_tracking_code():
 
         if not exists:
             return code
+
+    raise RuntimeError(
+        "امکان ایجاد کد پیگیری جدید وجود ندارد."
+    )
 
 
 def allowed_file(filename):
@@ -794,8 +754,6 @@ def add_finance(
         )
     )
 
-    conn.commit()
-
 
 def expert_has_service(
     expert_id,
@@ -847,11 +805,9 @@ def chat_is_open():
 
     settings = get_settings()
 
-    now = datetime.now(IRAN_TIMEZONE)
+    now = datetime.now()
 
-    day = str(
-        now.weekday()
-    )
+    day = str(now.weekday())
 
     allowed_days = [
         x.strip()
@@ -877,17 +833,12 @@ def chat_is_open():
 
     current = now.strftime("%H:%M")
 
-    if start <= end:
-        return start <= current <= end
-
-    return current >= start or current <= end
+    return start <= current <= end
 
 
 def create_backup():
 
-    timestamp = datetime.now(
-        IRAN_TIMEZONE
-    ).strftime(
+    timestamp = datetime.now().strftime(
         "%Y%m%d_%H%M%S"
     )
 
@@ -914,7 +865,6 @@ def create_backup():
         backup.close()
         source.close()
 
-
     conn = get_db()
 
     conn.execute(
@@ -928,65 +878,6 @@ def create_backup():
     conn.commit()
 
     return filename
-
-
-def get_request_for_user(
-    rid,
-    user
-):
-
-    conn = get_db()
-
-    row = conn.execute(
-        """
-        SELECT *
-        FROM requests
-        WHERE id = ?
-        """,
-        (rid,)
-    ).fetchone()
-
-    if not row:
-        return None
-
-    if not expert_can_see_request(
-        user,
-        row
-    ):
-        return None
-
-    return row
-
-
-def safe_download_path(base_folder, filename):
-
-    if not filename:
-        abort(404)
-
-    base = os.path.realpath(
-        base_folder
-    )
-
-    target = os.path.realpath(
-        os.path.join(
-            base_folder,
-            filename
-        )
-    )
-
-    if (
-        target != base
-        and
-        not target.startswith(
-            base + os.sep
-        )
-    ):
-        abort(404)
-
-    if not os.path.isfile(target):
-        abort(404)
-
-    return target
 
 
 # =========================================================
@@ -1029,6 +920,54 @@ def inject_globals():
 
 
 # =========================================================
+# UPLOADS
+# =========================================================
+
+@app.route("/uploads/<path:filename>")
+def uploaded_file(filename):
+
+    safe_name = os.path.basename(filename)
+
+    if safe_name != filename:
+        abort(404)
+
+    full_path = os.path.join(
+        UPLOAD_FOLDER,
+        safe_name
+    )
+
+    if not os.path.isfile(full_path):
+        abort(404)
+
+    return send_from_directory(
+        UPLOAD_FOLDER,
+        safe_name
+    )
+
+
+@app.route("/uploads/logo/<path:filename>")
+def uploaded_logo(filename):
+
+    safe_name = os.path.basename(filename)
+
+    if safe_name != filename:
+        abort(404)
+
+    full_path = os.path.join(
+        UPLOAD_FOLDER,
+        safe_name
+    )
+
+    if not os.path.isfile(full_path):
+        abort(404)
+
+    return send_from_directory(
+        UPLOAD_FOLDER,
+        safe_name
+    )
+
+
+# =========================================================
 # HOME
 # =========================================================
 
@@ -1066,9 +1005,7 @@ def index():
 # SERVICE
 # =========================================================
 
-@app.route(
-    "/service/<int:service_id>"
-)
+@app.route("/service/<int:service_id>")
 def service(service_id):
 
     conn = get_db()
@@ -1140,7 +1077,6 @@ def create_request(service_id):
     if not service_row:
         abort(404)
 
-
     name = request.form.get(
         "name",
         ""
@@ -1166,7 +1102,6 @@ def create_request(service_id):
         ""
     ).strip().upper()
 
-
     if not name or not phone:
 
         flash(
@@ -1181,7 +1116,6 @@ def create_request(service_id):
             )
         )
 
-
     customer = conn.execute(
         """
         SELECT *
@@ -1192,7 +1126,6 @@ def create_request(service_id):
         """,
         (phone,)
     ).fetchone()
-
 
     if customer:
 
@@ -1233,7 +1166,6 @@ def create_request(service_id):
 
         customer_id = cursor.lastrowid
 
-
     ignored = {
         "name",
         "phone",
@@ -1251,20 +1183,13 @@ def create_request(service_id):
 
             form_data[key] = request.form.get(key)
 
-
-    base_price = max(
-        0,
-        to_int(
-            service_row["price"]
-        )
+    base_price = to_int(
+        service_row["price"]
     )
 
     discount_amount = 0
-
     is_paid = 0
-
     discount_id = None
-
 
     if discount_code:
 
@@ -1278,17 +1203,13 @@ def create_request(service_id):
             (discount_code,)
         ).fetchone()
 
-
         if discount:
 
-            today = datetime.now(
-                IRAN_TIMEZONE
-            ).strftime(
+            today = datetime.now().strftime(
                 "%Y-%m-%d"
             )
 
             valid = True
-
 
             if (
                 discount["start_date"]
@@ -1297,14 +1218,12 @@ def create_request(service_id):
             ):
                 valid = False
 
-
             if (
                 discount["end_date"]
                 and
                 today > discount["end_date"]
             ):
                 valid = False
-
 
             if (
                 discount["max_uses"] > 0
@@ -1314,11 +1233,9 @@ def create_request(service_id):
             ):
                 valid = False
 
-
             if valid:
 
                 discount_id = discount["id"]
-
 
                 if discount["kind"] == "percent":
 
@@ -1337,28 +1254,22 @@ def create_request(service_id):
                         discount["value"]
                     )
 
-
                 if (
                     discount["kind"] == "percent"
                     and
                     discount["value"] >= 100
                 ):
-
                     is_paid = 1
-
 
     final_price = max(
         0,
         base_price - discount_amount
     )
 
-
     if final_price == 0:
         is_paid = 1
 
-
     tracking_code = generate_tracking_code()
-
 
     cursor = conn.execute(
         """
@@ -1397,9 +1308,7 @@ def create_request(service_id):
         )
     )
 
-
     request_id = cursor.lastrowid
-
 
     if discount_id:
 
@@ -1412,7 +1321,6 @@ def create_request(service_id):
             """,
             (discount_id,)
         )
-
 
     files = request.files.getlist(
         "documents"
@@ -1466,7 +1374,6 @@ def create_request(service_id):
             )
         )
 
-
     conn.execute(
         """
         INSERT INTO messages
@@ -1485,16 +1392,13 @@ def create_request(service_id):
         )
     )
 
-
     conn.commit()
-
 
     notify_request(
         request_id,
         "درخواست جدید",
         f"کد پیگیری: {tracking_code}"
     )
-
 
     return redirect(
         url_for(
@@ -1543,7 +1447,6 @@ def tracking():
         ).strip()
     )
 
-
     if code:
 
         conn = get_db()
@@ -1571,14 +1474,12 @@ def tracking():
             (code,)
         ).fetchone()
 
-
         if not result:
 
             flash(
                 "کد پیگیری پیدا نشد.",
                 "error"
             )
-
 
     return render_template(
         "tracking.html",
@@ -1594,9 +1495,7 @@ def tracking():
     "/customer/request/<tracking_code>",
     methods=["GET", "POST"]
 )
-def customer_request(
-    tracking_code
-):
+def customer_request(tracking_code):
 
     conn = get_db()
 
@@ -1623,10 +1522,8 @@ def customer_request(
         (tracking_code,)
     ).fetchone()
 
-
     if not req:
         abort(404)
-
 
     if request.method == "POST":
 
@@ -1644,22 +1541,17 @@ def customer_request(
                 )
             )
 
-
         message = request.form.get(
             "message",
             ""
         ).strip()
 
-
         file = request.files.get(
             "file"
         )
 
-
         file_path = ""
-
         original_name = ""
-
 
         if file and file.filename:
 
@@ -1686,9 +1578,7 @@ def customer_request(
                     file.save(path)
 
                     file_path = new_name
-
                     original_name = filename
-
 
         if message or file_path:
 
@@ -1717,13 +1607,11 @@ def customer_request(
 
             conn.commit()
 
-
             notify_request(
                 req["id"],
                 "پیام جدید مشتری",
                 "مشتری برای پرونده پیام جدید ارسال کرده است."
             )
-
 
         return redirect(
             url_for(
@@ -1731,7 +1619,6 @@ def customer_request(
                 tracking_code=tracking_code
             )
         )
-
 
     messages = conn.execute(
         """
@@ -1743,7 +1630,6 @@ def customer_request(
         (req["id"],)
     ).fetchall()
 
-
     documents = conn.execute(
         """
         SELECT *
@@ -1753,7 +1639,6 @@ def customer_request(
         """,
         (req["id"],)
     ).fetchall()
-
 
     return render_template(
         "chat.html",
@@ -1779,7 +1664,6 @@ def admin_login():
             url_for("admin")
         )
 
-
     if request.method == "POST":
 
         username = request.form.get(
@@ -1792,7 +1676,6 @@ def admin_login():
             ""
         )
 
-
         conn = get_db()
 
         user = conn.execute(
@@ -1804,7 +1687,6 @@ def admin_login():
             """,
             (username,)
         ).fetchone()
-
 
         if (
             user
@@ -1823,12 +1705,10 @@ def admin_login():
                 url_for("admin")
             )
 
-
         flash(
             "نام کاربری یا رمز عبور اشتباه است.",
             "error"
         )
-
 
     return render_template(
         "admin_login.html"
@@ -1856,7 +1736,6 @@ def admin():
     conn = get_db()
 
     user = get_current_user()
-
 
     if user["role"] == "expert":
 
@@ -1894,6 +1773,8 @@ def admin():
                     )
                 )
 
+                AND r.is_paid = 1
+
             ORDER BY r.id DESC
             """,
             (
@@ -1926,7 +1807,6 @@ def admin():
             """
         ).fetchall()
 
-
     customers = conn.execute(
         """
         SELECT *
@@ -1934,7 +1814,6 @@ def admin():
         ORDER BY id DESC
         """
     ).fetchall()
-
 
     services = conn.execute(
         """
@@ -1944,7 +1823,6 @@ def admin():
         """
     ).fetchall()
 
-
     discounts = conn.execute(
         """
         SELECT *
@@ -1952,7 +1830,6 @@ def admin():
         ORDER BY id DESC
         """
     ).fetchall()
-
 
     users = conn.execute(
         """
@@ -1967,7 +1844,6 @@ def admin():
         """
     ).fetchall()
 
-
     total_income = conn.execute(
         """
         SELECT
@@ -1979,7 +1855,6 @@ def admin():
         WHERE type = 'income'
         """
     ).fetchone()[0]
-
 
     total_debt = conn.execute(
         """
@@ -1997,7 +1872,6 @@ def admin():
         FROM requests
         """
     ).fetchone()[0]
-
 
     notifications = conn.execute(
         """
@@ -2017,7 +1891,6 @@ def admin():
         """,
         (user["id"],)
     ).fetchall()
-
 
     return render_template(
         "admin.html",
@@ -2059,7 +1932,6 @@ def admin_request(rid):
 
     user = get_current_user()
 
-
     row = conn.execute(
         """
         SELECT
@@ -2084,10 +1956,8 @@ def admin_request(rid):
         (rid,)
     ).fetchone()
 
-
     if not row:
         abort(404)
-
 
     if not expert_can_see_request(
         user,
@@ -2103,7 +1973,6 @@ def admin_request(rid):
             url_for("admin")
         )
 
-
     if request.method == "POST":
 
         status = request.form.get(
@@ -2111,48 +1980,34 @@ def admin_request(rid):
             row["status"]
         ).strip()
 
-
         estimated_time = request.form.get(
             "estimated_time",
             ""
         ).strip()
-
 
         admin_note = request.form.get(
             "admin_note",
             ""
         ).strip()
 
-
-        total_price = max(
-            0,
-            to_int(
-                request.form.get(
-                    "total_price",
-                    row["total_price"]
-                )
+        total_price = to_int(
+            request.form.get(
+                "total_price",
+                row["total_price"]
             )
         )
 
-
-        paid_price = max(
-            0,
-            to_int(
-                request.form.get(
-                    "paid_price",
-                    row["paid_price"]
-                )
+        paid_price = to_int(
+            request.form.get(
+                "paid_price",
+                row["paid_price"]
             )
         )
-
 
         if status not in ALLOWED_STATUSES:
-
             status = row["status"]
 
-
         expert_id = row["expert_id"]
-
 
         if (
             user["role"] == "expert"
@@ -2163,7 +2018,6 @@ def admin_request(rid):
         ):
 
             expert_id = user["id"]
-
 
         if (
             user["role"] == "expert"
@@ -2185,7 +2039,6 @@ def admin_request(rid):
                 )
             )
 
-
         if (
             user["role"] == "admin"
             and
@@ -2198,20 +2051,13 @@ def admin_request(rid):
                 )
             )
 
-            expert_exists = conn.execute(
-                """
-                SELECT id
-                FROM users
-                WHERE id = ?
-                AND role = 'expert'
-                AND active = 1
-                """,
-                (expert_id,)
-            ).fetchone()
+            if expert_id <= 0:
+                expert_id = None
 
-            if not expert_exists:
-                expert_id = row["expert_id"]
-
+        total_price = max(
+            0,
+            total_price
+        )
 
         paid_price = max(
             0,
@@ -2221,16 +2067,15 @@ def admin_request(rid):
             )
         )
 
-
         old_status = row["status"]
 
+        old_paid_price = row["paid_price"]
 
         is_paid = (
             1
             if paid_price >= total_price
             else 0
         )
-
 
         conn.execute(
             """
@@ -2260,21 +2105,16 @@ def admin_request(rid):
             )
         )
 
-
-        if (
-            paid_price > row["paid_price"]
-        ):
+        if paid_price > old_paid_price:
 
             add_finance(
                 rid,
                 row["customer_id"],
-                paid_price - row["paid_price"],
+                paid_price - old_paid_price,
                 "پرداخت پرونده"
             )
 
-
         conn.commit()
-
 
         if status != old_status:
 
@@ -2284,12 +2124,10 @@ def admin_request(rid):
                 f"وضعیت پرونده به «{status}» تغییر کرد."
             )
 
-
         flash(
             "پرونده با موفقیت ذخیره شد.",
             "success"
         )
-
 
         return redirect(
             url_for(
@@ -2297,7 +2135,6 @@ def admin_request(rid):
                 rid=rid
             )
         )
-
 
     messages = conn.execute(
         """
@@ -2309,7 +2146,6 @@ def admin_request(rid):
         (rid,)
     ).fetchall()
 
-
     documents = conn.execute(
         """
         SELECT *
@@ -2320,7 +2156,6 @@ def admin_request(rid):
         (rid,)
     ).fetchall()
 
-
     experts = conn.execute(
         """
         SELECT id, username
@@ -2330,7 +2165,6 @@ def admin_request(rid):
         ORDER BY username
         """
     ).fetchall()
-
 
     return render_template(
         "admin_request.html",
@@ -2365,7 +2199,6 @@ def admin_request_status():
         ""
     ).strip()
 
-
     if status not in ALLOWED_STATUSES:
 
         flash(
@@ -2377,11 +2210,9 @@ def admin_request_status():
             url_for("admin")
         )
 
-
     conn = get_db()
 
     user = get_current_user()
-
 
     row = conn.execute(
         """
@@ -2392,10 +2223,8 @@ def admin_request_status():
         (rid,)
     ).fetchone()
 
-
     if not row:
         abort(404)
-
 
     if not expert_can_see_request(
         user,
@@ -2411,9 +2240,7 @@ def admin_request_status():
             url_for("admin")
         )
 
-
     expert_id = row["expert_id"]
-
 
     if (
         user["role"] == "expert"
@@ -2424,31 +2251,6 @@ def admin_request_status():
     ):
 
         expert_id = user["id"]
-
-
-    if (
-        user["role"] == "expert"
-        and
-        row["expert_id"]
-        and
-        row["expert_id"] != user["id"]
-    ):
-
-        flash(
-            "این پرونده قبلاً توسط کارشناس دیگری پذیرش شده است.",
-            "error"
-        )
-
-        return redirect(
-            url_for(
-                "admin_request",
-                rid=rid
-            )
-        )
-
-
-    old_status = row["status"]
-
 
     conn.execute(
         """
@@ -2468,24 +2270,18 @@ def admin_request_status():
         )
     )
 
-
     conn.commit()
 
-
-    if status != old_status:
-
-        notify_request(
-            rid,
-            "تغییر وضعیت پرونده",
-            f"وضعیت جدید: {status}"
-        )
-
+    notify_request(
+        rid,
+        "تغییر وضعیت پرونده",
+        f"وضعیت جدید: {status}"
+    )
 
     flash(
         "وضعیت پرونده تغییر کرد.",
         "success"
     )
-
 
     return redirect(
         url_for(
@@ -2514,7 +2310,6 @@ def admin_request_update():
 
     user = get_current_user()
 
-
     row = conn.execute(
         """
         SELECT *
@@ -2524,10 +2319,8 @@ def admin_request_update():
         (rid,)
     ).fetchone()
 
-
     if not row:
         abort(404)
-
 
     if not expert_can_see_request(
         user,
@@ -2543,41 +2336,29 @@ def admin_request_update():
             url_for("admin")
         )
 
-
-    total_price = max(
-        0,
-        to_int(
-            request.form.get(
-                "total_price"
-            )
+    total_price = to_int(
+        request.form.get(
+            "total_price"
         )
     )
 
-
-    paid_price = max(
-        0,
-        to_int(
-            request.form.get(
-                "paid_price"
-            )
+    paid_price = to_int(
+        request.form.get(
+            "paid_price"
         )
     )
-
 
     estimated_time = request.form.get(
         "estimated_time",
         ""
     ).strip()
 
-
     admin_note = request.form.get(
         "admin_note",
         ""
     ).strip()
 
-
     expert_id = row["expert_id"]
-
 
     if user["role"] == "admin":
 
@@ -2587,24 +2368,17 @@ def admin_request_update():
 
         if requested_expert:
 
-            requested_expert_id = to_int(
+            expert_id = to_int(
                 requested_expert
             )
 
-            expert_exists = conn.execute(
-                """
-                SELECT id
-                FROM users
-                WHERE id = ?
-                AND role = 'expert'
-                AND active = 1
-                """,
-                (requested_expert_id,)
-            ).fetchone()
+            if expert_id <= 0:
+                expert_id = None
 
-            if expert_exists:
-                expert_id = requested_expert_id
-
+    total_price = max(
+        0,
+        total_price
+    )
 
     paid_price = max(
         0,
@@ -2614,13 +2388,11 @@ def admin_request_update():
         )
     )
 
-
     is_paid = (
         1
         if paid_price >= total_price
         else 0
     )
-
 
     conn.execute(
         """
@@ -2648,7 +2420,6 @@ def admin_request_update():
         )
     )
 
-
     if paid_price > row["paid_price"]:
 
         add_finance(
@@ -2658,9 +2429,7 @@ def admin_request_update():
             "پرداخت پرونده"
         )
 
-
     conn.commit()
-
 
     notify_request(
         rid,
@@ -2668,12 +2437,10 @@ def admin_request_update():
         "اطلاعات مالی یا توضیحات پرونده بروزرسانی شد."
     )
 
-
     flash(
         "اطلاعات پرونده ذخیره شد.",
         "success"
     )
-
 
     return redirect(
         url_for(
@@ -2698,22 +2465,18 @@ def admin_message():
         request.form.get("id")
     )
 
-
     message = request.form.get(
         "message",
         ""
     ).strip()
 
-
     file = request.files.get(
         "file"
     )
 
-
     conn = get_db()
 
     user = get_current_user()
-
 
     row = conn.execute(
         """
@@ -2724,10 +2487,8 @@ def admin_message():
         (rid,)
     ).fetchone()
 
-
     if not row:
         abort(404)
-
 
     if not expert_can_see_request(
         user,
@@ -2743,11 +2504,8 @@ def admin_message():
             url_for("admin")
         )
 
-
     file_path = ""
-
     original_name = ""
-
 
     if file and file.filename:
 
@@ -2774,9 +2532,7 @@ def admin_message():
                 )
 
                 file_path = new_name
-
                 original_name = filename
-
 
     if not message and not file_path:
 
@@ -2787,14 +2543,12 @@ def admin_message():
             )
         )
 
-
     sender = (
         "admin"
         if user["role"] == "admin"
         else
         "expert"
     )
-
 
     conn.execute(
         """
@@ -2819,16 +2573,13 @@ def admin_message():
         )
     )
 
-
     conn.commit()
-
 
     notify_request(
         rid,
         "پیام جدید",
         "پیام جدیدی برای پرونده شما ارسال شده است."
     )
-
 
     return redirect(
         url_for(
@@ -2839,7 +2590,7 @@ def admin_message():
 
 
 # =========================================================
-# SERVICES FROM ADMIN
+# SERVICES
 # =========================================================
 
 @app.route(
@@ -2854,18 +2605,15 @@ def admin_service_save():
         ""
     ).strip()
 
-
     category = request.form.get(
         "category",
         ""
     ).strip()
 
-
     description = request.form.get(
         "description",
         ""
     ).strip()
-
 
     price = max(
         0,
@@ -2874,11 +2622,9 @@ def admin_service_save():
         )
     )
 
-
     sort_order = to_int(
         request.form.get("sort_order")
     )
-
 
     active = (
         1
@@ -2889,37 +2635,35 @@ def admin_service_save():
         else 0
     )
 
-
     service_code = request.form.get(
         "service_code",
         ""
     ).strip()
-
 
     fields_json = request.form.get(
         "fields_json",
         "[]"
     )
 
-
     documents_json = request.form.get(
         "documents_json",
         "[]"
     )
 
-
     parent_id = request.form.get(
         "parent_id"
     )
-
 
     if parent_id:
         parent_id = to_int(
             parent_id
         )
+
+        if parent_id <= 0:
+            parent_id = None
+
     else:
         parent_id = None
-
 
     try:
 
@@ -2933,10 +2677,9 @@ def admin_service_save():
         ):
             fields_json = "[]"
 
-    except Exception:
+    except (ValueError, TypeError):
 
         fields_json = "[]"
-
 
     try:
 
@@ -2950,10 +2693,9 @@ def admin_service_save():
         ):
             documents_json = "[]"
 
-    except Exception:
+    except (ValueError, TypeError):
 
         documents_json = "[]"
-
 
     if not name:
 
@@ -2966,9 +2708,7 @@ def admin_service_save():
             url_for("admin")
         )
 
-
     conn = get_db()
-
 
     if parent_id:
 
@@ -2983,7 +2723,6 @@ def admin_service_save():
 
         if not parent:
             parent_id = None
-
 
     conn.execute(
         """
@@ -3017,15 +2756,12 @@ def admin_service_save():
         )
     )
 
-
     conn.commit()
-
 
     flash(
         "خدمت از داخل پنل مدیر اضافه شد.",
         "success"
     )
-
 
     return redirect(
         url_for("admin")
@@ -3047,15 +2783,6 @@ def delete_service(service_id):
 
     conn.execute(
         """
-        UPDATE services
-        SET parent_id = NULL
-        WHERE parent_id = ?
-        """,
-        (service_id,)
-    )
-
-    conn.execute(
-        """
         DELETE FROM services
         WHERE id = ?
         """,
@@ -3064,12 +2791,10 @@ def delete_service(service_id):
 
     conn.commit()
 
-
     flash(
         "خدمت حذف شد.",
         "success"
     )
-
 
     return redirect(
         url_for("admin")
@@ -3128,14 +2853,11 @@ def service_experts():
         )
     )
 
-
     expert_ids = request.form.getlist(
         "expert_ids"
     )
 
-
     conn = get_db()
-
 
     service = conn.execute(
         """
@@ -3146,18 +2868,16 @@ def service_experts():
         (service_id,)
     ).fetchone()
 
-
     if not service:
 
         flash(
-            "خدمت پیدا نشد.",
+            "خدمت موردنظر پیدا نشد.",
             "error"
         )
 
         return redirect(
             url_for("admin")
         )
-
 
     conn.execute(
         """
@@ -3167,7 +2887,6 @@ def service_experts():
         (service_id,)
     )
 
-
     for expert_id in expert_ids:
 
         expert_id = to_int(
@@ -3176,18 +2895,17 @@ def service_experts():
 
         if expert_id:
 
-            expert = conn.execute(
+            exists = conn.execute(
                 """
                 SELECT id
                 FROM users
                 WHERE id = ?
                 AND role = 'expert'
-                AND active = 1
                 """,
                 (expert_id,)
             ).fetchone()
 
-            if expert:
+            if exists:
 
                 conn.execute(
                     """
@@ -3204,15 +2922,12 @@ def service_experts():
                     )
                 )
 
-
     conn.commit()
-
 
     flash(
         "دسترسی کارشناسان این خدمت ذخیره شد.",
         "success"
     )
-
 
     return redirect(
         url_for("admin")
@@ -3235,26 +2950,21 @@ def create_user():
         ""
     ).strip()
 
-
     password = request.form.get(
         "password",
         ""
     )
-
 
     role = request.form.get(
         "role",
         "expert"
     )
 
-
     if role not in (
         "admin",
         "expert"
     ):
-
         role = "expert"
-
 
     if (
         not username
@@ -3271,9 +2981,7 @@ def create_user():
             url_for("admin")
         )
 
-
     conn = get_db()
-
 
     exists = conn.execute(
         """
@@ -3283,7 +2991,6 @@ def create_user():
         """,
         (username,)
     ).fetchone()
-
 
     if exists:
 
@@ -3295,7 +3002,6 @@ def create_user():
         return redirect(
             url_for("admin")
         )
-
 
     conn.execute(
         """
@@ -3315,15 +3021,12 @@ def create_user():
         )
     )
 
-
     conn.commit()
-
 
     flash(
         "کاربر ایجاد شد.",
         "success"
     )
-
 
     return redirect(
         url_for("admin")
@@ -3350,7 +3053,6 @@ def toggle_user(user_id):
             url_for("admin")
         )
 
-
     conn = get_db()
 
     conn.execute(
@@ -3369,7 +3071,6 @@ def toggle_user(user_id):
     )
 
     conn.commit()
-
 
     return redirect(
         url_for("admin")
@@ -3392,7 +3093,6 @@ def admin_password():
         ""
     )
 
-
     if len(password) < 6:
 
         flash(
@@ -3404,9 +3104,7 @@ def admin_password():
             url_for("admin")
         )
 
-
     conn = get_db()
-
 
     conn.execute(
         """
@@ -3424,15 +3122,12 @@ def admin_password():
         )
     )
 
-
     conn.commit()
-
 
     flash(
         "رمز عبور تغییر کرد.",
         "success"
     )
-
 
     return redirect(
         url_for("admin")
@@ -3455,53 +3150,44 @@ def create_discount():
         ""
     ).strip().upper()
 
-
     kind = request.form.get(
         "kind",
         "percent"
     )
 
-
     value = to_int(
         request.form.get("value")
     )
 
-
-    max_uses = max(
-        0,
-        to_int(
-            request.form.get(
-                "max_uses",
-                0
-            )
+    max_uses = to_int(
+        request.form.get(
+            "max_uses",
+            0
         )
     )
-
 
     start_date = request.form.get(
         "start_date",
         ""
     ).strip()
 
-
     end_date = request.form.get(
         "end_date",
         ""
     ).strip()
 
-
     if kind not in (
         "percent",
         "fixed"
     ):
-
         kind = "percent"
-
 
     if (
         not code
         or
         value < 0
+        or
+        max_uses < 0
     ):
 
         flash(
@@ -3512,7 +3198,6 @@ def create_discount():
         return redirect(
             url_for("admin")
         )
-
 
     if (
         kind == "percent"
@@ -3529,9 +3214,24 @@ def create_discount():
             url_for("admin")
         )
 
+    if (
+        start_date
+        and
+        end_date
+        and
+        start_date > end_date
+    ):
+
+        flash(
+            "تاریخ شروع نمی‌تواند بعد از تاریخ پایان باشد.",
+            "error"
+        )
+
+        return redirect(
+            url_for("admin")
+        )
 
     conn = get_db()
-
 
     exists = conn.execute(
         """
@@ -3541,7 +3241,6 @@ def create_discount():
         """,
         (code,)
     ).fetchone()
-
 
     if exists:
 
@@ -3553,7 +3252,6 @@ def create_discount():
         return redirect(
             url_for("admin")
         )
-
 
     conn.execute(
         """
@@ -3579,15 +3277,12 @@ def create_discount():
         )
     )
 
-
     conn.commit()
-
 
     flash(
         "کد تخفیف ایجاد شد.",
         "success"
     )
-
 
     return redirect(
         url_for("admin")
@@ -3679,7 +3374,6 @@ def admin_settings_save():
         "payment_callback"
     ]
 
-
     for key in keys:
 
         set_setting(
@@ -3690,11 +3384,9 @@ def admin_settings_save():
             ).strip()
         )
 
-
     logo = request.files.get(
         "logo"
     )
-
 
     if logo and logo.filename:
 
@@ -3706,18 +3398,15 @@ def admin_settings_save():
                 logo.filename
             )
 
-            if (
+            extension = os.path.splitext(
                 filename
-                and
-                os.path.splitext(
-                    filename
-                )[1].lower()
-                in (
-                    ".jpg",
-                    ".jpeg",
-                    ".png",
-                    ".webp"
-                )
+            )[1].lower()
+
+            if extension in (
+                ".jpg",
+                ".jpeg",
+                ".png",
+                ".webp"
             ):
 
                 filename = (
@@ -3738,12 +3427,10 @@ def admin_settings_save():
                     filename
                 )
 
-
     flash(
         "تنظیمات ذخیره شد.",
         "success"
     )
-
 
     return redirect(
         url_for("admin")
@@ -3764,7 +3451,6 @@ def notifications_read():
     user = get_current_user()
 
     conn = get_db()
-
 
     if user["role"] == "admin":
 
@@ -3792,9 +3478,7 @@ def notifications_read():
             (user["id"],)
         )
 
-
     conn.commit()
-
 
     return redirect(
         url_for("admin")
@@ -3809,49 +3493,21 @@ def notifications_read():
     "/download/document/<int:document_id>"
 )
 @login_required
-def download_document(
-    document_id
-):
+def download_document(document_id):
 
     conn = get_db()
 
-    user = get_current_user()
-
-
     doc = conn.execute(
         """
-        SELECT
-            d.*,
-            r.expert_id,
-            r.service_id
-
-        FROM documents d
-
-        INNER JOIN requests r
-            ON r.id = d.request_id
-
-        WHERE d.id = ?
+        SELECT *
+        FROM documents
+        WHERE id = ?
         """,
         (document_id,)
     ).fetchone()
 
-
     if not doc:
         abort(404)
-
-
-    if not expert_can_see_request(
-        user,
-        doc
-    ):
-        abort(403)
-
-
-    safe_download_path(
-        DOCUMENTS_FOLDER,
-        doc["file_path"]
-    )
-
 
     return send_from_directory(
         DOCUMENTS_FOLDER,
@@ -3871,55 +3527,23 @@ def download_document(
 @login_required
 def download_chat_file(filename):
 
-    conn = get_db()
+    safe_name = os.path.basename(filename)
 
-    user = get_current_user()
-
-
-    message = conn.execute(
-        """
-        SELECT
-            m.*,
-            r.expert_id,
-            r.service_id
-
-        FROM messages m
-
-        INNER JOIN requests r
-            ON r.id = m.request_id
-
-        WHERE m.file_path = ?
-        """,
-        (filename,)
-    ).fetchone()
-
-
-    if not message:
+    if safe_name != filename:
         abort(404)
 
-
-    if not expert_can_see_request(
-        user,
-        message
-    ):
-        abort(403)
-
-
-    safe_download_path(
+    full_path = os.path.join(
         CHAT_FOLDER,
-        filename
+        safe_name
     )
 
+    if not os.path.isfile(full_path):
+        abort(404)
 
     return send_from_directory(
         CHAT_FOLDER,
-        filename,
-        as_attachment=True,
-        download_name=(
-            message["original_name"]
-            or
-            filename
-        )
+        safe_name,
+        as_attachment=True
     )
 
 
@@ -3936,12 +3560,10 @@ def admin_backup():
 
     filename = create_backup()
 
-
     flash(
         f"پشتیبان دیتابیس ساخته شد: {filename}",
         "success"
     )
-
 
     return redirect(
         url_for("admin")
@@ -3954,14 +3576,22 @@ def admin_backup():
 @admin_required
 def download_backup(filename):
 
-    safe_download_path(
+    safe_name = os.path.basename(filename)
+
+    if safe_name != filename:
+        abort(404)
+
+    full_path = os.path.join(
         BACKUP_FOLDER,
-        filename
+        safe_name
     )
+
+    if not os.path.isfile(full_path):
+        abort(404)
 
     return send_from_directory(
         BACKUP_FOLDER,
-        filename,
+        safe_name,
         as_attachment=True
     )
 
@@ -3977,15 +3607,6 @@ def not_found(error):
         "base.html",
         content="صفحه مورد نظر پیدا نشد."
     ), 404
-
-
-@app.errorhandler(403)
-def forbidden(error):
-
-    return render_template(
-        "base.html",
-        content="شما اجازه دسترسی به این بخش را ندارید."
-    ), 403
 
 
 @app.errorhandler(413)
