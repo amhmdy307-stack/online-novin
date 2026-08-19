@@ -1,60 +1,117 @@
 {% extends "base.html" %}
 
 {% block title %}
-{{ site_name|default("کافی نت آنلاین نوین") }}
+{{ site_name }}
 {% endblock %}
 
 {% block content %}
 
 <div class="card">
-    <h1>{{ site_name|default("کافی نت آنلاین نوین") }}</h1>
 
-    {% if settings.get('manager_text') %}
-        <p>{{ settings.get('manager_text') }}</p>
-    {% endif %}
+    <h1>
+        {{ site_name }}
+    </h1>
 
-    {% if settings.get('home_text') %}
-        <p>{{ settings.get('home_text') }}</p>
-    {% endif %}
+    <h3>
+        با مدیریت {{ manager }}
+    </h3>
+
+    <p>
+        {{ site_settings.get(
+            "home_text",
+            "تمام خدمات کافی‌نت آنلاین نوین را به صورت غیرحضوری دریافت کنید."
+        ) }}
+    </p>
+
 </div>
 
+
 <div class="card">
-    <h2>خدمات ما</h2>
+
+    <h2>
+        📋 خدمات
+    </h2>
 
     {% if services %}
-        <div class="grid">
+
+        <div class="icon-grid">
+
             {% for service in services %}
-                <div class="card" style="margin:0;">
-                    <h3>{{ service["name"] }}</h3>
+
+                <a
+                    class="icon-card"
+                    href="{{ url_for(
+                        'service',
+                        service_id=service['id']
+                    ) }}"
+                >
+
+                    <div class="icon">
+                        📄
+                    </div>
+
+                    <strong>
+                        {{ service["name"] }}
+                    </strong>
 
                     {% if service["category"] %}
-                        <span class="badge">{{ service["category"] }}</span>
-                    {% endif %}
 
-                    {% if service["description"] %}
-                        <p>{{ service["description"][:120] }}{% if service["description"]|length > 120 %}...{% endif %}</p>
-                    {% endif %}
-
-                    {% if service["price"] and service["price"] > 0 %}
-                        <div class="price">
-                            {{ "{:,}".format(service["price"]) }} تومان
+                        <div class="mini">
+                            {{ service["category"] }}
                         </div>
-                    {% else %}
-                        <div class="badge">قیمت پس از بررسی</div>
+
                     {% endif %}
 
-                    <br>
-                    <a href="{{ url_for('service', service_id=service['id']) }}" class="btn">
-                        ثبت درخواست
-                    </a>
-                </div>
+                </a>
+
             {% endfor %}
+
         </div>
+
     {% else %}
+
         <div class="alert">
             هنوز خدمتی ثبت نشده است.
         </div>
+
     {% endif %}
+
+</div>
+
+
+<div class="icon-grid">
+
+    <a
+        href="{{ url_for('tracking') }}"
+        class="icon-card"
+    >
+
+        <div class="icon">
+            🔎
+        </div>
+
+        <strong>
+            پیگیری درخواست
+        </strong>
+
+    </a>
+
+
+    <a
+        href="{{ url_for('admin_login') }}"
+        class="icon-card"
+    >
+
+        <div class="icon">
+            🔐
+        </div>
+
+        <strong>
+            پنل مدیریت
+        </strong>
+
+    </a>
+
 </div>
 
 {% endblock %}
