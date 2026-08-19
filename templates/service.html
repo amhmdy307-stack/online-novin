@@ -1,57 +1,138 @@
 {% extends "base.html" %}
 
 {% block title %}
-{{ service["name"] }} - {{ site_name|default("کافی نت آنلاین نوین") }}
+{{ service["name"] }}
 {% endblock %}
 
 {% block content %}
 
 <div class="card">
 
-    <a href="{{ url_for('home') }}" class="btn btn-secondary">
+    <a
+        href="{{ url_for('home') }}"
+        class="btn btn-secondary"
+    >
         بازگشت
     </a>
 
     <br><br>
 
-    <h1>{{ service["name"] }}</h1>
+    <h1>
+        {{ service["name"] }}
+    </h1>
+
 
     {% if service["category"] %}
-        <div class="badge">
+
+        <span class="badge">
             {{ service["category"] }}
-        </div>
+        </span>
+
     {% endif %}
 
+
     {% if service["description"] %}
+
         <p>
             {{ service["description"] }}
         </p>
+
     {% endif %}
 
+
     {% if service["price"] and service["price"] > 0 %}
+
         <div class="price">
+
             قیمت پایه:
-            {{ "{:,}".format(service["price"]) }}
+
+            {{ "{:,}".format(
+                service["price"]
+            ) }}
+
             تومان
+
         </div>
+
     {% else %}
+
         <div class="badge">
             قیمت پس از بررسی اعلام می‌شود
         </div>
+
     {% endif %}
 
 </div>
 
 
+{% if subservices %}
+
 <div class="card">
 
-    <h2>ثبت درخواست</h2>
+    <h2>
+        سامانه‌ها / زیرمجموعه‌ها
+    </h2>
+
+    <div class="icon-grid">
+
+        {% for item in subservices %}
+
+            <a
+                class="icon-card"
+                href="{{ url_for(
+                    'service',
+                    service_id=item['id']
+                ) }}"
+            >
+
+                <div class="icon">
+                    🖥️
+                </div>
+
+                <strong>
+                    {{ item["name"] }}
+                </strong>
+
+                <div class="mini">
+
+                    {% if item["price"] %}
+                        {{ "{:,}".format(
+                            item["price"]
+                        ) }}
+                        تومان
+                    {% else %}
+                        قیمت پس از بررسی
+                    {% endif %}
+
+                </div>
+
+            </a>
+
+        {% endfor %}
+
+    </div>
+
+</div>
+
+{% endif %}
+
+
+<div class="card">
+
+    <h2>
+        ثبت درخواست
+    </h2>
+
 
     <form
-        action="{{ url_for('create_request', service_id=service['id']) }}"
+        action="{{ url_for(
+            'create_request',
+            service_id=service['id']
+        ) }}"
         method="POST"
         enctype="multipart/form-data"
     >
+
 
         <label>
             نام و نام خانوادگی *
@@ -61,7 +142,6 @@
             type="text"
             name="name"
             required
-            placeholder="نام و نام خانوادگی"
         >
 
 
@@ -73,7 +153,6 @@
             type="text"
             name="national_id"
             maxlength="10"
-            placeholder="کد ملی"
         >
 
 
@@ -97,6 +176,7 @@
                 اطلاعات مورد نیاز
             </h3>
 
+
             {% for field in fields %}
 
                 {% if field is string %}
@@ -110,24 +190,45 @@
                         name="field_{{ loop.index }}"
                     >
 
+
                 {% elif field is mapping %}
 
                     <label>
-                        {{ field.get("label", field.get("name", "اطلاعات")) }}
+
+                        {{ field.get(
+                            "label",
+                            field.get(
+                                "name",
+                                "اطلاعات"
+                            )
+                        ) }}
+
                     </label>
+
 
                     {% if field.get("type") == "textarea" %}
 
                         <textarea
-                            name="{{ field.get('name', 'field_' ~ loop.index) }}"
+                            name="{{ field.get(
+                                'name',
+                                'field_' ~ loop.index
+                            ) }}"
                         ></textarea>
 
                     {% else %}
 
                         <input
-                            type="{{ field.get('type', 'text') }}"
-                            name="{{ field.get('name', 'field_' ~ loop.index) }}"
-                            {% if field.get("required") %}required{% endif %}
+                            type="{{ field.get(
+                                'type',
+                                'text'
+                            ) }}"
+                            name="{{ field.get(
+                                'name',
+                                'field_' ~ loop.index
+                            ) }}"
+                            {% if field.get("required") %}
+                                required
+                            {% endif %}
                         >
 
                     {% endif %}
@@ -140,12 +241,23 @@
 
 
         <label>
+            کد تخفیف
+        </label>
+
+        <input
+            type="text"
+            name="discount_code"
+            placeholder="در صورت داشتن کد تخفیف"
+        >
+
+
+        <label>
             توضیحات مشتری
         </label>
 
         <textarea
             name="customer_note"
-            placeholder="اگر توضیحی درباره درخواست دارید اینجا بنویسید..."
+            placeholder="توضیحات درخواست..."
         ></textarea>
 
 
@@ -158,11 +270,15 @@
             </h3>
 
             <ul>
+
                 {% for document in documents %}
+
                     <li>
                         {{ document }}
                     </li>
+
                 {% endfor %}
+
             </ul>
 
         {% endif %}
@@ -179,15 +295,16 @@
             accept=".jpg,.jpeg,.png,.webp,.pdf"
         >
 
-        <small>
-            فرمت‌های مجاز:
+
+        <small class="mini">
+
             JPG، JPEG، PNG، WEBP و PDF
-            <br>
-            حداکثر حجم هر فایل: ۱۰ مگابایت
+
         </small>
 
 
         <br><br>
+
 
         <button
             type="submit"
