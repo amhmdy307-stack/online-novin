@@ -1,54 +1,42 @@
 {% extends "base.html" %}
 
-{% block title %}
-پیگیری درخواست
-{% endblock %}
-
+{% block title %}پیگیری درخواست{% endblock %}
 
 {% block content %}
 
 <div class="card">
-
-<h1>
-🔎 پیگیری درخواست
-</h1>
-
-
-<form method="POST" action="{{ url_for('tracking') }}">
-
-<label>
-کد پیگیری ۴ رقمی
-</label>
-
-
-<input
-type="text"
-name="tracking_code"
-maxlength="4"
-minlength="4"
-inputmode="numeric"
-required
-placeholder="مثلاً 4821"
->
-
-
-<button class="btn" type="submit">
-پیگیری
-</button>
-
-
-</form>
-
-
-{% if error %}
-
-<div class="alert">
-{{ error }}
+    <h1>پیگیری درخواست</h1>
+    <p>کد پیگیری ۴ رقمی خود را وارد کنید.</p>
+    <form method="POST">
+        <label>کد پیگیری</label>
+        <input type="text" name="tracking_code" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" minlength="4" required placeholder="مثلاً 4827" style="direction:ltr;text-align:center;font-size:24px;">
+        <button type="submit" class="btn">مشاهده وضعیت</button>
+    </form>
 </div>
 
+{% if result %}
+<div class="card">
+    <h2>وضعیت پرونده</h2>
+    <div class="grid">
+        <div><strong>کد پیگیری:</strong><br><span class="badge" style="direction:ltr;">{{ result["tracking_code"] }}</span></div>
+        <div><strong>نام مشتری:</strong><br>{{ result["customer_name"] }}</div>
+        <div><strong>خدمت:</strong><br>{{ result["service_name"] }}</div>
+        <div><strong>وضعیت:</strong><br><span class="badge status">{{ result["status"] }}</span></div>
+        <div>
+            <strong>مدت زمان تقریبی:</strong><br>
+            {% if result["estimated_time"] %}{{ result["estimated_time"] }}{% else %}توسط کارشناس اعلام می‌شود{% endif %}
+        </div>
+    </div>
+
+    {% if result["admin_note"] %}
+    <hr>
+    <h3>توضیحات</h3>
+    <div class="alert">{{ result["admin_note"] }}</div>
+    {% endif %}
+
+    <br>
+    <a href="{{ url_for('customer_request', tracking_code=result['tracking_code']) }}" class="btn">ورود به پرونده و ارتباط با کارشناس</a>
+</div>
 {% endif %}
-
-
-</div>
 
 {% endblock %}
