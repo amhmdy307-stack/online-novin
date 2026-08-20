@@ -5,7 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <title>
-        {{ site_name|default("کافی نت آنلاین نوین") }}
+        {% block title %}
+            {{ site_name|default("کافی نت آنلاین نوین") }}
+        {% endblock %}
     </title>
 
     <style>
@@ -143,7 +145,6 @@
         <div class="logo">
             {{ site_name|default("کافی نت آنلاین نوین") }}
         </div>
-
         <div class="nav-links">
             <a href="{{ url_for('home') }}">خانه</a>
             <a href="{{ url_for('tracking') }}">پیگیری درخواست</a>
