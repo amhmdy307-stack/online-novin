@@ -118,7 +118,7 @@
 </h2>
 
 <form
-    action="{{ url_for('service', sid=service['id']) }}"
+    action="{{ url_for('create_request', service_id=service['id']) }}"
     method="POST"
     enctype="multipart/form-data"
 >
@@ -279,17 +279,6 @@
     type="text"
     name="discount_code"
     placeholder="در صورت داشتن کد تخفیف"
->
-
-
-<label>
-کد درخواست رایگان
-</label>
-
-<input
-    type="text"
-    name="free_code"
-    placeholder="در صورت داشتن کد درخواست رایگان"
 >
 
 
