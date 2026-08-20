@@ -8,59 +8,54 @@
 
 <div class="card">
 
-    <a
-        href="{{ url_for('home') }}"
-        class="btn btn-secondary"
-    >
-        بازگشت
-    </a>
+<a
+    href="{{ url_for('home') }}"
+    class="btn btn-secondary"
+>
+بازگشت
+</a>
 
-    <br><br>
+<br><br>
 
-    <h1>
-        {{ service["name"] }}
-    </h1>
+<h1>
+{{ service["name"] }}
+</h1>
 
+{% if service["category"] %}
 
-    {% if service["category"] %}
+<span class="badge">
+{{ service["category"] }}
+</span>
 
-        <span class="badge">
-            {{ service["category"] }}
-        </span>
+{% endif %}
 
-    {% endif %}
+{% if service["description"] %}
 
+<p>
+{{ service["description"] }}
+</p>
 
-    {% if service["description"] %}
+{% endif %}
 
-        <p>
-            {{ service["description"] }}
-        </p>
+{% if service["price"] and service["price"] > 0 %}
 
-    {% endif %}
+<div class="price">
 
+قیمت پایه:
 
-    {% if service["price"] and service["price"] > 0 %}
+{{ "{:,}".format(service["price"]) }}
 
-        <div class="price">
+تومان
 
-            قیمت پایه:
+</div>
 
-            {{ "{:,}".format(
-                service["price"]
-            ) }}
+{% else %}
 
-            تومان
+<div class="badge">
+قیمت پس از بررسی اعلام می‌شود
+</div>
 
-        </div>
-
-    {% else %}
-
-        <div class="badge">
-            قیمت پس از بررسی اعلام می‌شود
-        </div>
-
-    {% endif %}
+{% endif %}
 
 </div>
 
@@ -69,48 +64,47 @@
 
 <div class="card">
 
-    <h2>
-        سامانه‌ها / زیرمجموعه‌ها
-    </h2>
+<h2>
+سامانه‌ها / زیرمجموعه‌ها
+</h2>
 
-    <div class="icon-grid">
+<div class="icon-grid">
 
-        {% for item in subservices %}
+{% for item in subservices %}
 
-            <a
-                class="icon-card"
-                href="{{ url_for(
-                    'service',
-                    service_id=item['id']
-                ) }}"
-            >
+<a
+    class="icon-card"
+    href="{{ url_for('service', sid=item['id']) }}"
+>
 
-                <div class="icon">
-                    🖥️
-                </div>
+<div class="icon">
+🖥️
+</div>
 
-                <strong>
-                    {{ item["name"] }}
-                </strong>
+<strong>
+{{ item["name"] }}
+</strong>
 
-                <div class="mini">
+<div class="mini">
 
-                    {% if item["price"] %}
-                        {{ "{:,}".format(
-                            item["price"]
-                        ) }}
-                        تومان
-                    {% else %}
-                        قیمت پس از بررسی
-                    {% endif %}
+{% if item["price"] %}
 
-                </div>
+{{ "{:,}".format(item["price"]) }}
+تومان
 
-            </a>
+{% else %}
 
-        {% endfor %}
+قیمت پس از بررسی
 
-    </div>
+{% endif %}
+
+</div>
+
+</a>
+
+{% endfor %}
+
+</div>
 
 </div>
 
@@ -119,201 +113,244 @@
 
 <div class="card">
 
-    <h2>
-        ثبت درخواست
-    </h2>
+<h2>
+ثبت درخواست
+</h2>
+
+<form
+    action="{{ url_for('service', sid=service['id']) }}"
+    method="POST"
+    enctype="multipart/form-data"
+>
+
+<label>
+نام و نام خانوادگی *
+</label>
+
+<input
+    type="text"
+    name="name"
+    required
+>
 
 
-    <form
-        action="{{ url_for(
-            'create_request',
-            service_id=service['id']
-        ) }}"
-        method="POST"
-        enctype="multipart/form-data"
-    >
+<label>
+کد ملی *
+</label>
+
+<input
+    type="text"
+    name="national_id"
+    maxlength="10"
+    required
+>
 
 
-        <label>
-            نام و نام خانوادگی *
-        </label>
+<label>
+شماره موبایل *
+</label>
 
-        <input
-            type="text"
-            name="name"
-            required
-        >
-
-
-        <label>
-            کد ملی
-        </label>
-
-        <input
-            type="text"
-            name="national_id"
-            maxlength="10"
-        >
+<input
+    type="tel"
+    name="phone"
+    required
+    placeholder="09xxxxxxxxx"
+>
 
 
-        <label>
-            شماره موبایل *
-        </label>
+{% if fields %}
 
-        <input
-            type="tel"
-            name="phone"
-            required
-            placeholder="09xxxxxxxxx"
-        >
+<hr>
 
+<h3>
+اطلاعات مورد نیاز
+</h3>
 
-        {% if fields %}
+{% for field in fields %}
 
-            <hr>
+{% if field is string %}
 
-            <h3>
-                اطلاعات مورد نیاز
-            </h3>
+<label>
+{{ field }}
+</label>
 
-
-            {% for field in fields %}
-
-                {% if field is string %}
-
-                    <label>
-                        {{ field }}
-                    </label>
-
-                    <input
-                        type="text"
-                        name="field_{{ loop.index }}"
-                    >
+<input
+    type="text"
+    name="field_{{ loop.index }}"
+>
 
 
-                {% elif field is mapping %}
+{% elif field is mapping %}
 
-                    <label>
+<label>
 
-                        {{ field.get(
-                            "label",
-                            field.get(
-                                "name",
-                                "اطلاعات"
-                            )
-                        ) }}
+{{ field.get(
+    "label",
+    field.get(
+        "name",
+        "اطلاعات"
+    )
+) }}
 
-                    </label>
-
-
-                    {% if field.get("type") == "textarea" %}
-
-                        <textarea
-                            name="{{ field.get(
-                                'name',
-                                'field_' ~ loop.index
-                            ) }}"
-                        ></textarea>
-
-                    {% else %}
-
-                        <input
-                            type="{{ field.get(
-                                'type',
-                                'text'
-                            ) }}"
-                            name="{{ field.get(
-                                'name',
-                                'field_' ~ loop.index
-                            ) }}"
-                            {% if field.get("required") %}
-                                required
-                            {% endif %}
-                        >
-
-                    {% endif %}
-
-                {% endif %}
-
-            {% endfor %}
-
-        {% endif %}
+</label>
 
 
-        <label>
-            کد تخفیف
-        </label>
+{% if field.get("type") == "textarea" %}
 
-        <input
-            type="text"
-            name="discount_code"
-            placeholder="در صورت داشتن کد تخفیف"
-        >
-
-
-        <label>
-            توضیحات مشتری
-        </label>
-
-        <textarea
-            name="customer_note"
-            placeholder="توضیحات درخواست..."
-        ></textarea>
+<textarea
+    name="{{ field.get(
+        'name',
+        'field_' ~ loop.index
+    ) }}"
+></textarea>
 
 
-        {% if documents %}
+{% elif field.get("type") == "select" %}
 
-            <hr>
+<select
+    name="{{ field.get(
+        'name',
+        'field_' ~ loop.index
+    ) }}"
+    {% if field.get("required") %}required{% endif %}
+>
 
-            <h3>
-                مدارک مورد نیاز
-            </h3>
+<option value="">
+انتخاب کنید
+</option>
 
-            <ul>
+{% for option in field.get("options", []) %}
 
-                {% for document in documents %}
+<option value="{{ option }}">
+{{ option }}
+</option>
 
-                    <li>
-                        {{ document }}
-                    </li>
+{% endfor %}
 
-                {% endfor %}
-
-            </ul>
-
-        {% endif %}
-
-
-        <label>
-            ارسال مدارک
-        </label>
-
-        <input
-            type="file"
-            name="documents"
-            multiple
-            accept=".jpg,.jpeg,.png,.webp,.pdf"
-        >
+</select>
 
 
-        <small class="mini">
+{% elif field.get("type") in ["image","pdf","multi_file"] %}
 
-            JPG، JPEG، PNG، WEBP و PDF
+<input
+    type="file"
+    name="{{ field.get(
+        'name',
+        'field_' ~ loop.index
+    ) }}"
+    {% if field.get("type") == "multi_file" %}
+    multiple
+    {% endif %}
+    {% if field.get("required") %}
+    required
+    {% endif %}
+>
 
-        </small>
+{% else %}
+
+<input
+    type="{{ field.get(
+        'type',
+        'text'
+    ) }}"
+    name="{{ field.get(
+        'name',
+        'field_' ~ loop.index
+    ) }}"
+    {% if field.get("required") %}
+    required
+    {% endif %}
+>
+
+{% endif %}
+
+{% endif %}
+
+{% endfor %}
+
+{% endif %}
 
 
-        <br><br>
+<label>
+کد تخفیف
+</label>
+
+<input
+    type="text"
+    name="discount_code"
+    placeholder="در صورت داشتن کد تخفیف"
+>
 
 
-        <button
-            type="submit"
-            class="btn btn-success"
-        >
-            ثبت درخواست
-        </button>
+<label>
+کد درخواست رایگان
+</label>
 
-    </form>
+<input
+    type="text"
+    name="free_code"
+    placeholder="در صورت داشتن کد درخواست رایگان"
+>
+
+
+<label>
+توضیحات مشتری
+</label>
+
+<textarea
+    name="customer_note"
+    placeholder="توضیحات درخواست..."
+></textarea>
+
+
+{% if documents %}
+
+<hr>
+
+<h3>
+مدارک مورد نیاز
+</h3>
+
+<ul>
+
+{% for document in documents %}
+
+<li>
+{{ document }}
+</li>
+
+{% endfor %}
+
+</ul>
+
+{% endif %}
+
+
+<label>
+ارسال مدارک
+</label>
+
+<input
+    type="file"
+    name="documents"
+    multiple
+    accept=".jpg,.jpeg,.png,.webp,.pdf"
+>
+
+<small class="mini">
+JPG، JPEG، PNG، WEBP و PDF
+</small>
+
+<br><br>
+
+<button
+    type="submit"
+    class="btn btn-success"
+>
+ثبت درخواست
+</button>
+
+</form>
 
 </div>
 
