@@ -1,658 +1,556 @@
-import os
+from flask import (
+    Flask,
+    render_template,
+    request,
+    redirect,
+    url_for,
+    session,
+    flash
+)
 import json
+import os
 import secrets
-from functools import wraps
-from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify, send_from_directory
 
 from database import (
     create_tables,
     get_connection,
-    get_setting,
-    set_setting,
+    create_customer,
     add_request,
     add_message,
     add_file,
-    add_financial_transaction,
-    add_payment,
-    mark_payment_paid,
-    add_discount_code,
-    get_financial_transactions,
-    get_financial_summary,
-    unread_admin_notifications,
-    unread_customer_notifications,
-    mark_all_admin_notifications_read,
-    mark_all_customer_notifications_read,
-    get_request_history,
-    get_request_messages,
-    get_customer_requests,
-    get_support_messages,
-    create_support_request,
-    add_support_message,
-    add_admin,
-    set_admin_permission,
-    remove_admin_permission,
-    has_permission,
-    set_admin_notification_permission,
     accept_request,
     update_request_status,
-    now,
+    add_admin,
+    get_setting,
+    set_setting,
+    get_financial_summary,
+    unread_admin_notifications,
+    get_admin_notifications,
+    mark_all_admin_notifications_read
 )
 
-BASE = os.path.dirname(os.path.abspath(__file__))
-UPLOADS = os.path.join(BASE, "static", "uploads")
-
-os.makedirs(UPLOADS, exist_ok=True)
 
 app = Flask(__name__)
+
 app.secret_key = os.environ.get(
     "SECRET_KEY",
-    "novin-online-secret-key-change-this"
+    "novin-secret-key-change-this"
 )
 
 app.config["MAX_CONTENT_LENGTH"] = 25 * 1024 * 1024
 
-create_tables()
+UPLOAD_FOLDER = os.path.join(
+    app.root_path,
+    "static",
+    "uploads"
+)
 
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+ALLOWED_EXTENSIONS = {
+    "jpg",
+    "jpeg",
+    "png",
+    "webp",
+    "pdf"
+}
 
 STATUSES = [
     "جدید",
     "پذیرش شد",
     "در حال بررسی",
-    "منتظر مدارک",
-    "منتظر پرداخت",
     "در حال انجام",
-    "منتظر پاسخ سامانه",
-    "انجام شده",
-    "رد شده",
-    "لغو شد",
-    "نیاز به پیگیری",
+    "تکمیل شد",
+    "آماده تحویل",
     "بسته شد",
+    "لغو شد"
 ]
 
 
-FIELD_TYPES = [
-    "text",
-    "number",
-    "phone",
-    "national_id",
-    "national_identifier",
-    "date",
-    "select",
-    "person_type",
-    "province",
-    "city",
-    "image",
-    "pdf",
-    "multi_file",
-    "checkbox",
-    "textarea",
-]
+# =============================================================
+# آماده‌سازی
+# =============================================================
+
+create_tables()
 
 
-DEFAULT_SERVICES = [
-    {
-        "name": "ثبت‌نام خودرو",
-        "description": "ایران‌خودرو، سایپا و بهمن موتور",
-        "category": "خودرو",
-        "price": 300000,
-        "fields": [
-            {
-                "name": "company",
-                "label": "شرکت ثبت‌نام",
-                "type": "select",
-                "required": 1,
-                "options": ["ایران‌خودرو", "سایپا", "بهمن موتور"],
-            },
-            {
-                "name": "previous_registration",
-                "label": "سابقه ثبت‌نام",
-                "type": "select",
-                "required": 1,
-                "options": [
-                    "اولین بار ثبت‌نام می‌کنم",
-                    "قبلاً ثبت‌نام کرده‌ام",
-                ],
-            },
-            {
-                "name": "father_name",
-                "label": "نام پدر",
-                "type": "text",
-                "required": 0,
-            },
-            {
-                "name": "birth_cert_no",
-                "label": "شماره شناسنامه",
-                "type": "text",
-                "required": 0,
-            },
-            {
-                "name": "birth_cert_series",
-                "label": "سری شناسنامه",
-                "type": "text",
-                "required": 0,
-            },
-            {
-                "name": "birth_cert_letter",
-                "label": "حرف",
-                "type": "text",
-                "required": 0,
-            },
-            {
-                "name": "birth_cert_serial",
-                "label": "سریال",
-                "type": "text",
-                "required": 0,
-            },
-            {
-                "name": "gender",
-                "label": "جنسیت",
-                "type": "select",
-                "required": 0,
-                "options": ["مرد", "زن"],
-            },
-            {
-                "name": "birth_date",
-                "label": "تاریخ تولد",
-                "type": "date",
-                "required": 0,
-            },
-            {
-                "name": "issue_date",
-                "label": "تاریخ صدور",
-                "type": "date",
-                "required": 0,
-            },
-            {
-                "name": "postal_code",
-                "label": "کد پستی",
-                "type": "text",
-                "required": 0,
-            },
-            {
-                "name": "sheba",
-                "label": "شماره شبا",
-                "type": "text",
-                "required": 0,
-            },
-            {
-                "name": "previous_registration_phone",
-                "label": "تلفن ثبت‌شده در سامانه",
-                "type": "phone",
-                "required": 0,
-            },
-            {
-                "name": "bank_card",
-                "label": "عکس کارت بانکی",
-                "type": "image",
-                "required": 0,
-            },
-        ],
-    },
-    {
-        "name": "مسکن ملی",
-        "description": "ثبت درخواست و بارگذاری مدارک",
-        "category": "مسکن",
-        "price": 0,
-        "fields": [
-            {
-                "name": "postal_code",
-                "label": "کد پستی",
-                "type": "text",
-                "required": 1,
-            },
-            {
-                "name": "province_residence",
-                "label": "استان محل سکونت",
-                "type": "province",
-                "required": 1,
-            },
-            {
-                "name": "city_residence",
-                "label": "شهر محل سکونت",
-                "type": "city",
-                "required": 1,
-            },
-            {
-                "name": "applicant_documents",
-                "label": "مدارک متقاضی",
-                "type": "multi_file",
-                "required": 0,
-            },
-            {
-                "name": "spouse_documents",
-                "label": "مدارک همسر",
-                "type": "multi_file",
-                "required": 0,
-            },
-            {
-                "name": "children_documents",
-                "label": "مدارک فرزندان",
-                "type": "multi_file",
-                "required": 0,
-            },
-        ],
-    },
-    {
-        "name": "ثبت‌نام سهام نوزاد",
-        "description": "ثبت اطلاعات پدر و فرزند",
-        "category": "خانواده",
-        "price": 0,
-        "fields": [
-            {
-                "name": "father_phone",
-                "label": "تلفن به نام پدر",
-                "type": "phone",
-                "required": 1,
-            },
-            {
-                "name": "child_national_id",
-                "label": "کد ملی فرزند",
-                "type": "national_id",
-                "required": 1,
-            },
-            {
-                "name": "child_birth_date",
-                "label": "تاریخ تولد فرزند",
-                "type": "date",
-                "required": 1,
-            },
-            {
-                "name": "father_national_id",
-                "label": "کد ملی پدر",
-                "type": "national_id",
-                "required": 1,
-            },
-            {
-                "name": "father_birth_date",
-                "label": "تاریخ تولد پدر",
-                "type": "date",
-                "required": 1,
-            },
-            {
-                "name": "postal_code",
-                "label": "کد پستی",
-                "type": "text",
-                "required": 1,
-            },
-        ],
-    },
-    {
-        "name": "چک صیادی",
-        "description": "ثبت، تأیید یا رد چک صیادی",
-        "category": "بانکی",
-        "price": 0,
-        "fields": [
-            {
-                "name": "action",
-                "label": "نوع خدمت",
-                "type": "select",
-                "required": 1,
-                "options": ["ثبت چک", "تأیید چک", "رد چک"],
-            },
-            {
-                "name": "receiver_type",
-                "label": "نوع شخص گیرنده",
-                "type": "person_type",
-                "required": 1,
-            },
-            {
-                "name": "receiver_id",
-                "label": "کد ملی / شناسه ملی گیرنده",
-                "type": "national_identifier",
-                "required": 1,
-            },
-            {
-                "name": "issuer_type",
-                "label": "نوع شخص صادرکننده",
-                "type": "person_type",
-                "required": 1,
-            },
-            {
-                "name": "issuer_id",
-                "label": "کد ملی / شناسه ملی صادرکننده",
-                "type": "national_identifier",
-                "required": 1,
-            },
-            {
-                "name": "sayad_id",
-                "label": "شناسه صیادی",
-                "type": "text",
-                "required": 1,
-            },
-            {
-                "name": "check_series",
-                "label": "سری چک",
-                "type": "text",
-                "required": 0,
-            },
-            {
-                "name": "check_serial",
-                "label": "سریال چک",
-                "type": "text",
-                "required": 0,
-            },
-            {
-                "name": "amount",
-                "label": "مبلغ",
-                "type": "number",
-                "required": 0,
-            },
-        ],
-    },
-    {
-        "name": "ثبت قرارداد",
-        "description": "اجاره‌نامه / قولنامه",
-        "category": "قرارداد",
-        "price": 0,
-        "fields": [
-            {
-                "name": "contract_type",
-                "label": "نوع قرارداد",
-                "type": "select",
-                "required": 1,
-                "options": ["اجاره‌نامه", "قولنامه"],
-            },
-            {
-                "name": "property_type",
-                "label": "نوع ملک / زمین",
-                "type": "select",
-                "required": 1,
-                "options": ["ملک", "زمین"],
-            },
-            {
-                "name": "role",
-                "label": "نقش مشتری",
-                "type": "select",
-                "required": 1,
-                "options": ["موجر", "مستأجر"],
-            },
-            {
-                "name": "other_national_id",
-                "label": "کد ملی طرف مقابل",
-                "type": "national_id",
-                "required": 1,
-            },
-            {
-                "name": "other_phone",
-                "label": "تلفن طرف مقابل",
-                "type": "phone",
-                "required": 1,
-            },
-            {
-                "name": "other_postal_code",
-                "label": "کد پستی طرف مقابل",
-                "type": "text",
-                "required": 1,
-            },
-            {
-                "name": "property_postal_code",
-                "label": "کد پستی ملک",
-                "type": "text",
-                "required": 1,
-            },
-            {
-                "name": "usage",
-                "label": "نوع کاربری",
-                "type": "select",
-                "required": 1,
-                "options": [
-                    "مسکونی",
-                    "تجاری",
-                    "ورزشی",
-                    "مرغداری",
-                    "گلخانه",
-                ],
-            },
-            {
-                "name": "building_type",
-                "label": "نوع ملک",
-                "type": "select",
-                "required": 1,
-                "options": ["آپارتمان", "ویلایی"],
-            },
-            {
-                "name": "shares",
-                "label": "میزان دانگ",
-                "type": "select",
-                "required": 1,
-                "options": ["۱", "۲", "۳", "۴", "۵", "۶"],
-            },
-            {
-                "name": "deposit",
-                "label": "مبلغ رهن",
-                "type": "number",
-                "required": 0,
-            },
-            {
-                "name": "monthly_rent",
-                "label": "مبلغ اجاره ماهانه",
-                "type": "number",
-                "required": 0,
-            },
-        ],
-    },
-    {
-        "name": "جواز کسب",
-        "description": "ثبت درخواست جواز کسب و بارگذاری مدارک",
-        "category": "اداری",
-        "price": 0,
-        "fields": [
-            {
-                "name": "license_type",
-                "label": "نوع جواز",
-                "type": "text",
-                "required": 1,
-            },
-            {
-                "name": "postal_code",
-                "label": "کد پستی",
-                "type": "text",
-                "required": 1,
-            },
-            {
-                "name": "tax_id",
-                "label": "کد مالیاتی",
-                "type": "text",
-                "required": 1,
-            },
-            {
-                "name": "bank_card",
-                "label": "تصویر کارت بانکی",
-                "type": "image",
-                "required": 0,
-            },
-        ],
-    },
-]
+# =============================================================
+# ابزارها
+# =============================================================
+
+def site_settings():
+
+    return {
+        "site_name": get_setting(
+            "site_name",
+            "کافی‌نت آنلاین نوین"
+        ),
+        "manager": get_setting(
+            "manager",
+            "احمد محمدی مهر"
+        ),
+        "phone": get_setting(
+            "phone",
+            "09920345139"
+        ),
+        "logo": get_setting(
+            "logo",
+            ""
+        ),
+        "warning_text": get_setting(
+            "warning_text",
+            ""
+        )
+    }
 
 
-def ensure_default_services():
-    con = get_connection()
+def allowed_file(filename):
 
-    count = con.execute(
-        "SELECT COUNT(*) AS c FROM services"
-    ).fetchone()["c"]
+    if not filename:
+        return False
 
-    if count == 0:
-        for order, item in enumerate(DEFAULT_SERVICES):
-            con.execute(
-                """
-                INSERT INTO services
-                (
-                    name,
-                    description,
-                    category,
-                    image,
-                    price,
-                    active,
-                    sort_order,
-                    fields_json,
-                    documents_json,
-                    created_at
-                )
-                VALUES (?, ?, ?, '', ?, 1, ?, ?, '[]', ?)
-                """,
-                (
-                    item["name"],
-                    item["description"],
-                    item["category"],
-                    item["price"],
-                    order,
-                    json.dumps(item["fields"], ensure_ascii=False),
-                    now(),
-                ),
-            )
+    if "." not in filename:
+        return False
 
-    con.commit()
-    con.close()
+    extension = filename.rsplit(".", 1)[1].lower()
+
+    return extension in ALLOWED_EXTENSIONS
 
 
-ensure_default_services()
+def admin_logged_in():
+
+    return bool(
+        session.get("admin_id")
+        and session.get("admin_username")
+    )
 
 
-def settings():
-    con = get_connection()
-    rows = con.execute(
-        "SELECT key,value FROM settings"
-    ).fetchall()
-    con.close()
-    return dict(rows)
+def require_admin():
+
+    if not admin_logged_in():
+        return redirect(url_for("admin_login"))
+
+    return None
 
 
-def make_tracking_code():
+def generate_tracking_code():
+
     while True:
-        code = (
-            "NV-"
-            + __import__("datetime").datetime.now().strftime("%Y%m%d")
-            + "-"
-            + secrets.token_hex(3).upper()
+
+        code = str(
+            secrets.randbelow(900) + 100
         )
 
         con = get_connection()
 
-        exists = con.execute(
+        row = con.execute(
             """
-            SELECT 1
+            SELECT id
             FROM requests
-            WHERE tracking_code=?
+            WHERE tracking_code = ?
             """,
-            (code,),
+            (code,)
         ).fetchone()
 
         con.close()
 
-        if not exists:
+        if not row:
             return code
 
 
-def admin_required(view):
-    @wraps(view)
-    def wrapped(*args, **kwargs):
-        if not session.get("admin_id"):
-            return redirect(url_for("admin_login"))
-        return view(*args, **kwargs)
+def get_fields(service):
 
-    return wrapped
+    try:
+        value = service["fields_json"] or "[]"
 
+        if isinstance(value, list):
+            return value
 
-def superadmin_required(view):
-    @wraps(view)
-    def wrapped(*args, **kwargs):
-        if not session.get("admin_id"):
-            return redirect(url_for("admin_login"))
+        return json.loads(value)
 
-        if session.get("admin_role") != "superadmin":
-            flash("دسترسی غیرمجاز.")
-            return redirect(url_for("admin"))
-
-        return view(*args, **kwargs)
-
-    return wrapped
+    except Exception:
+        return []
 
 
-def save_upload(file_obj):
-    if not file_obj or not file_obj.filename:
-        return None
+def get_documents(service):
 
-    ext = os.path.splitext(file_obj.filename)[1].lower()
+    try:
+        value = service["documents_json"] or "[]"
 
-    allowed = {
-        ".jpg",
-        ".jpeg",
-        ".png",
-        ".webp",
-        ".pdf",
-    }
+        if isinstance(value, list):
+            return value
 
-    if ext not in allowed:
-        return None
+        return json.loads(value)
 
-    filename = secrets.token_hex(16) + ext
-
-    file_obj.save(
-        os.path.join(UPLOADS, filename)
-    )
-
-    return filename
+    except Exception:
+        return []
 
 
-@app.context_processor
-def inject_globals():
-    return {
-        "site": settings(),
-        "statuses": STATUSES,
-    }
+def get_services():
 
-
-@app.route("/")
-def home():
     con = get_connection()
 
-    services = con.execute(
+    rows = con.execute(
         """
         SELECT *
         FROM services
-        WHERE active=1
-        ORDER BY sort_order,id
+        WHERE active = 1
+        AND parent_id IS NULL
+        ORDER BY sort_order ASC, id ASC
         """
     ).fetchall()
 
     con.close()
 
-    return render_template(
-        "home.html",
-        services=services,
-    )
+    return rows
 
 
-@app.route(
-    "/service/<int:sid>",
-    methods=["GET", "POST"]
-)
-def service(sid):
+def get_service(service_id):
 
     con = get_connection()
 
-    service_row = con.execute(
+    service = con.execute(
         """
         SELECT *
         FROM services
-        WHERE id=?
+        WHERE id = ?
         """,
-        (sid,),
+        (service_id,)
     ).fetchone()
 
     con.close()
 
-    if not service_row or not service_row["active"]:
-        return "این خدمت فعال نیست.", 404
+    return service
 
-    try:
-        fields = json.loads(
-            service_row["fields_json"] or "[]"
+
+# =============================================================
+# صفحه اصلی
+# =============================================================
+
+@app.route("/")
+def home():
+
+    services = get_services()
+
+    return render_template(
+        "home.html",
+        site=site_settings(),
+        services=services
+    )
+
+
+# =============================================================
+# صفحه خدمت
+# =============================================================
+
+@app.route("/service/<int:service_id>")
+@app.route("/service/<int:sid>")
+def service(service_id=None, sid=None):
+
+    service_id = service_id or sid
+
+    service = get_service(service_id)
+
+    if not service:
+        return "خدمت پیدا نشد", 404
+
+    con = get_connection()
+
+    subservices = con.execute(
+        """
+        SELECT *
+        FROM services
+        WHERE parent_id = ?
+        AND active = 1
+        ORDER BY sort_order ASC, id ASC
+        """,
+        (service_id,)
+    ).fetchall()
+
+    con.close()
+
+    fields = get_fields(service)
+    documents = get_documents(service)
+
+    return render_template(
+        "service.html",
+        site=site_settings(),
+        service=service,
+        subservices=subservices,
+        fields=fields,
+        documents=documents
+    )
+
+
+# =============================================================
+# ثبت درخواست
+# =============================================================
+
+@app.route(
+    "/service/<int:service_id>/request",
+    methods=["POST"]
+)
+@app.route(
+    "/create-request/<int:service_id>",
+    methods=["POST"]
+)
+def create_request(service_id):
+
+    service = get_service(service_id)
+
+    if not service:
+        return "خدمت پیدا نشد", 404
+
+    name = request.form.get(
+        "name",
+        ""
+    ).strip()
+
+    national_id = request.form.get(
+        "national_id",
+        ""
+    ).strip()
+
+    phone = request.form.get(
+        "phone",
+        ""
+    ).strip()
+
+    customer_note = request.form.get(
+        "customer_note",
+        ""
+    ).strip()
+
+    if not name or not phone:
+
+        flash(
+            "نام و شماره موبایل الزامی است.",
+            "error"
         )
-    except Exception:
-        fields = []
+
+        return redirect(
+            url_for(
+                "service",
+                service_id=service_id
+            )
+        )
+
+    customer_id = create_customer(
+        name=name,
+        national_id=national_id,
+        phone=phone
+    )
+
+    data = {}
+
+    for key in request.form:
+
+        if key.startswith("field_"):
+
+            data[key] = request.form.get(
+                key,
+                ""
+            )
+
+    data["customer_note"] = customer_note
+
+    discount_code = request.form.get(
+        "discount_code",
+        ""
+    ).strip()
+
+    if discount_code:
+
+        data["discount_code"] = discount_code
+
+    tracking_code = generate_tracking_code()
+
+    total_price = int(
+        service["price"] or 0
+    )
+
+    request_id = add_request(
+        customer_id=customer_id,
+        service_id=service_id,
+        data_json=json.dumps(
+            data,
+            ensure_ascii=False
+        ),
+        total_price=total_price,
+        tracking_code=tracking_code
+    )
+
+    # ---------------------------------------------------------
+    # ذخیره فایل‌های مدارک
+    # ---------------------------------------------------------
+
+    uploaded_files = request.files.getlist(
+        "documents"
+    )
+
+    for file in uploaded_files:
+
+        if not file or not file.filename:
+            continue
+
+        if not allowed_file(file.filename):
+            continue
+
+        extension = file.filename.rsplit(
+            ".",
+            1
+        )[1].lower()
+
+        stored_name = (
+            secrets.token_hex(16)
+            + "."
+            + extension
+        )
+
+        path = os.path.join(
+            UPLOAD_FOLDER,
+            stored_name
+        )
+
+        file.save(path)
+
+        add_file(
+            request_id=request_id,
+            customer_id=customer_id,
+            field_name="documents",
+            original_name=file.filename,
+            stored_name=stored_name,
+            file_type=extension,
+            downloadable=1
+        )
+
+    session["customer_id"] = customer_id
+
+    return redirect(
+        url_for(
+            "tracking_result",
+            tracking_code=tracking_code
+        )
+    )
+
+
+# =============================================================
+# پیگیری
+# =============================================================
+
+@app.route("/tracking", methods=["GET", "POST"])
+def tracking():
+
+    if request.method == "POST":
+
+        tracking_code = request.form.get(
+            "tracking_code",
+            ""
+        ).strip()
+
+        if tracking_code:
+
+            return redirect(
+                url_for(
+                    "tracking_result",
+                    tracking_code=tracking_code
+                )
+            )
+
+    return render_template(
+        "tracking.html",
+        site=site_settings()
+    )
+
+
+@app.route("/tracking/<tracking_code>")
+def tracking_result(tracking_code):
+
+    con = get_connection()
+
+    item = con.execute(
+        """
+        SELECT
+            requests.*,
+            customers.name AS customer_name,
+            customers.phone AS customer_phone,
+            services.name AS service_name,
+            admins.name AS admin_name
+        FROM requests
+        LEFT JOIN customers
+            ON customers.id = requests.customer_id
+        LEFT JOIN services
+            ON services.id = requests.service_id
+        LEFT JOIN admins
+            ON admins.id = requests.assigned_admin_id
+        WHERE requests.tracking_code = ?
+        """,
+        (tracking_code,)
+    ).fetchone()
+
+    history = []
+
+    messages = []
+
+    if item:
+
+        history = con.execute(
+            """
+            SELECT
+                request_history.*,
+                admins.name AS admin_name
+            FROM request_history
+            LEFT JOIN admins
+                ON admins.id = request_history.admin_id
+            WHERE request_history.request_id = ?
+            ORDER BY request_history.id ASC
+            """,
+            (item["id"],)
+        ).fetchall()
+
+        messages = con.execute(
+            """
+            SELECT
+                messages.*,
+                admins.name AS admin_name
+            FROM messages
+            LEFT JOIN admins
+                ON admins.id = messages.sender_admin_id
+            WHERE messages.request_id = ?
+            ORDER BY messages.id ASC
+            """,
+            (item["id"],)
+        ).fetchall()
+
+    con.close()
+
+    if not item:
+
+        return render_template(
+            "tracking.html",
+            site=site_settings(),
+            error="درخواستی با این کد پیگیری پیدا نشد."
+        )
+
+    return render_template(
+        "tracking_result.html",
+        site=site_settings(),
+        item=item,
+        history=history,
+        messages=messages
+    )
+
+
+# =============================================================
+# پشتیبانی
+# =============================================================
+
+@app.route("/support", methods=["GET", "POST"])
+def support():
+
+    customer_id = session.get(
+        "customer_id"
+    )
 
     if request.method == "POST":
 
@@ -661,654 +559,163 @@ def service(sid):
             ""
         ).strip()
 
-        national_id = request.form.get(
-            "national_id",
-            ""
-        ).strip()
-
         phone = request.form.get(
             "phone",
             ""
         ).strip()
 
-        if not name or not national_id or not phone:
+        message = request.form.get(
+            "message",
+            ""
+        ).strip()
+
+        if not message:
+
             flash(
-                "نام، کد ملی و شماره موبایل الزامی است."
+                "متن پیام را وارد کنید.",
+                "error"
             )
 
-            return redirect(request.url)
+            return redirect(
+                url_for("support")
+            )
+
+        if not customer_id:
+
+            if not name or not phone:
+
+                flash(
+                    "نام و شماره موبایل را وارد کنید.",
+                    "error"
+                )
+
+                return redirect(
+                    url_for("support")
+                )
+
+            customer_id = create_customer(
+                name=name,
+                phone=phone
+            )
+
+            session["customer_id"] = customer_id
 
         con = get_connection()
 
-        customer = con.execute(
+        existing = con.execute(
             """
             SELECT id
-            FROM customers
-            WHERE national_id=?
-            AND phone=?
+            FROM requests
+            WHERE customer_id = ?
+            AND service_id IS NULL
+            AND status NOT IN ('بسته شد','لغو شد')
+            ORDER BY id DESC
             LIMIT 1
             """,
-            (
-                national_id,
-                phone,
-            ),
+            (customer_id,)
         ).fetchone()
 
-        if customer:
+        if existing:
 
-            customer_id = customer["id"]
-
-            con.execute(
-                """
-                UPDATE customers
-                SET name=?
-                WHERE id=?
-                """,
-                (
-                    name,
-                    customer_id,
-                ),
-            )
+            request_id = existing["id"]
 
         else:
 
-            cur = con.execute(
+            tracking_code = (
+                "SUP-"
+                + secrets.token_hex(5).upper()
+            )
+
+            cur = con.cursor()
+
+            cur.execute(
                 """
-                INSERT INTO customers
+                INSERT INTO requests
                 (
-                    name,
-                    national_id,
-                    phone,
-                    created_at
-                )
-                VALUES (?, ?, ?, ?)
-                """,
-                (
-                    name,
-                    national_id,
-                    phone,
-                    now(),
-                ),
-            )
-
-            customer_id = cur.lastrowid
-
-        data = {}
-        uploaded_files = []
-
-        for field in fields:
-
-            key = field.get("name")
-
-            if not key:
-                continue
-
-            field_type = field.get("type")
-
-            if field_type in (
-                "image",
-                "pdf",
-                "multi_file",
-            ):
-
-                if field_type == "multi_file":
-
-                    objects = request.files.getlist(
-                        key
-                    )
-
-                    for obj in objects:
-
-                        stored = save_upload(obj)
-
-                        if stored:
-
-                            uploaded_files.append(
-                                {
-                                    "field_name": key,
-                                    "original_name": obj.filename,
-                                    "stored_name": stored,
-                                }
-                            )
-
-                else:
-
-                    obj = request.files.get(key)
-
-                    stored = save_upload(obj)
-
-                    if stored:
-
-                        uploaded_files.append(
-                            {
-                                "field_name": key,
-                                "original_name": obj.filename,
-                                "stored_name": stored,
-                            }
-                        )
-
-            else:
-
-                value = request.form.get(
-                    key,
-                    "",
-                )
-
-                if field_type == "checkbox":
-                    value = (
-                        request.form.get(key)
-                        == "on"
-                    )
-
-                data[key] = value
-
-        discount_code = (
-            request.form.get(
-                "discount_code",
-                "",
-            )
-            .strip()
-            .upper()
-        )
-
-        base_price = int(
-            service_row["price"] or 0
-        )
-
-        final_price = base_price
-        valid_discount = None
-
-        if discount_code:
-
-            discount = con.execute(
-                """
-                SELECT *
-                FROM discount_codes
-                WHERE code=?
-                AND active=1
-                """,
-                (discount_code,),
-            ).fetchone()
-
-            if discount:
-
-                today = (
-                    __import__("datetime")
-                    .datetime.now()
-                    .strftime("%Y-%m-%d")
-                )
-
-                valid_date = True
-
-                if (
-                    discount["start_date"]
-                    and today < discount["start_date"]
-                ):
-                    valid_date = False
-
-                if (
-                    discount["end_date"]
-                    and today > discount["end_date"]
-                ):
-                    valid_date = False
-
-                if (
-                    discount["max_uses"]
-                    and discount["used_count"]
-                    >= discount["max_uses"]
-                ):
-                    valid_date = False
-
-                if (
-                    discount["service_id"]
-                    and discount["service_id"]
-                    != sid
-                ):
-                    valid_date = False
-
-                if valid_date:
-
-                    if discount["kind"] == "amount":
-                        reduction = min(
-                            final_price,
-                            discount["value"],
-                        )
-                    else:
-                        reduction = min(
-                            final_price,
-                            round(
-                                final_price
-                                * discount["value"]
-                                / 100
-                            ),
-                        )
-
-                    final_price = max(
-                        0,
-                        final_price - reduction,
-                    )
-
-                    valid_discount = discount
-
-        free = None
-
-        free_code = (
-            request.form.get(
-                "free_code",
-                "",
-            )
-            .strip()
-            .upper()
-        )
-
-        if free_code:
-
-            free = con.execute(
-                """
-                SELECT *
-                FROM free_codes
-                WHERE code=?
-                AND active=1
-                """,
-                (free_code,),
-            ).fetchone()
-
-            if free:
-
-                today = (
-                    __import__("datetime")
-                    .datetime.now()
-                    .strftime("%Y-%m-%d")
-                )
-
-                if (
-                    free["service_id"]
-                    and free["service_id"] != sid
-                ):
-                    free = None
-
-                elif (
-                    free["valid_until"]
-                    and today > free["valid_until"]
-                ):
-                    free = None
-
-                elif (
-                    free["max_uses"]
-                    and free["used_count"]
-                    >= free["max_uses"]
-                ):
-                    free = None
-
-                else:
-                    final_price = 0
-
-        tracking_code = make_tracking_code()
-
-        status = (
-            "منتظر پرداخت"
-            if final_price > 0
-            else "جدید"
-        )
-
-        cur = con.execute(
-            """
-            INSERT INTO requests
-            (
-                customer_id,
-                service_id,
-                data_json,
-                status,
-                tracking_code,
-                total_price,
-                paid_price,
-                payment_mode,
-                created_at,
-                updated_at
-            )
-            VALUES (?, ?, ?, ?, ?, ?, 0, 'full', ?, ?)
-            """,
-            (
-                customer_id,
-                sid,
-                json.dumps(
-                    data,
-                    ensure_ascii=False,
-                ),
-                status,
-                tracking_code,
-                final_price,
-                now(),
-                now(),
-            ),
-        )
-
-        request_id = cur.lastrowid
-
-        if valid_discount:
-
-            con.execute(
-                """
-                UPDATE discount_codes
-                SET used_count=used_count+1
-                WHERE id=?
-                """,
-                (
-                    valid_discount["id"],
-                ),
-            )
-
-        if free:
-
-            con.execute(
-                """
-                UPDATE free_codes
-                SET used_count=used_count+1
-                WHERE id=?
-                """,
-                (
-                    free["id"],
-                ),
-            )
-
-        for item in uploaded_files:
-
-            cur_file = con.execute(
-                """
-                INSERT INTO files
-                (
-                    request_id,
                     customer_id,
-                    field_name,
-                    original_name,
-                    stored_name,
-                    file_type,
-                    downloadable,
-                    created_at
+                    service_id,
+                    data_json,
+                    status,
+                    tracking_code,
+                    total_price,
+                    paid_price,
+                    payment_mode,
+                    created_at,
+                    updated_at
                 )
-                VALUES (?, ?, ?, ?, ?, ?, 1, ?)
+                VALUES (?, NULL, '{}', 'پشتیبانی', ?, 0, 0, 'full', ?, ?)
                 """,
                 (
-                    request_id,
                     customer_id,
-                    item["field_name"],
-                    item["original_name"],
-                    item["stored_name"],
-                    os.path.splitext(
-                        item["original_name"]
-                    )[1].lower(),
-                    now(),
-                ),
+                    tracking_code,
+                    __import__(
+                        "datetime"
+                    ).datetime.now().strftime(
+                        "%Y-%m-%d %H:%M:%S"
+                    ),
+                    __import__(
+                        "datetime"
+                    ).datetime.now().strftime(
+                        "%Y-%m-%d %H:%M:%S"
+                    )
+                )
             )
 
-        con.commit()
+            request_id = cur.lastrowid
+
+            con.commit()
+
         con.close()
 
-        # اعلان ثبت درخواست برای مدیران
-        # از تابع اصلی database.py استفاده می‌شود.
-        try:
-            add_request(
-                customer_id=customer_id,
-                service_id=sid,
-                data_json=json.dumps(
-                    data,
-                    ensure_ascii=False,
-                ),
-                total_price=final_price,
-                tracking_code=tracking_code,
-            )
-        except Exception:
-            pass
-
-        return render_template(
-            "success.html",
-            code=tracking_code,
-            price=final_price,
-            payment_needed=final_price > 0,
+        add_message(
+            request_id=request_id,
+            customer_id=customer_id,
+            sender="customer",
+            message=message
         )
 
-    return render_template(
-        "service.html",
-        service=service_row,
-        fields=fields,
-    )
+        return redirect(
+            url_for(
+                "support"
+            )
+        )
 
-
-@app.route(
-    "/tracking",
-    methods=["GET", "POST"]
-)
-def tracking():
-
-    code = request.values.get(
-        "code",
-        "",
-    ).strip()
-
-    result = None
     messages = []
 
-    if code:
+    if customer_id:
 
         con = get_connection()
-
-        result = con.execute(
-            """
-            SELECT
-                r.*,
-                s.name AS service_name,
-                c.name AS customer_name,
-                c.phone AS customer_phone
-            FROM requests r
-            LEFT JOIN services s
-                ON s.id=r.service_id
-            LEFT JOIN customers c
-                ON c.id=r.customer_id
-            WHERE r.tracking_code=?
-            """,
-            (code,),
-        ).fetchone()
-
-        if result:
-
-            messages = con.execute(
-                """
-                SELECT
-                    m.*,
-                    a.name AS admin_name
-                FROM messages m
-                LEFT JOIN admins a
-                    ON a.id=m.sender_admin_id
-                WHERE m.request_id=?
-                ORDER BY m.id ASC
-                """,
-                (
-                    result["id"],
-                ),
-            ).fetchall()
-
-        con.close()
-
-    return render_template(
-        "tracking.html",
-        result=result,
-        messages=messages,
-    )
-
-
-@app.route("/customer")
-def customer_panel():
-
-    code = request.args.get(
-        "code",
-        "",
-    ).strip()
-
-    if not code:
-        return redirect(
-            url_for("tracking")
-        )
-
-    con = get_connection()
-
-    requests_rows = con.execute(
-        """
-        SELECT
-            r.*,
-            s.name AS service_name
-        FROM requests r
-        LEFT JOIN services s
-            ON s.id=r.service_id
-        WHERE r.tracking_code=?
-        """,
-        (code,),
-    ).fetchall()
-
-    customer = None
-    messages = []
-
-    if requests_rows:
-
-        customer = con.execute(
-            """
-            SELECT *
-            FROM customers
-            WHERE id=?
-            """,
-            (
-                requests_rows[0]["customer_id"],
-            ),
-        ).fetchone()
 
         messages = con.execute(
             """
             SELECT
-                m.*,
-                a.name AS admin_name
-            FROM messages m
-            LEFT JOIN admins a
-                ON a.id=m.sender_admin_id
-            WHERE m.request_id=?
-            ORDER BY m.id ASC
+                messages.*,
+                admins.name AS admin_name,
+                requests.tracking_code
+            FROM messages
+            INNER JOIN requests
+                ON requests.id = messages.request_id
+            LEFT JOIN admins
+                ON admins.id = messages.sender_admin_id
+            WHERE requests.customer_id = ?
+            AND requests.service_id IS NULL
+            ORDER BY messages.id ASC
             """,
-            (
-                requests_rows[0]["id"],
-            ),
+            (customer_id,)
         ).fetchall()
 
-    con.close()
+        con.close()
 
     return render_template(
-        "customer.html",
-        requests=requests_rows,
-        customer=customer,
-        code=code,
-        messages=messages,
+        "support.html",
+        site=site_settings(),
+        messages=messages
     )
 
 
-@app.post("/customer/message")
-def customer_message():
-
-    code = request.form.get(
-        "code",
-        "",
-    ).strip()
-
-    message = request.form.get(
-        "message",
-        "",
-    ).strip()
-
-    if not code or not message:
-        return redirect(
-            url_for(
-                "customer_panel",
-                code=code,
-            )
-        )
-
-    con = get_connection()
-
-    r = con.execute(
-        """
-        SELECT *
-        FROM requests
-        WHERE tracking_code=?
-        """,
-        (code,),
-    ).fetchone()
-
-    if r:
-
-        cur = con.execute(
-            """
-            INSERT INTO messages
-            (
-                request_id,
-                customer_id,
-                sender,
-                message,
-                created_at
-            )
-            VALUES (?, ?, 'customer', ?, ?)
-            """,
-            (
-                r["id"],
-                r["customer_id"],
-                message,
-                now(),
-            ),
-        )
-
-        con.commit()
-
-        # اعلان پیام مشتری برای مدیران
-        admins = con.execute(
-            """
-            SELECT id
-            FROM admins
-            WHERE active=1
-            AND notifications_enabled=1
-            """
-        ).fetchall()
-
-        for admin in admins:
-
-            con.execute(
-                """
-                INSERT INTO notifications
-                (
-                    admin_id,
-                    request_id,
-                    title,
-                    message,
-                    is_read,
-                    created_at
-                )
-                VALUES (?, ?, ?, ?, 0, ?)
-                """,
-                (
-                    admin["id"],
-                    r["id"],
-                    "پیام جدید مشتری",
-                    "مشتری برای پرونده شما پیام جدید ارسال کرده است.",
-                    0,
-                    now(),
-                ),
-            )
-
-        con.commit()
-
-    con.close()
-
-    return redirect(
-        url_for(
-            "customer_panel",
-            code=code,
-        )
-    )
-
+# =============================================================
+# ورود مدیر
+# =============================================================
 
 @app.route(
     "/admin/login",
@@ -1316,16 +723,22 @@ def customer_message():
 )
 def admin_login():
 
+    if admin_logged_in():
+
+        return redirect(
+            url_for("admin")
+        )
+
     if request.method == "POST":
 
         username = request.form.get(
             "username",
-            "",
+            ""
         ).strip()
 
         password = request.form.get(
             "password",
-            "",
+            ""
         )
 
         con = get_connection()
@@ -1334,53 +747,50 @@ def admin_login():
             """
             SELECT *
             FROM admins
-            WHERE username=?
-            AND active=1
+            WHERE username = ?
+            AND active = 1
+            LIMIT 1
             """,
-            (
-                username,
-            ),
+            (username,)
         ).fetchone()
 
         con.close()
 
-        if (
-            admin
-            and secrets.compare_digest(
-                password,
-                admin["password"],
-            )
-        ):
+        if admin and admin["password"] == password:
+
+            session.clear()
 
             session["admin_id"] = admin["id"]
+            session["admin_username"] = admin["username"]
             session["admin_role"] = admin["role"]
+            session["admin_name"] = admin["name"]
 
             return redirect(
                 url_for("admin")
             )
 
         flash(
-            "نام کاربری یا رمز عبور اشتباه است."
+            "نام کاربری یا رمز عبور اشتباه است.",
+            "error"
         )
 
     return render_template(
-        "admin_login.html"
+        "admin_login.html",
+        site=site_settings()
     )
 
 
-@app.route("/admin/logout")
-def admin_logout():
-
-    session.clear()
-
-    return redirect(
-        url_for("admin_login")
-    )
-
+# =============================================================
+# پنل مدیریت
+# =============================================================
 
 @app.route("/admin")
-@admin_required
 def admin():
+
+    guard = require_admin()
+
+    if guard:
+        return guard
 
     con = get_connection()
 
@@ -1388,58 +798,70 @@ def admin():
         """
         SELECT *
         FROM services
-        ORDER BY sort_order,id
+        ORDER BY sort_order ASC, id ASC
         """
     ).fetchall()
 
     customers = con.execute(
         """
         SELECT
-            c.*,
-            COUNT(r.id) AS request_count
-        FROM customers c
-        LEFT JOIN requests r
-            ON r.customer_id=c.id
-        GROUP BY c.id
-        ORDER BY c.id DESC
+            customers.*,
+            COUNT(requests.id) AS request_count
+        FROM customers
+        LEFT JOIN requests
+            ON requests.customer_id = customers.id
+        GROUP BY customers.id
+        ORDER BY customers.id DESC
         """
     ).fetchall()
 
     requests_rows = con.execute(
         """
         SELECT
-            r.*,
-            s.name AS service_name,
-            c.name AS customer_name,
-            c.phone,
-            a.name AS admin_name
-        FROM requests r
-        LEFT JOIN services s
-            ON s.id=r.service_id
-        LEFT JOIN customers c
-            ON c.id=r.customer_id
-        LEFT JOIN admins a
-            ON a.id=r.assigned_admin_id
-        ORDER BY r.id DESC
+            requests.*,
+            customers.name AS customer_name,
+            services.name AS service_name,
+            admins.name AS admin_name
+        FROM requests
+        LEFT JOIN customers
+            ON customers.id = requests.customer_id
+        LEFT JOIN services
+            ON services.id = requests.service_id
+        LEFT JOIN admins
+            ON admins.id = requests.assigned_admin_id
+        ORDER BY requests.id DESC
         """
     ).fetchall()
 
     messages = con.execute(
         """
         SELECT
-            m.*,
-            c.name AS customer_name,
-            r.tracking_code,
-            a.name AS admin_name
-        FROM messages m
-        LEFT JOIN customers c
-            ON c.id=m.customer_id
-        LEFT JOIN requests r
-            ON r.id=m.request_id
-        LEFT JOIN admins a
-            ON a.id=m.sender_admin_id
-        ORDER BY m.id DESC
-        LIMIT 100
+            messages.*,
+            customers.name AS customer_name,
+            requests.tracking_code
+        FROM messages
+        LEFT JOIN customers
+            ON customers.id = messages.customer_id
+        LEFT JOIN requests
+            ON requests.id = messages.request_id
+        ORDER BY messages.id DESC
+        """
+    ).fetchall()
+
+    payments = con.execute(
+        """
+        SELECT
+            payments.*,
+            customers.name AS customer_name,
+            services.name AS service_name
+        FROM payments
+        LEFT JOIN customers
+            ON customers.id = payments.customer_id
+        LEFT JOIN requests
+            ON requests.id = payments.request_id
+        LEFT JOIN services
+            ON services.id = requests.service_id
+        ORDER BY payments.id DESC
         """
     ).fetchall()
 
@@ -1447,355 +869,120 @@ def admin():
         """
         SELECT *
         FROM admins
-        ORDER BY id
+        ORDER BY id ASC
         """
     ).fetchall()
 
-    discounts = con.execute(
+    notifications = con.execute(
         """
         SELECT *
-        FROM discount_codes
+        FROM notifications
+        WHERE admin_id = ?
         ORDER BY id DESC
-        """
+        LIMIT 50
+        """,
+        (session["admin_id"],)
     ).fetchall()
-
-    payment_codes = con.execute(
-        """
-        SELECT *
-        FROM payment_codes
-        ORDER BY id DESC
-        """
-    ).fetchall()
-
-    free_codes = con.execute(
-        """
-        SELECT *
-        FROM free_codes
-        ORDER BY id DESC
-        """
-    ).fetchall()
-
-    payments = con.execute(
-        """
-        SELECT
-            p.*,
-            r.tracking_code,
-            c.name AS customer_name,
-            s.name AS service_name
-        FROM payments p
-        LEFT JOIN requests r
-            ON r.id=p.request_id
-        LEFT JOIN customers c
-            ON c.id=p.customer_id
-        LEFT JOIN services s
-            ON s.id=r.service_id
-        ORDER BY p.id DESC
-        """
-    ).fetchall()
-
-    site_settings = dict(
-        con.execute(
-            "SELECT key,value FROM settings"
-        ).fetchall()
-    )
-
-    unread_notifications = unread_admin_notifications(
-        session["admin_id"]
-    )
-
-    financial_summary = get_financial_summary()
 
     con.close()
 
     return render_template(
         "admin.html",
+        site=site_settings(),
+        site_settings=site_settings(),
         services=services,
         customers=customers,
         requests=requests_rows,
         messages=messages,
-        admins=admins,
-        discounts=discounts,
-        payment_codes=payment_codes,
-        free_codes=free_codes,
         payments=payments,
-        site_settings=site_settings,
-        unread_notifications=unread_notifications,
-        financial_summary=financial_summary,
+        admins=admins,
+        statuses=STATUSES,
+        financial_summary=get_financial_summary(),
+        notifications=notifications,
+        unread_notifications=[
+            x for x in notifications
+            if not x["is_read"]
+        ]
     )
 
 
-@app.post("/admin/request/accept")
-@admin_required
-def admin_request_accept():
+# =============================================================
+# ذخیره خدمت
+# =============================================================
 
-    request_id = int(
-        request.form.get(
-            "request_id"
-        )
-    )
-
-    estimated_time = request.form.get(
-        "estimated_time",
-        "",
-    ).strip()
-
-    expert_name = request.form.get(
-        "expert_name",
-        "",
-    ).strip()
-
-    success = accept_request(
-        request_id=request_id,
-        admin_id=session["admin_id"],
-        estimated_time=estimated_time,
-        expert_name=expert_name,
-    )
-
-    if not success:
-        flash(
-            "این پرونده قبلاً توسط کارشناس دیگری پذیرفته شده یا وجود ندارد."
-        )
-
-    return redirect(
-        url_for("admin")
-    )
-
-
-@app.post("/admin/request/status")
-@admin_required
-def admin_request_status():
-
-    request_id = int(
-        request.form.get(
-            "request_id"
-        )
-    )
-
-    status = request.form.get(
-        "status",
-        "جدید",
-    )
-
-    description = request.form.get(
-        "description",
-        "",
-    ).strip()
-
-    estimated_time = request.form.get(
-        "estimated_time",
-        "",
-    ).strip()
-
-    expert_name = request.form.get(
-        "expert_name",
-        "",
-    ).strip()
-
-    update_request_status(
-        request_id=request_id,
-        admin_id=session["admin_id"],
-        status=status,
-        description=description,
-        estimated_time=estimated_time,
-        expert_name=expert_name,
-    )
-
-    return redirect(
-        url_for("admin")
-    )
-
-
-@app.post("/admin/request/payment")
-@admin_required
-def admin_request_payment():
-
-    request_id = int(
-        request.form.get(
-            "request_id"
-        )
-    )
-
-    paid_price = int(
-        request.form.get(
-            "paid_price"
-        )
-        or 0
-    )
-
-    con = get_connection()
-
-    con.execute(
-        """
-        UPDATE requests
-        SET paid_price=?,
-            updated_at=?
-        WHERE id=?
-        """,
-        (
-            paid_price,
-            now(),
-            request_id,
-        ),
-    )
-
-    con.commit()
-    con.close()
-
-    return redirect(
-        url_for("admin")
-    )
-
-
-@app.post("/admin/reply")
-@admin_required
-def admin_reply():
-
-    request_id = int(
-        request.form.get(
-            "request_id"
-        )
-    )
-
-    message = request.form.get(
-        "message",
-        "",
-    ).strip()
-
-    if not message:
-        return redirect(
-            url_for("admin")
-        )
-
-    con = get_connection()
-
-    req = con.execute(
-        """
-        SELECT *
-        FROM requests
-        WHERE id=?
-        """,
-        (
-            request_id,
-        ),
-    ).fetchone()
-
-    if req:
-
-        con.execute(
-            """
-            INSERT INTO messages
-            (
-                request_id,
-                customer_id,
-                sender,
-                sender_admin_id,
-                message,
-                created_at
-            )
-            VALUES (?, ?, 'admin', ?, ?, ?)
-            """,
-            (
-                request_id,
-                req["customer_id"],
-                session["admin_id"],
-                message,
-                now(),
-            ),
-        )
-
-        # اعلان پاسخ مدیر/کارشناس برای مشتری
-        con.execute(
-            """
-            INSERT INTO notifications
-            (
-                customer_id,
-                request_id,
-                title,
-                message,
-                is_read,
-                created_at
-            )
-            VALUES (?, ?, ?, ?, 0, ?)
-            """,
-            (
-                req["customer_id"],
-                request_id,
-                "پاسخ جدید پشتیبانی",
-                "مدیر یا کارشناس برای پرونده شما پاسخ جدیدی ارسال کرده است.",
-                0,
-                now(),
-            ),
-        )
-
-        con.commit()
-
-    con.close()
-
-    return redirect(
-        url_for("admin")
-    )
-
-
-@app.post("/admin/service/save")
-@admin_required
+@app.route(
+    "/admin/service/save",
+    methods=["POST"]
+)
 def admin_service_save():
+
+    guard = require_admin()
+
+    if guard:
+        return guard
 
     service_id = request.form.get(
         "id",
-        "",
+        ""
     ).strip()
 
     name = request.form.get(
         "name",
-        "",
+        ""
     ).strip()
 
     description = request.form.get(
         "description",
-        "",
+        ""
     ).strip()
 
     category = request.form.get(
         "category",
-        "",
+        ""
     ).strip()
 
-    price = int(
-        request.form.get(
-            "price"
-        )
-        or 0
-    )
+    price = request.form.get(
+        "price",
+        "0"
+    ).strip()
 
-    sort_order = int(
-        request.form.get(
-            "sort_order"
-        )
-        or 0
-    )
+    sort_order = request.form.get(
+        "sort_order",
+        "0"
+    ).strip()
 
-    active = (
-        1
-        if request.form.get("active")
-        == "1"
-        else 0
-    )
+    active = request.form.get(
+        "active",
+        "1"
+    ).strip()
 
     fields_json = request.form.get(
         "fields_json",
-        "[]",
-    )
+        "[]"
+    ).strip()
 
-    try:
-        fields = json.loads(
-            fields_json
+    if not name:
+        return redirect(
+            url_for("admin")
         )
 
-        if not isinstance(fields, list):
-            fields = []
-
+    try:
+        price = int(price or 0)
     except Exception:
-        fields = []
+        price = 0
+
+    try:
+        sort_order = int(sort_order or 0)
+    except Exception:
+        sort_order = 0
+
+    if active not in ("0", "1"):
+        active = "1"
+
+    try:
+        json.loads(fields_json or "[]")
+    except Exception:
+        fields_json = "[]"
 
     con = get_connection()
 
@@ -1805,28 +992,25 @@ def admin_service_save():
             """
             UPDATE services
             SET
-                name=?,
-                description=?,
-                category=?,
-                price=?,
-                active=?,
-                sort_order=?,
-                fields_json=?
-            WHERE id=?
+                name = ?,
+                description = ?,
+                category = ?,
+                price = ?,
+                active = ?,
+                sort_order = ?,
+                fields_json = ?
+            WHERE id = ?
             """,
             (
                 name,
                 description,
                 category,
                 price,
-                active,
+                int(active),
                 sort_order,
-                json.dumps(
-                    fields,
-                    ensure_ascii=False,
-                ),
-                service_id,
-            ),
+                fields_json,
+                int(service_id)
+            )
         )
 
     else:
@@ -1838,27 +1022,25 @@ def admin_service_save():
                 name,
                 description,
                 category,
+                image,
                 price,
                 active,
                 sort_order,
                 fields_json,
+                documents_json,
                 created_at
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, '', ?, ?, ?, ?, '[]', datetime('now'))
             """,
             (
                 name,
                 description,
                 category,
                 price,
-                active,
+                int(active),
                 sort_order,
-                json.dumps(
-                    fields,
-                    ensure_ascii=False,
-                ),
-                now(),
-            ),
+                fields_json
+            )
         )
 
     con.commit()
@@ -1869,22 +1051,33 @@ def admin_service_save():
     )
 
 
-@app.post(
-    "/admin/service/delete/<int:sid>"
+# =============================================================
+# حذف خدمت
+# =============================================================
+
+@app.route(
+    "/admin/service/delete/<int:sid>",
+    methods=["POST"]
 )
-@superadmin_required
 def admin_service_delete(sid):
+
+    guard = require_admin()
+
+    if guard:
+        return guard
+
+    if session.get("admin_role") != "superadmin":
+
+        return "دسترسی غیرمجاز", 403
 
     con = get_connection()
 
     con.execute(
         """
         DELETE FROM services
-        WHERE id=?
+        WHERE id = ?
         """,
-        (
-            sid,
-        ),
+        (sid,)
     )
 
     con.commit()
@@ -1895,79 +1088,250 @@ def admin_service_delete(sid):
     )
 
 
-@app.post("/admin/password")
-@admin_required
-def admin_password():
+# =============================================================
+# پذیرش پرونده
+# =============================================================
 
-    password = request.form.get(
-        "password",
-        "",
+@app.route(
+    "/admin/request/accept",
+    methods=["POST"]
+)
+def admin_request_accept():
+
+    guard = require_admin()
+
+    if guard:
+        return guard
+
+    request_id = request.form.get(
+        "request_id",
+        ""
     )
 
-    if len(password) >= 6:
+    expert_name = request.form.get(
+        "expert_name",
+        ""
+    ).strip()
 
-        con = get_connection()
+    estimated_time = request.form.get(
+        "estimated_time",
+        ""
+    ).strip()
 
-        con.execute(
-            """
-            UPDATE admins
-            SET password=?
-            WHERE id=?
-            """,
-            (
-                password,
-                session["admin_id"],
-            ),
+    try:
+        request_id = int(request_id)
+    except Exception:
+        return redirect(
+            url_for("admin")
         )
 
-        con.commit()
-        con.close()
+    accept_request(
+        request_id=request_id,
+        admin_id=session["admin_id"],
+        estimated_time=estimated_time,
+        expert_name=expert_name
+    )
 
     return redirect(
         url_for("admin")
     )
 
 
-@app.post("/admin/user/save")
-@superadmin_required
+# =============================================================
+# تغییر وضعیت پرونده
+# =============================================================
+
+@app.route(
+    "/admin/request/status",
+    methods=["POST"]
+)
+def admin_request_status():
+
+    guard = require_admin()
+
+    if guard:
+        return guard
+
+    try:
+        request_id = int(
+            request.form.get(
+                "request_id",
+                "0"
+            )
+        )
+    except Exception:
+        return redirect(
+            url_for("admin")
+        )
+
+    status = request.form.get(
+        "status",
+        "جدید"
+    )
+
+    description = request.form.get(
+        "description",
+        ""
+    ).strip()
+
+    estimated_time = request.form.get(
+        "estimated_time",
+        ""
+    ).strip()
+
+    expert_name = request.form.get(
+        "expert_name",
+        ""
+    ).strip()
+
+    if status not in STATUSES:
+        status = "جدید"
+
+    update_request_status(
+        request_id=request_id,
+        admin_id=session["admin_id"],
+        status=status,
+        description=description,
+        estimated_time=estimated_time,
+        expert_name=expert_name
+    )
+
+    return redirect(
+        url_for("admin")
+    )
+
+
+# =============================================================
+# پاسخ مدیر
+# =============================================================
+
+@app.route(
+    "/admin/reply",
+    methods=["POST"]
+)
+def admin_reply():
+
+    guard = require_admin()
+
+    if guard:
+        return guard
+
+    try:
+        request_id = int(
+            request.form.get(
+                "request_id",
+                "0"
+            )
+        )
+    except Exception:
+        return redirect(
+            url_for("admin")
+        )
+
+    message = request.form.get(
+        "message",
+        ""
+    ).strip()
+
+    if message:
+
+        con = get_connection()
+
+        row = con.execute(
+            """
+            SELECT customer_id
+            FROM requests
+            WHERE id = ?
+            """,
+            (request_id,)
+        ).fetchone()
+
+        con.close()
+
+        if row:
+
+            add_message(
+                request_id=request_id,
+                customer_id=row["customer_id"],
+                sender="admin",
+                message=message,
+                sender_admin_id=session["admin_id"]
+            )
+
+    return redirect(
+        url_for("admin")
+    )
+
+
+# =============================================================
+# مدیریت کاربران
+# =============================================================
+
+@app.route(
+    "/admin/user/save",
+    methods=["POST"]
+)
 def admin_user_save():
+
+    guard = require_admin()
+
+    if guard:
+        return guard
+
+    if session.get("admin_role") != "superadmin":
+
+        return "دسترسی غیرمجاز", 403
 
     admin_id = request.form.get(
         "id",
-        "",
+        ""
     ).strip()
 
     username = request.form.get(
         "username",
-        "",
+        ""
     ).strip()
 
     password = request.form.get(
         "password",
-        "",
+        ""
     )
 
     name = request.form.get(
         "name",
-        "",
+        ""
     ).strip()
 
     phone = request.form.get(
         "phone",
-        "",
+        ""
     ).strip()
 
     role = request.form.get(
         "role",
-        "admin",
+        "admin"
     )
 
-    active = (
-        1
-        if request.form.get("active")
-        == "1"
-        else 0
+    active = request.form.get(
+        "active",
+        "1"
     )
+
+    if role not in (
+        "admin",
+        "operator",
+        "superadmin"
+    ):
+        role = "admin"
+
+    if active not in ("0", "1"):
+        active = "1"
+
+    if not username:
+
+        return redirect(
+            url_for("admin")
+        )
 
     con = get_connection()
 
@@ -1979,13 +1343,13 @@ def admin_user_save():
                 """
                 UPDATE admins
                 SET
-                    username=?,
-                    password=?,
-                    name=?,
-                    phone=?,
-                    role=?,
-                    active=?
-                WHERE id=?
+                    username = ?,
+                    password = ?,
+                    name = ?,
+                    phone = ?,
+                    role = ?,
+                    active = ?
+                WHERE id = ?
                 """,
                 (
                     username,
@@ -1993,9 +1357,9 @@ def admin_user_save():
                     name,
                     phone,
                     role,
-                    active,
-                    admin_id,
-                ),
+                    int(active),
+                    int(admin_id)
+                )
             )
 
         else:
@@ -2004,24 +1368,27 @@ def admin_user_save():
                 """
                 UPDATE admins
                 SET
-                    username=?,
-                    name=?,
-                    phone=?,
-                    role=?,
-                    active=?
-                WHERE id=?
+                    username = ?,
+                    name = ?,
+                    phone = ?,
+                    role = ?,
+                    active = ?
+                WHERE id = ?
                 """,
                 (
                     username,
                     name,
                     phone,
                     role,
-                    active,
-                    admin_id,
-                ),
+                    int(active),
+                    int(admin_id)
+                )
             )
 
     else:
+
+        if not password:
+            password = "123456"
 
         con.execute(
             """
@@ -2036,17 +1403,16 @@ def admin_user_save():
                 notifications_enabled,
                 created_at
             )
-            VALUES (?, ?, ?, ?, ?, ?, 1, ?)
+            VALUES (?, ?, ?, ?, ?, ?, 1, datetime('now'))
             """,
             (
                 username,
-                password or "123456",
+                password,
                 name,
                 phone,
                 role,
-                active,
-                now(),
-            ),
+                int(active)
+            )
         )
 
     con.commit()
@@ -2057,226 +1423,99 @@ def admin_user_save():
     )
 
 
-@app.post("/admin/discount/save")
-@admin_required
-def admin_discount_save():
+# =============================================================
+# تنظیمات سایت
+# =============================================================
 
-    code = request.form.get(
-        "code",
-        "",
-    ).strip().upper()
-
-    kind = request.form.get(
-        "kind",
-        "percent",
-    )
-
-    value = int(
-        request.form.get(
-            "value"
-        )
-        or 0
-    )
-
-    start_date = request.form.get(
-        "start_date",
-        "",
-    )
-
-    end_date = request.form.get(
-        "end_date",
-        "",
-    )
-
-    max_uses = int(
-        request.form.get(
-            "max_uses"
-        )
-        or 0
-    )
-
-    service_id = (
-        int(
-            request.form.get(
-                "service_id"
-            )
-            or 0
-        )
-        or None
-    )
-
-    add_discount_code(
-        code=code,
-        kind=kind,
-        value=value,
-        start_date=start_date,
-        end_date=end_date,
-        max_uses=max_uses,
-        service_id=service_id,
-    )
-
-    return redirect(
-        url_for("admin")
-    )
-
-
-@app.post("/admin/payment-code/save")
-@admin_required
-def admin_payment_code_save():
-
-    con = get_connection()
-
-    con.execute(
-        """
-        INSERT INTO payment_codes
-        (
-            code,
-            prepayment_percent,
-            installment_count,
-            installment_percent,
-            valid_until,
-            service_id,
-            active
-        )
-        VALUES (?, ?, ?, ?, ?, ?, 1)
-        """,
-        (
-            request.form.get(
-                "code",
-                "",
-            ).strip().upper(),
-            int(
-                request.form.get(
-                    "prepayment_percent"
-                )
-                or 0
-            ),
-            int(
-                request.form.get(
-                    "installment_count"
-                )
-                or 0
-            ),
-            int(
-                request.form.get(
-                    "installment_percent"
-                )
-                or 0
-            ),
-            request.form.get(
-                "valid_until",
-                "",
-            ),
-            int(
-                request.form.get(
-                    "service_id"
-                )
-                or 0
-            )
-            or None,
-        ),
-    )
-
-    con.commit()
-    con.close()
-
-    return redirect(
-        url_for("admin")
-    )
-
-
-@app.post("/admin/free/save")
-@admin_required
-def admin_free_save():
-
-    con = get_connection()
-
-    con.execute(
-        """
-        INSERT INTO free_codes
-        (
-            code,
-            valid_until,
-            max_uses,
-            used_count,
-            service_id,
-            active
-        )
-        VALUES (?, ?, ?, 0, ?, 1)
-        """,
-        (
-            request.form.get(
-                "code",
-                "",
-            ).strip().upper(),
-            request.form.get(
-                "valid_until",
-                "",
-            ),
-            int(
-                request.form.get(
-                    "max_uses"
-                )
-                or 1
-            ),
-            int(
-                request.form.get(
-                    "service_id"
-                )
-                or 0
-            )
-            or None,
-        ),
-    )
-
-    con.commit()
-    con.close()
-
-    return redirect(
-        url_for("admin")
-    )
-
-
-@app.post("/admin/settings")
-@admin_required
+@app.route(
+    "/admin/settings/save",
+    methods=["POST"]
+)
 def admin_settings_save():
 
-    allowed = [
-        "site_name",
-        "manager",
-        "phone",
-        "logo",
-        "warning_text",
-        "currency",
-        "support_enabled",
-        "support_title",
-        "support_description",
-        "admin_request_notification",
-        "customer_request_notification",
-        "notifications_once_permission",
-    ]
+    guard = require_admin()
+
+    if guard:
+        return guard
+
+    values = {
+        "site_name": request.form.get(
+            "site_name",
+            ""
+        ).strip(),
+
+        "manager": request.form.get(
+            "manager",
+            ""
+        ).strip(),
+
+        "phone": request.form.get(
+            "phone",
+            ""
+        ).strip(),
+
+        "logo": request.form.get(
+            "logo",
+            ""
+        ).strip(),
+
+        "warning_text": request.form.get(
+            "warning_text",
+            ""
+        ).strip()
+    }
+
+    for key, value in values.items():
+
+        set_setting(
+            key,
+            value
+        )
+
+    return redirect(
+        url_for("admin")
+    )
+
+
+# =============================================================
+# تغییر رمز مدیر فعلی
+# =============================================================
+
+@app.route(
+    "/admin/password",
+    methods=["POST"]
+)
+def admin_password():
+
+    guard = require_admin()
+
+    if guard:
+        return guard
+
+    password = request.form.get(
+        "password",
+        ""
+    )
+
+    if not password:
+
+        return redirect(
+            url_for("admin")
+        )
 
     con = get_connection()
 
-    for key in allowed:
-
-        value = request.form.get(
-            key,
-            "",
+    con.execute(
+        """
+        UPDATE admins
+        SET password = ?
+        WHERE id = ?
+        """,
+        (
+            password,
+            session["admin_id"]
         )
-
-        con.execute(
-            """
-            INSERT INTO settings(key,value)
-            VALUES (?,?)
-            ON CONFLICT(key)
-            DO UPDATE SET value=excluded.value
-            """,
-            (
-                key,
-                value,
-            ),
-        )
+    )
 
     con.commit()
     con.close()
@@ -2286,9 +1525,39 @@ def admin_settings_save():
     )
 
 
-@app.post("/admin/notifications/read-all")
-@admin_required
+# =============================================================
+# اعلان‌های مدیر
+# =============================================================
+
+@app.route("/admin/notifications")
+def admin_notifications():
+
+    guard = require_admin()
+
+    if guard:
+        return guard
+
+    notifications = get_admin_notifications(
+        session["admin_id"]
+    )
+
+    return render_template(
+        "admin_notifications.html",
+        site=site_settings(),
+        notifications=notifications
+    )
+
+
+@app.route(
+    "/admin/notifications/read-all",
+    methods=["POST"]
+)
 def admin_notifications_read_all():
+
+    guard = require_admin()
+
+    if guard:
+        return guard
 
     mark_all_admin_notifications_read(
         session["admin_id"]
@@ -2299,148 +1568,26 @@ def admin_notifications_read_all():
     )
 
 
-@app.post("/customer/notifications/read-all")
-def customer_notifications_read_all():
+# =============================================================
+# خروج
+# =============================================================
 
-    customer_id = request.form.get(
-        "customer_id"
-    )
+@app.route("/admin/logout")
+def admin_logout():
 
-    if customer_id:
-
-        mark_all_customer_notifications_read(
-            int(customer_id)
-        )
-
-    return redirect(
-        request.referrer
-        or url_for("home")
-    )
-
-
-@app.post("/admin/notifications/permission")
-@admin_required
-def admin_notification_permission():
-
-    enabled = (
-        request.form.get(
-            "enabled"
-        )
-        == "1"
-    )
-
-    set_admin_notification_permission(
-        session["admin_id"],
-        enabled,
-    )
+    session.pop("admin_id", None)
+    session.pop("admin_username", None)
+    session.pop("admin_role", None)
+    session.pop("admin_name", None)
 
     return redirect(
-        url_for("admin")
+        url_for("admin_login")
     )
 
 
-@app.route("/support")
-def support():
-
-    customer_id = request.args.get(
-        "customer_id",
-        type=int,
-    )
-
-    if not customer_id:
-        return redirect(
-            url_for("tracking")
-        )
-
-    con = get_connection()
-
-    customer = con.execute(
-        """
-        SELECT *
-        FROM customers
-        WHERE id=?
-        """,
-        (
-            customer_id,
-        ),
-    ).fetchone()
-
-    con.close()
-
-    if not customer:
-        return redirect(
-            url_for("home")
-        )
-
-    messages = get_support_messages(
-        customer_id
-    )
-
-    return render_template(
-        "support.html",
-        customer=customer,
-        messages=messages,
-    )
-
-
-@app.post("/support/message")
-def support_message():
-
-    customer_id = int(
-        request.form.get(
-            "customer_id"
-        )
-    )
-
-    message = request.form.get(
-        "message",
-        "",
-    ).strip()
-
-    if message:
-
-        create_support_request(
-            customer_id
-        )
-
-        add_support_message(
-            customer_id=customer_id,
-            message=message,
-        )
-
-    return redirect(
-        url_for(
-            "support",
-            customer_id=customer_id,
-        )
-    )
-
-
-@app.get(
-    "/files/<path:filename>"
-)
-@admin_required
-def protected_file(filename):
-
-    return send_from_directory(
-        UPLOADS,
-        filename,
-        as_attachment=False,
-    )
-
-
-@app.get("/health")
-def health():
-
-    return jsonify(
-        {
-            "ok": True,
-            "database": os.path.exists(DB_PATH)
-            if "DB_PATH" in globals()
-            else True,
-        }
-    )
-
+# =============================================================
+# اجرای برنامه
+# =============================================================
 
 if __name__ == "__main__":
 
@@ -2449,7 +1596,8 @@ if __name__ == "__main__":
         port=int(
             os.environ.get(
                 "PORT",
-                5000,
+                5000
             )
         ),
+        debug=False
     )
