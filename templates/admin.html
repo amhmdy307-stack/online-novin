@@ -1,15 +1,23 @@
 <!doctype html>
 <html lang="fa" dir="rtl">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
 
-<title>پنل مدیریت - {{ site.site_name }}</title>
+<head>
+
+<meta charset="utf-8">
+
+<meta
+    name="viewport"
+    content="width=device-width,initial-scale=1"
+>
+
+<title>
+پنل مدیریت - {{ site.site_name }}
+</title>
 
 <style>
+
 :root{
     --green:#3f5f32;
-    --green2:#526f3a;
     --dark:#263b20;
     --light:#eef2ea;
     --white:#fff;
@@ -83,6 +91,19 @@ body{
     padding:20px;
     border-radius:16px;
     margin-bottom:16px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:15px;
+}
+
+.hero-logo{
+    width:75px;
+    height:75px;
+    object-fit:contain;
+    border-radius:50%;
+    background:#fff;
+    padding:5px;
 }
 
 .grid{
@@ -96,6 +117,7 @@ body{
     border:1px solid var(--border);
     border-radius:14px;
     padding:16px;
+    margin-bottom:14px;
     box-shadow:0 3px 12px rgba(0,0,0,.04);
 }
 
@@ -113,6 +135,10 @@ select{
     border-radius:8px;
     font-family:inherit;
     margin:5px 0 10px;
+}
+
+textarea{
+    min-height:90px;
 }
 
 button,
@@ -154,8 +180,12 @@ th{
     background:#e4eadf;
 }
 
-.nav-title{
-    margin:0 0 12px;
+.notice{
+    background:#fff8df;
+    border:1px solid #e8d99b;
+    padding:12px;
+    border-radius:10px;
+    margin-bottom:12px;
 }
 
 @media(max-width:700px){
@@ -176,8 +206,19 @@ th{
     .sidebar .icon{
         font-size:20px;
     }
+
+    .hero{
+        display:block;
+    }
+
+    .hero-logo{
+        margin-top:12px;
+    }
+
 }
+
 </style>
+
 </head>
 
 <body>
@@ -236,19 +277,38 @@ th{
 
 </aside>
 
+
 <main class="main">
+
 
 <section id="dashboard">
 
 <div class="hero">
 
-<h1>{{ site.site_name }}</h1>
+<div>
+
+<h1>
+{{ site.site_name }}
+</h1>
 
 <p>
 مدیریت خدمات، مشتریان، درخواست‌ها، پیام‌ها و امور مالی
 </p>
 
 </div>
+
+{% if site.logo %}
+
+<img
+    class="hero-logo"
+    src="{{ url_for('static', filename=site.logo) }}"
+    alt="لوگو"
+>
+
+{% endif %}
+
+</div>
+
 
 <div class="grid">
 
@@ -269,7 +329,9 @@ th{
 
 <div class="card">
 <h3>درآمد</h3>
-<strong>{{ "{:,}".format(financial_summary.income) }}</strong>
+<strong>
+{{ "{:,}".format(financial_summary.income or 0) }}
+</strong>
 </div>
 
 </div>
@@ -281,38 +343,61 @@ th{
 
 <div class="card">
 
-<h2>مدیریت خدمات</h2>
+<h2>
+مدیریت خدمات
+</h2>
 
-<form method="post"
-action="{{ url_for('admin_service_save') }}">
+<form
+    method="post"
+    action="{{ url_for('admin_service_save') }}"
+>
 
-<input name="name"
-placeholder="نام خدمت"
-required>
+<input
+    name="name"
+    placeholder="نام خدمت"
+    required
+>
 
-<input name="description"
-placeholder="توضیحات">
+<input
+    name="description"
+    placeholder="توضیحات"
+>
 
-<input name="category"
-placeholder="دسته‌بندی">
+<input
+    name="category"
+    placeholder="دسته‌بندی"
+>
 
-<input name="price"
-type="number"
-placeholder="قیمت">
+<input
+    name="price"
+    type="number"
+    placeholder="قیمت"
+>
 
-<input name="sort_order"
-type="number"
-value="0"
-placeholder="ترتیب نمایش">
+<input
+    name="display_order"
+    type="number"
+    value="0"
+    placeholder="ترتیب نمایش"
+>
 
 <select name="active">
-<option value="1">فعال</option>
-<option value="0">غیرفعال</option>
+
+<option value="1">
+فعال
+</option>
+
+<option value="0">
+غیرفعال
+</option>
+
 </select>
 
-<textarea name="fields_json"
-rows="8"
-placeholder='فرمت JSON فیلدهای خدمت'></textarea>
+<textarea
+    name="fields_json"
+    rows="8"
+    placeholder='فرمت JSON فیلدهای خدمت'
+></textarea>
 
 <button>
 افزودن خدمت
@@ -322,62 +407,87 @@ placeholder='فرمت JSON فیلدهای خدمت'></textarea>
 
 </div>
 
+
 <div class="grid">
 
 {% for service in services %}
 
 <div class="card">
 
-<h3>{{ service.name }}</h3>
+<h3>
+{{ service.name }}
+</h3>
 
-<p>{{ service.description }}</p>
+<p>
+{{ service.description }}
+</p>
 
 <p>
 قیمت:
 {{ "{:,}".format(service.price or 0) }}
 </p>
 
-<form method="post"
-action="{{ url_for('admin_service_save') }}">
+<form
+    method="post"
+    action="{{ url_for('admin_service_save') }}"
+>
 
-<input type="hidden"
-name="id"
-value="{{ service.id }}">
+<input
+    type="hidden"
+    name="id"
+    value="{{ service.id }}"
+>
 
-<input name="name"
-value="{{ service.name }}"
-required>
+<input
+    name="name"
+    value="{{ service.name }}"
+    required
+>
 
-<input name="description"
-value="{{ service.description }}">
+<input
+    name="description"
+    value="{{ service.description }}"
+>
 
-<input name="category"
-value="{{ service.category }}">
+<input
+    name="category"
+    value="{{ service.category }}"
+>
 
-<input name="price"
-type="number"
-value="{{ service.price or 0 }}">
+<input
+    name="price"
+    type="number"
+    value="{{ service.price or 0 }}"
+>
 
-<input name="sort_order"
-type="number"
-value="{{ service.sort_order or 0 }}">
+<input
+    name="display_order"
+    type="number"
+    value="{{ service.display_order or 0 }}"
+>
 
 <select name="active">
 
-<option value="1"
-{% if service.active %}selected{% endif %}>
+<option
+    value="1"
+    {% if service.active %}selected{% endif %}
+>
 فعال
 </option>
 
-<option value="0"
-{% if not service.active %}selected{% endif %}>
+<option
+    value="0"
+    {% if not service.active %}selected{% endif %}
+>
 غیرفعال
 </option>
 
 </select>
 
-<textarea name="fields_json"
-rows="5">{{ service.fields_json }}</textarea>
+<textarea
+    name="fields_json"
+    rows="5"
+>{{ service.fields_json }}</textarea>
 
 <button>
 ذخیره
@@ -385,11 +495,14 @@ rows="5">{{ service.fields_json }}</textarea>
 
 </form>
 
-{% if session.admin_role == "superadmin" %}
 
-<form method="post"
-action="{{ url_for('admin_service_delete',sid=service.id) }}"
-onsubmit="return confirm('این خدمت حذف شود؟')">
+{% if session.admin_role == "admin" or session.admin_role == "superadmin" %}
+
+<form
+    method="post"
+    action="{{ url_for('admin_service_delete',sid=service.id) }}"
+    onsubmit="return confirm('این خدمت حذف شود؟')"
+>
 
 <button class="danger">
 حذف
@@ -412,7 +525,9 @@ onsubmit="return confirm('این خدمت حذف شود؟')">
 
 <div class="card">
 
-<h2>مشتریان</h2>
+<h2>
+مشتریان
+</h2>
 
 <div class="table-wrap">
 
@@ -429,10 +544,21 @@ onsubmit="return confirm('این خدمت حذف شود؟')">
 
 <tr>
 
-<td>{{ customer.name }}</td>
-<td>{{ customer.national_id }}</td>
-<td>{{ customer.phone }}</td>
-<td>{{ customer.request_count }}</td>
+<td>
+{{ customer.name }}
+</td>
+
+<td>
+{{ customer.national_id }}
+</td>
+
+<td>
+{{ customer.phone }}
+</td>
+
+<td>
+{{ customer.request_count }}
+</td>
 
 </tr>
 
@@ -466,51 +592,37 @@ onsubmit="return confirm('این خدمت حذف شود؟')">
 
 <p>
 کد پیگیری:
-<strong>{{ item.tracking_code }}</strong>
+<strong>
+{{ item.tracking_code }}
+</strong>
 </p>
 
 <p>
 وضعیت:
-<strong>{{ item.status }}</strong>
+<strong>
+{{ item.status }}
+</strong>
 </p>
 
-<p>
-کارشناس:
-{{ item.admin_name or "تعیین نشده" }}
-</p>
+<form
+    method="post"
+    action="{{ url_for('admin_request_status') }}"
+>
 
-<form method="post"
-action="{{ url_for('admin_request_accept') }}">
-
-<input type="hidden"
-name="request_id"
-value="{{ item.id }}">
-
-<input name="expert_name"
-placeholder="نام کارشناس">
-
-<input name="estimated_time"
-placeholder="زمان تقریبی انجام">
-
-<button>
-پذیرش پرونده
-</button>
-
-</form>
-
-<form method="post"
-action="{{ url_for('admin_request_status') }}">
-
-<input type="hidden"
-name="request_id"
-value="{{ item.id }}">
+<input
+    type="hidden"
+    name="id"
+    value="{{ item.id }}"
+>
 
 <select name="status">
 
 {% for status in statuses %}
 
-<option value="{{ status }}"
-{% if status == item.status %}selected{% endif %}>
+<option
+    value="{{ status }}"
+    {% if status == item.status %}selected{% endif %}
+>
 {{ status }}
 </option>
 
@@ -518,30 +630,28 @@ value="{{ item.id }}">
 
 </select>
 
-<input name="estimated_time"
-placeholder="زمان تقریبی">
-
-<input name="expert_name"
-placeholder="نام کارشناس">
-
-<textarea name="description"
-placeholder="توضیحات برای مشتری"></textarea>
-
 <button>
 ذخیره وضعیت
 </button>
 
 </form>
 
-<form method="post"
-action="{{ url_for('admin_reply') }}">
 
-<input type="hidden"
-name="request_id"
-value="{{ item.id }}">
+<form
+    method="post"
+    action="{{ url_for('admin_reply') }}"
+>
 
-<textarea name="message"
-placeholder="پاسخ به مشتری"></textarea>
+<input
+    type="hidden"
+    name="request_id"
+    value="{{ item.id }}"
+>
+
+<textarea
+    name="message"
+    placeholder="پاسخ به مشتری"
+></textarea>
 
 <button>
 ارسال پاسخ
@@ -592,7 +702,9 @@ placeholder="پاسخ به مشتری"></textarea>
 
 <div class="card">
 
-<h2>پرداخت‌ها</h2>
+<h2>
+پرداخت‌ها
+</h2>
 
 <div class="table-wrap">
 
@@ -610,11 +722,25 @@ placeholder="پاسخ به مشتری"></textarea>
 
 <tr>
 
-<td>{{ payment.customer_name or "-" }}</td>
-<td>{{ payment.service_name or "-" }}</td>
-<td>{{ "{:,}".format(payment.amount or 0) }}</td>
-<td>{{ payment.status }}</td>
-<td>{{ payment.transaction_id or "-" }}</td>
+<td>
+{{ payment.customer_name or "-" }}
+</td>
+
+<td>
+{{ payment.service_name or "-" }}
+</td>
+
+<td>
+{{ "{:,}".format(payment.amount or 0) }}
+</td>
+
+<td>
+{{ payment.status }}
+</td>
+
+<td>
+{{ payment.transaction_id or "-" }}
+</td>
 
 </tr>
 
@@ -634,24 +760,39 @@ placeholder="پاسخ به مشتری"></textarea>
 <div class="grid">
 
 <div class="card">
-<h3>درآمد</h3>
+
+<h3>
+درآمد
+</h3>
+
 <strong>
-{{ "{:,}".format(financial_summary.income) }}
+{{ "{:,}".format(financial_summary.income or 0) }}
 </strong>
+
 </div>
 
 <div class="card">
-<h3>هزینه</h3>
+
+<h3>
+هزینه
+</h3>
+
 <strong>
-{{ "{:,}".format(financial_summary.expense) }}
+{{ "{:,}".format(financial_summary.expense or 0) }}
 </strong>
+
 </div>
 
 <div class="card">
-<h3>موجودی</h3>
+
+<h3>
+موجودی
+</h3>
+
 <strong>
-{{ "{:,}".format(financial_summary.balance) }}
+{{ "{:,}".format(financial_summary.balance or 0) }}
 </strong>
+
 </div>
 
 </div>
@@ -663,25 +804,37 @@ placeholder="پاسخ به مشتری"></textarea>
 
 <div class="card">
 
-<h2>کاربران مدیریت</h2>
+<h2>
+کاربران مدیریت
+</h2>
 
-{% if session.admin_role == "superadmin" %}
+{% if session.admin_role == "admin" or session.admin_role == "superadmin" %}
 
-<form method="post"
-action="{{ url_for('admin_user_save') }}">
+<form
+    method="post"
+    action="{{ url_for('admin_user_save') }}"
+>
 
-<input name="username"
-placeholder="نام کاربری"
-required>
+<input
+    name="username"
+    placeholder="نام کاربری"
+    required
+>
 
-<input name="password"
-placeholder="رمز عبور">
+<input
+    name="password"
+    placeholder="رمز عبور"
+>
 
-<input name="name"
-placeholder="نام مدیر / کارشناس">
+<input
+    name="name"
+    placeholder="نام مدیر / کارشناس"
+>
 
-<input name="phone"
-placeholder="شماره موبایل">
+<input
+    name="phone"
+    placeholder="شماره موبایل"
+>
 
 <select name="role">
 
@@ -719,39 +872,57 @@ placeholder="شماره موبایل">
 
 <div class="card">
 
-<form method="post"
-action="{{ url_for('admin_user_save') }}">
+<form
+    method="post"
+    action="{{ url_for('admin_user_save') }}"
+>
 
-<input type="hidden"
-name="id"
-value="{{ admin.id }}">
+<input
+    type="hidden"
+    name="id"
+    value="{{ admin.id }}"
+>
 
-<input name="username"
-value="{{ admin.username }}">
+<input
+    name="username"
+    value="{{ admin.username }}"
+>
 
-<input name="name"
-value="{{ admin.name }}">
+<input
+    name="name"
+    value="{{ admin.name or '' }}"
+>
 
-<input name="phone"
-value="{{ admin.phone }}">
+<input
+    name="phone"
+    value="{{ admin.phone or '' }}"
+>
 
-<input name="password"
-placeholder="رمز جدید">
+<input
+    name="password"
+    placeholder="رمز جدید"
+>
 
 <select name="role">
 
-<option value="admin"
-{% if admin.role == "admin" %}selected{% endif %}>
+<option
+    value="admin"
+    {% if admin.role == "admin" %}selected{% endif %}
+>
 مدیر
 </option>
 
-<option value="operator"
-{% if admin.role == "operator" %}selected{% endif %}>
+<option
+    value="operator"
+    {% if admin.role == "operator" %}selected{% endif %}
+>
 کارشناس
 </option>
 
-<option value="superadmin"
-{% if admin.role == "superadmin" %}selected{% endif %}>
+<option
+    value="superadmin"
+    {% if admin.role == "superadmin" %}selected{% endif %}
+>
 مدیر اصلی
 </option>
 
@@ -759,13 +930,17 @@ placeholder="رمز جدید">
 
 <select name="active">
 
-<option value="1"
-{% if admin.active %}selected{% endif %}>
+<option
+    value="1"
+    {% if admin.active %}selected{% endif %}
+>
 فعال
 </option>
 
-<option value="0"
-{% if not admin.active %}selected{% endif %}>
+<option
+    value="0"
+    {% if not admin.active %}selected{% endif %}
+>
 غیرفعال
 </option>
 
@@ -792,29 +967,77 @@ placeholder="رمز جدید">
 
 <div class="card">
 
-<h2>تنظیمات سایت</h2>
+<h2>
+تنظیمات سایت
+</h2>
 
-<form method="post"
-action="{{ url_for('admin_settings_save') }}">
+<form
+    method="post"
+    action="{{ url_for('admin_settings_save') }}"
+    enctype="multipart/form-data"
+>
 
-<label>نام سایت</label>
-<input name="site_name"
-value="{{ site_settings.get('site_name','') }}">
+<label>
+نام سایت
+</label>
 
-<label>مدیر</label>
-<input name="manager"
-value="{{ site_settings.get('manager','') }}">
+<input
+    name="site_name"
+    value="{{ site_settings.get('site_name','') }}"
+>
 
-<label>شماره تماس</label>
-<input name="phone"
-value="{{ site_settings.get('phone','') }}">
+<label>
+مدیر
+</label>
 
-<label>لوگو</label>
-<input name="logo"
-value="{{ site_settings.get('logo','') }}">
+<input
+    name="manager"
+    value="{{ site_settings.get('manager','') }}"
+>
 
-<label>متن هشدار</label>
-<textarea name="warning_text">{{ site_settings.get('warning_text','') }}</textarea>
+<label>
+شماره تماس
+</label>
+
+<input
+    name="phone"
+    value="{{ site_settings.get('phone','') }}"
+>
+
+<label>
+افزودن / تغییر لوگو
+</label>
+
+{% if site_settings.get('logo') %}
+
+<img
+    src="{{ url_for('static', filename=site_settings.get('logo')) }}"
+    style="width:90px;height:90px;object-fit:contain;background:#fff;border:1px solid #ddd;border-radius:10px;padding:5px;"
+>
+
+<br><br>
+
+{% endif %}
+
+<input
+    type="file"
+    name="logo_file"
+    accept=".jpg,.jpeg,.png,.webp"
+>
+
+<input
+    type="hidden"
+    name="logo"
+    value="{{ site_settings.get('logo','') }}"
+>
+
+<label>
+متن هشدار
+</label>
+
+<textarea
+    name="warning_text"
+>{{ site_settings.get('warning_text','') }}</textarea>
 
 <button>
 ذخیره تنظیمات
@@ -822,17 +1045,25 @@ value="{{ site_settings.get('logo','') }}">
 
 </form>
 
+
 <hr>
 
-<h3>تغییر رمز عبور</h3>
 
-<form method="post"
-action="{{ url_for('admin_password') }}">
+<h3>
+تغییر رمز عبور
+</h3>
 
-<input type="password"
-name="password"
-placeholder="رمز جدید"
-required>
+<form
+    method="post"
+    action="{{ url_for('admin_password') }}"
+>
+
+<input
+    type="password"
+    name="password"
+    placeholder="رمز جدید"
+    required
+>
 
 <button>
 تغییر رمز
@@ -844,28 +1075,36 @@ required>
 
 </section>
 
+
 </main>
+
 
 <script>
 
 function showSection(id){
 
-const sections=document.querySelectorAll("main section");
+    const sections =
+        document.querySelectorAll("main section");
 
-sections.forEach(function(section){
-section.style.display="none";
-});
+    sections.forEach(function(section){
 
-const target=document.getElementById(id);
+        section.style.display = "none";
 
-if(target){
-target.style.display="block";
-}
+    });
 
-window.scrollTo({
-top:0,
-behavior:"smooth"
-});
+    const target =
+        document.getElementById(id);
+
+    if(target){
+
+        target.style.display = "block";
+
+    }
+
+    window.scrollTo({
+        top:0,
+        behavior:"smooth"
+    });
 
 }
 
