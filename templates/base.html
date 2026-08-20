@@ -1,406 +1,275 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="fa" dir="rtl">
 
 <head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 
-    <meta charset="UTF-8">
+<title>
+{% block title %}
+{{ site.site_name }}
+{% endblock %}
+</title>
 
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
+<style>
 
-    <title>
-        {% block title %}
-            {{ site_name|default("کافی نت آنلاین نوین") }}
-        {% endblock %}
-    </title>
+:root{
+    --green:#3f5f32;
+    --green2:#526f3a;
+    --dark:#263b20;
+    --light:#eef2ea;
+    --border:#d5ddcf;
+    --white:#fff;
+}
 
-    <style>
+*{
+    box-sizing:border-box;
+}
 
-        * {
-            box-sizing: border-box;
-        }
+body{
+    margin:0;
+    background:var(--light);
+    color:#263126;
+    font-family:Tahoma,Arial,sans-serif;
+}
 
-        body {
-            margin: 0;
-            font-family: Tahoma, Arial, sans-serif;
-            background: #f5f7fb;
-            color: #1f2937;
-        }
+header{
+    background:linear-gradient(135deg,var(--dark),var(--green));
+    color:#fff;
+    text-align:center;
+    padding:24px 15px;
+}
 
-        a {
-            text-decoration: none;
-            color: inherit;
-        }
+header img{
+    width:90px;
+    height:90px;
+    object-fit:contain;
+    border-radius:50%;
+    background:#fff;
+    padding:5px;
+}
 
-        .navbar {
-            background: #0f172a;
-            color: white;
-            padding: 15px 20px;
-        }
+header h1{
+    margin:12px 0 5px;
+    font-size:22px;
+}
 
-        .nav-container {
-            max-width: 1150px;
-            margin: auto;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 15px;
-        }
+header p{
+    margin:0;
+    opacity:.9;
+}
 
-        .logo {
-            font-size: 20px;
-            font-weight: bold;
-        }
+main{
+    max-width:900px;
+    margin:auto;
+    padding:18px 12px 40px;
+}
 
-        .nav-links {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
+.quick{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+    margin-bottom:18px;
+}
 
-        .nav-links a {
-            padding: 8px 12px;
-            border-radius: 8px;
-            background: rgba(255,255,255,.08);
-        }
+.quick a{
+    background:var(--green);
+    color:#fff;
+    text-decoration:none;
+    text-align:center;
+    padding:11px 8px;
+    border-radius:10px;
+    font-size:13px;
+    font-weight:bold;
+}
 
-        .container {
-            max-width: 1150px;
-            margin: 25px auto;
-            padding: 0 15px;
-        }
+.quick a:hover{
+    background:var(--dark);
+}
 
-        .card {
-            background: white;
-            border-radius: 15px;
-            padding: 20px;
-            margin-bottom: 20px;
-            box-shadow: 0 3px 15px rgba(0,0,0,.06);
-        }
+.notice{
+    background:#fff8df;
+    border:1px solid #e8d99b;
+    border-radius:12px;
+    padding:12px;
+    margin-bottom:18px;
+    font-size:13px;
+}
 
-        .grid {
-            display: grid;
-            grid-template-columns:
-                repeat(auto-fit, minmax(220px, 1fr));
-            gap: 18px;
-        }
+.card{
+    background:#fff;
+    border:1px solid var(--border);
+    border-radius:15px;
+    padding:17px;
+    margin-bottom:15px;
+    box-shadow:0 3px 12px rgba(0,0,0,.05);
+}
 
-        .icon-grid {
-            display: grid;
-            grid-template-columns:
-                repeat(auto-fit, minmax(150px, 1fr));
-            gap: 15px;
-        }
+.card h2,
+.card h3{
+    color:var(--dark);
+}
 
-        .icon-card {
-            background: white;
-            border-radius: 15px;
-            padding: 22px 15px;
-            text-align: center;
-            box-shadow: 0 3px 15px rgba(0,0,0,.06);
-            transition: .2s;
-        }
+input,
+textarea,
+select{
+    width:100%;
+    padding:10px;
+    border:1px solid #cbd5c4;
+    border-radius:8px;
+    font-family:inherit;
+    margin:5px 0 10px;
+}
 
-        .icon-card:hover {
-            transform: translateY(-3px);
-        }
+textarea{
+    min-height:100px;
+    resize:vertical;
+}
 
-        .icon {
-            font-size: 38px;
-            margin-bottom: 10px;
-        }
+.btn{
+    display:inline-block;
+    width:100%;
+    background:var(--green);
+    color:#fff;
+    text-decoration:none;
+    text-align:center;
+    border:0;
+    border-radius:10px;
+    padding:12px;
+    font-size:14px;
+    font-weight:bold;
+    cursor:pointer;
+}
 
-        h1,
-        h2,
-        h3 {
-            margin-top: 0;
-        }
+.btn:hover{
+    background:var(--dark);
+}
 
-        label {
-            display: block;
-            margin-bottom: 7px;
-            font-weight: bold;
-        }
+.btn-secondary{
+    background:#687782;
+}
 
-        input,
-        textarea,
-        select {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #d1d5db;
-            border-radius: 9px;
-            font-family: inherit;
-            margin-bottom: 15px;
-            background: white;
-        }
+.btn-success{
+    background:#3f6f42;
+}
 
-        textarea {
-            min-height: 110px;
-            resize: vertical;
-        }
+.badge{
+    display:inline-block;
+    background:#e4eadf;
+    color:var(--dark);
+    border-radius:20px;
+    padding:5px 10px;
+    font-size:12px;
+}
 
-        button,
-        .btn {
-            display: inline-block;
-            border: 0;
-            border-radius: 9px;
-            padding: 11px 17px;
-            cursor: pointer;
-            font-family: inherit;
-            background: #2563eb;
-            color: white;
-        }
+.price{
+    margin-top:12px;
+    padding:12px;
+    background:#f2f6ef;
+    border-radius:10px;
+    font-weight:bold;
+}
 
-        .btn-success {
-            background: #16a34a;
-        }
+.icon-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+    gap:12px;
+}
 
-        .btn-danger {
-            background: #dc2626;
-        }
+.icon-card{
+    display:block;
+    text-decoration:none;
+    color:#263126;
+    border:1px solid var(--border);
+    border-radius:12px;
+    padding:14px;
+    text-align:center;
+    background:#fafcf9;
+}
 
-        .btn-warning {
-            background: #d97706;
-        }
+.icon{
+    font-size:28px;
+    margin-bottom:8px;
+}
 
-        .btn-secondary {
-            background: #475569;
-        }
+.mini{
+    font-size:12px;
+    color:#687568;
+    margin-top:6px;
+}
 
-        .btn-dark {
-            background: #111827;
-        }
+hr{
+    border:0;
+    border-top:1px solid var(--border);
+    margin:18px 0;
+}
 
-        .alert {
-            padding: 13px 15px;
-            border-radius: 10px;
-            margin-bottom: 15px;
-            background: #e0f2fe;
-        }
+@media(max-width:500px){
 
-        .alert-error {
-            background: #fee2e2;
-            color: #991b1b;
-        }
+    .quick{
+        grid-template-columns:1fr 1fr;
+    }
 
-        .alert-success {
-            background: #dcfce7;
-            color: #166534;
-        }
+    header h1{
+        font-size:19px;
+    }
 
-        .badge {
-            display: inline-block;
-            padding: 5px 10px;
-            border-radius: 20px;
-            background: #e5e7eb;
-            font-size: 13px;
-        }
+}
 
-        .price {
-            font-size: 20px;
-            font-weight: bold;
-        }
+</style>
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        th,
-        td {
-            padding: 10px;
-            border-bottom: 1px solid #e5e7eb;
-            text-align: right;
-        }
-
-        .table-wrapper {
-            overflow-x: auto;
-        }
-
-        .chat {
-            max-height: 550px;
-            overflow-y: auto;
-            padding: 12px;
-            background: #f8fafc;
-            border-radius: 12px;
-        }
-
-        .message {
-            padding: 12px;
-            border-radius: 10px;
-            margin-bottom: 10px;
-            max-width: 85%;
-        }
-
-        .message-customer {
-            background: #dbeafe;
-            margin-left: auto;
-        }
-
-        .message-admin,
-        .message-expert {
-            background: #dcfce7;
-            margin-right: auto;
-        }
-
-        .message-system {
-            background: #f1f5f9;
-            margin: auto;
-        }
-
-        .status-box {
-            padding: 18px;
-            border-radius: 14px;
-            background: #f8fafc;
-            margin-bottom: 15px;
-        }
-
-        .status-title {
-            font-size: 14px;
-            color: #64748b;
-            margin-bottom: 6px;
-        }
-
-        .status-value {
-            font-size: 21px;
-            font-weight: bold;
-        }
-
-        .mini {
-            font-size: 13px;
-            color: #64748b;
-        }
-
-        footer {
-            margin-top: 40px;
-            padding: 25px;
-            background: #0f172a;
-            color: white;
-            text-align: center;
-        }
-
-        @media (max-width: 600px) {
-
-            .nav-container {
-                flex-direction: column;
-                align-items: stretch;
-            }
-
-            .nav-links {
-                justify-content: center;
-            }
-
-            .container {
-                margin-top: 15px;
-            }
-
-            table {
-                min-width: 700px;
-            }
-        }
-
-    </style>
-
-    {% block head %}{% endblock %}
+{% block head %}{% endblock %}
 
 </head>
 
-
 <body>
 
-<nav class="navbar">
+<header>
 
-    <div class="nav-container">
+{% if site.logo %}
 
-        <div class="logo">
-            {{ site_name|default("کافی نت آنلاین نوین") }}
-        </div>
+<img
+    src="{{ url_for('static', filename=site.logo) }}"
+    alt="لوگو"
+>
 
-        <div class="nav-links">
+{% endif %}
 
-            <a href="{{ url_for('home') }}">
-                🏠 خانه
-            </a>
+<h1>
+{{ site.site_name }}
+</h1>
 
-            <a href="{{ url_for('tracking') }}">
-                🔎 پیگیری
-            </a>
+<p>
+با مدیریت : {{ site.manager }}
+</p>
 
-            <a href="{{ url_for('admin_login') }}">
-                ⚙️ مدیریت
-            </a>
+</header>
 
-        </div>
+<main>
 
-    </div>
+<div class="quick">
 
-</nav>
+<a href="{{ url_for('tracking') }}">
+🔎 پیگیری درخواست
+</a>
 
+<a href="{{ url_for('support') }}">
+💬 ارتباط با پشتیبانی
+</a>
 
-<main class="container">
+</div>
 
-    {% with messages = get_flashed_messages(with_categories=true) %}
+{% if site.warning_text %}
 
-        {% if messages %}
+<div class="notice">
+⚠️ {{ site.warning_text }}
+</div>
 
-            {% for category, message in messages %}
+{% endif %}
 
-                <div class="alert
-                    {% if category == 'error' %}
-                        alert-error
-                    {% elif category == 'success' %}
-                        alert-success
-                    {% endif %}
-                ">
-
-                    {{ message }}
-
-                </div>
-
-            {% endfor %}
-
-        {% endif %}
-
-    {% endwith %}
-
-
-    {% block content %}
-
-        {% if content %}
-            {{ content }}
-        {% endif %}
-
-    {% endblock %}
+{% block content %}{% endblock %}
 
 </main>
-
-
-<footer>
-
-    <div>
-        {{ site_name|default("کافی نت آنلاین نوین") }}
-    </div>
-
-    <div style="margin-top:8px;">
-        با مدیریت
-        {{ manager|default("احمد محمدی مهر") }}
-    </div>
-
-    {% if phone %}
-
-        <div style="margin-top:8px;">
-            تلفن:
-            {{ phone }}
-        </div>
-
-    {% endif %}
-
-</footer>
-
-
-{% block scripts %}{% endblock %}
 
 </body>
 </html>
