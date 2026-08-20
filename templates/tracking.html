@@ -4,141 +4,51 @@
 پیگیری درخواست
 {% endblock %}
 
+
 {% block content %}
 
 <div class="card">
 
-    <h1>
-        🔎 پیگیری درخواست
-    </h1>
-
-    <form
-        method="POST"
-        action="{{ url_for('tracking') }}"
-    >
-
-        <label>
-            کد پیگیری ۴ رقمی
-        </label>
-
-        <input
-            type="text"
-            name="tracking_code"
-            maxlength="4"
-            minlength="4"
-            inputmode="numeric"
-            required
-            placeholder="مثلاً 4821"
-        >
-
-        <button
-            type="submit"
-            class="btn"
-        >
-            پیگیری
-        </button>
-
-    </form>
-
-</div>
+<h1>
+🔎 پیگیری درخواست
+</h1>
 
 
-{% if result %}
+<form method="POST" action="{{ url_for('tracking') }}">
 
-<div class="card">
-
-    <h2>
-        وضعیت پرونده
-    </h2>
-
-    <div class="status-box">
-
-        <div class="status-title">
-            کد پیگیری
-        </div>
-
-        <div class="status-value">
-            {{ result["tracking_code"] }}
-        </div>
-
-    </div>
-
-    <div class="status-box">
-
-        <div class="status-title">
-            خدمت
-        </div>
-
-        <div class="status-value">
-            {{ result["service_name"] }}
-        </div>
-
-    </div>
-
-    <div class="status-box">
-
-        <div class="status-title">
-            وضعیت
-        </div>
-
-        <div class="status-value">
-            {{ result["status"] }}
-        </div>
-
-    </div>
-
-    <div class="status-box">
-
-        <div class="status-title">
-            مدت زمان تقریبی انجام
-        </div>
-
-        <div class="status-value">
-
-            {% if result["estimated_time"] %}
-
-                {{ result["estimated_time"] }}
-
-            {% else %}
-
-                در حال بررسی
-
-            {% endif %}
-
-        </div>
-
-    </div>
+<label>
+کد پیگیری ۴ رقمی
+</label>
 
 
-    {% if result["admin_note"] %}
-
-        <div class="alert">
-
-            <strong>
-                توضیحات:
-            </strong>
-
-            <br>
-
-            {{ result["admin_note"] }}
-
-        </div>
-
-    {% endif %}
+<input
+type="text"
+name="tracking_code"
+maxlength="4"
+minlength="4"
+inputmode="numeric"
+required
+placeholder="مثلاً 4821"
+>
 
 
-    <a
-        href="{{ url_for(
-            'customer_request',
-            tracking_code=result['tracking_code']
-        ) }}"
-        class="btn"
-    >
-        💬 ارتباط با کارشناس
-    </a>
+<button class="btn" type="submit">
+پیگیری
+</button>
 
+
+</form>
+
+
+{% if error %}
+
+<div class="alert">
+{{ error }}
 </div>
 
 {% endif %}
+
+
+</div>
 
 {% endblock %}
