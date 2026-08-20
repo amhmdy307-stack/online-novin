@@ -239,22 +239,18 @@
 
     {% block head %}{% endblock %}
 </head>
-
 <body>
 
 <nav class="navbar">
     <div class="nav-container">
-
         <div class="logo">
             {{ site_name|default("کافی نت آنلاین نوین") }}
         </div>
-
         <div class="nav-links">
             <a href="{{ url_for('home') }}">خانه</a>
             <a href="{{ url_for('tracking') }}">پیگیری درخواست</a>
             <a href="{{ url_for('admin_login') }}">مدیریت</a>
         </div>
-
     </div>
 </nav>
 
@@ -263,17 +259,9 @@
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
             {% for category, message in messages %}
-
-                <div class="alert
-                    {% if category == 'error' %}
-                        alert-error
-                    {% elif category == 'success' %}
-                        alert-success
-                    {% endif %}
-                ">
+                <div class="alert {% if category == 'error' %}alert-error{% elif category == 'success' %}alert-success{% endif %}">
                     {{ message }}
                 </div>
-
             {% endfor %}
         {% endif %}
     {% endwith %}
@@ -283,21 +271,11 @@
 </main>
 
 <footer>
-
-    <div>
-        کافی نت آنلاین نوین
-    </div>
-
-    <div style="margin-top:8px;">
-        با مدیریت {{ manager|default("احمد محمدی مهر") }}
-    </div>
-
+    <div>کافی نت آنلاین نوین</div>
+    <div style="margin-top:8px;">با مدیریت {{ manager|default("احمد محمدی مهر") }}</div>
     {% if phone %}
-        <div style="margin-top:8px;">
-            تلفن: {{ phone }}
-        </div>
+        <div style="margin-top:8px;">تلفون: {{ phone }}</div>
     {% endif %}
-
 </footer>
 
 {% block scripts %}{% endblock %}
