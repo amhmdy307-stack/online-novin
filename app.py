@@ -1238,7 +1238,195 @@ def admin_reply():
     return redirect(
         url_for("admin")
     )
+# =============================================================
+# مدیریت کاربران مدیر
+# =============================================================
 
+@app.route(
+    "/admin/user/save",
+    methods=["POST"]
+)
+def admin_user_save():
+
+    guard = require_admin()
+
+    if guard:
+        return guard
+
+    # فقط مدیر ارشد اجازه مدیریت کاربران را دارد
+    if session.get("admin_role") != "superadmin":
+        return "دسترسی غیرمجاز", 403
+
+    admin_id = request.form.get(
+        "id",
+        ""
+    ).strip()
+
+    username = request.form.get(
+        "username",
+        ""
+    ).strip()
+
+    password = request.form.get(
+        "password",
+        ""
+    )
+
+    name = request.form.get(
+        "name",
+        ""
+    ).strip()
+
+    phone = request.form.get(
+        "phone",
+        ""
+    ).strip()
+
+    role = request.form.get(
+        "role",
+        "admin"
+    )
+
+    active = request.form.get(
+        "active",
+        "1"
+    )
+
+    if not username:
+        flash(
+            "نام کاربری الزامی است.",
+            "error"
+        )
+
+        return redirect(
+            url_for("admin")
+        )
+
+    if role not in (
+        "admin",
+        "operator",
+        "superadmin"
+    ):
+        role = "admin"
+
+    if active not in ("0", "1"):
+        active = "1"
+
+    con = get_connection()
+
+    try:
+
+        if admin_id:
+
+            # ویرایش کاربر موجود
+            if password:
+
+                con.execute(
+                    """
+                    UPDATE admins
+                    SET
+                        username = ?,
+                        password = ?,
+                        name = ?,
+                        phone = ?,
+                        role = ?,
+                        active = ?
+                    WHERE id = ?
+                    """,
+                    (
+                        username,
+                        password,
+                        name,
+                        phone,
+                        role,
+                        int(active),
+                        int(admin_id)
+                    )
+                )
+
+            else:
+
+                # اگر رمز خالی باشد، رمز قبلی حفظ می‌شود
+                con.execute(
+                    """
+                    UPDATE admins
+                    SET
+                        username = ?,
+                        name = ?,
+                        phone = ?,
+                        role = ?,
+                        active = ?
+                    WHERE id = ?
+                    """,
+                    (
+                        username,
+                        name,
+                        phone,
+                        role,
+                        int(active),
+                        int(admin_id)
+                    )
+                )
+
+        else:
+
+            # ایجاد کاربر جدید
+            if not password:
+                password = "123456"
+
+            con.execute(
+                """
+                INSERT INTO admins
+                (
+                    username,
+                    password,
+                    name,
+                    phone,
+                    role,
+                    active,
+                    notifications_enabled,
+                    created_at
+                )
+                VALUES
+                (
+                    ?,
+                    ?,
+                    ?,
+                    ?,
+                    ?,
+                    ?,
+                    1,
+                    datetime('now')
+                )
+                """,
+                (
+                    username,
+                    password,
+                    name,
+                    phone,
+                    role,
+                    int(active)
+                )
+            )
+
+        con.commit()
+
+    except Exception as e:
+
+        con.rollback()
+
+        flash(
+            "خطا در ذخیره کاربر: " + str(e),
+            "error"
+        )
+
+    finally:
+
+        con.close()
+
+    return redirect(
+        url_for("admin")
+    )
 
 
 # =============================================================
