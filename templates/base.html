@@ -6,24 +6,33 @@
 
     <title>
         {% block title %}
-            {{ site_name|default("کافی نت آنلاین نوین") }}
+        {{ site_name|default("کافی نت آنلاین نوین") }}
         {% endblock %}
     </title>
 
     <style>
-        * { box-sizing: border-box; }
+        * {
+            box-sizing: border-box;
+        }
+
         body {
             margin: 0;
             font-family: Tahoma, Arial, sans-serif;
             background: #f5f7fb;
             color: #1f2937;
         }
-        a { text-decoration: none; color: inherit; }
+
+        a {
+            text-decoration: none;
+            color: inherit;
+        }
+
         .navbar {
             background: #0f172a;
             color: white;
             padding: 15px 20px;
         }
+
         .nav-container {
             max-width: 1100px;
             margin: auto;
@@ -32,22 +41,30 @@
             align-items: center;
             gap: 15px;
         }
-        .logo { font-size: 20px; font-weight: bold; }
+
+        .logo {
+            font-size: 20px;
+            font-weight: bold;
+        }
+
         .nav-links {
             display: flex;
             gap: 10px;
             flex-wrap: wrap;
         }
+
         .nav-links a {
             padding: 8px 12px;
             border-radius: 8px;
             background: rgba(255,255,255,.08);
         }
+
         .container {
             max-width: 1100px;
             margin: 25px auto;
             padding: 0 15px;
         }
+
         .card {
             background: white;
             border-radius: 15px;
@@ -55,14 +72,26 @@
             margin-bottom: 20px;
             box-shadow: 0 3px 15px rgba(0,0,0,.06);
         }
+
         .grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
             gap: 18px;
         }
-        h1, h2, h3 { margin-top: 0; }
-        label { display: block; margin-bottom: 7px; font-weight: bold; }
-        input, textarea, select {
+
+        h1, h2, h3 {
+            margin-top: 0;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 7px;
+            font-weight: bold;
+        }
+
+        input,
+        textarea,
+        select {
             width: 100%;
             padding: 12px;
             border: 1px solid #d1d5db;
@@ -71,8 +100,14 @@
             margin-bottom: 15px;
             background: white;
         }
-        textarea { min-height: 110px; resize: vertical; }
-        button, .btn {
+
+        textarea {
+            min-height: 110px;
+            resize: vertical;
+        }
+
+        button,
+        .btn {
             display: inline-block;
             border: 0;
             border-radius: 9px;
@@ -82,18 +117,40 @@
             background: #2563eb;
             color: white;
         }
-        .btn-success { background: #16a34a; }
-        .btn-danger { background: #dc2626; }
-        .btn-warning { background: #d97706; }
-        .btn-secondary { background: #475569; }
+
+        .btn-success {
+            background: #16a34a;
+        }
+
+        .btn-danger {
+            background: #dc2626;
+        }
+
+        .btn-warning {
+            background: #d97706;
+        }
+
+        .btn-secondary {
+            background: #475569;
+        }
+
         .alert {
             padding: 13px 15px;
             border-radius: 10px;
             margin-bottom: 15px;
             background: #e0f2fe;
         }
-        .alert-error { background: #fee2e2; color: #991b1b; }
-        .alert-success { background: #dcfce7; color: #166534; }
+
+        .alert-error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .alert-success {
+            background: #dcfce7;
+            color: #166534;
+        }
+
         .badge {
             display: inline-block;
             padding: 5px 10px;
@@ -101,11 +158,32 @@
             background: #e5e7eb;
             font-size: 13px;
         }
-        .status { font-weight: bold; }
-        .price { font-size: 20px; font-weight: bold; }
-        table { width: 100%; border-collapse: collapse; }
-        th, td { padding: 10px; border-bottom: 1px solid #e5e7eb; text-align: right; }
-        .table-wrapper { overflow-x: auto; }
+
+        .status {
+            font-weight: bold;
+        }
+
+        .price {
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            padding: 10px;
+            border-bottom: 1px solid #e5e7eb;
+            text-align: right;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
         .chat {
             max-height: 500px;
             overflow-y: auto;
@@ -113,14 +191,24 @@
             background: #f8fafc;
             border-radius: 12px;
         }
+
         .message {
             padding: 10px;
             border-radius: 10px;
             margin-bottom: 10px;
             max-width: 85%;
         }
-        .message-customer { background: #dbeafe; margin-left: auto; }
-        .message-admin { background: #dcfce7; margin-right: auto; }
+
+        .message-customer {
+            background: #dbeafe;
+            margin-left: auto;
+        }
+
+        .message-admin {
+            background: #dcfce7;
+            margin-right: auto;
+        }
+
         footer {
             margin-top: 40px;
             padding: 25px;
@@ -128,28 +216,45 @@
             color: white;
             text-align: center;
         }
+
         @media (max-width: 600px) {
-            .nav-container { flex-direction: column; align-items: stretch; }
-            .nav-links { justify-content: center; }
-            .container { margin-top: 15px; }
-            table { min-width: 700px; }
+            .nav-container {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .nav-links {
+                justify-content: center;
+            }
+
+            .container {
+                margin-top: 15px;
+            }
+
+            table {
+                min-width: 700px;
+            }
         }
     </style>
 
     {% block head %}{% endblock %}
 </head>
+
 <body>
 
 <nav class="navbar">
     <div class="nav-container">
+
         <div class="logo">
             {{ site_name|default("کافی نت آنلاین نوین") }}
         </div>
+
         <div class="nav-links">
             <a href="{{ url_for('home') }}">خانه</a>
             <a href="{{ url_for('tracking') }}">پیگیری درخواست</a>
             <a href="{{ url_for('admin_login') }}">مدیریت</a>
         </div>
+
     </div>
 </nav>
 
@@ -158,9 +263,17 @@
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
             {% for category, message in messages %}
-                <div class="alert {% if category == 'error' %}alert-error{% elif category == 'success' %}alert-success{% endif %}">
+
+                <div class="alert
+                    {% if category == 'error' %}
+                        alert-error
+                    {% elif category == 'success' %}
+                        alert-success
+                    {% endif %}
+                ">
                     {{ message }}
                 </div>
+
             {% endfor %}
         {% endif %}
     {% endwith %}
@@ -170,11 +283,21 @@
 </main>
 
 <footer>
-    <div>کافی نت آنلاین نوین</div>
-    <div style="margin-top:8px;">با مدیریت {{ manager|default("احمد محمدی مهر") }}</div>
+
+    <div>
+        کافی نت آنلاین نوین
+    </div>
+
+    <div style="margin-top:8px;">
+        با مدیریت {{ manager|default("احمد محمدی مهر") }}
+    </div>
+
     {% if phone %}
-        <div style="margin-top:8px;">تلفن: {{ phone }}</div>
+        <div style="margin-top:8px;">
+            تلفن: {{ phone }}
+        </div>
     {% endif %}
+
 </footer>
 
 {% block scripts %}{% endblock %}
