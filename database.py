@@ -5,10 +5,6 @@ from datetime import datetime
 DB_NAME = "site.db"
 
 
-# =============================================================
-# ابزارهای پایه
-# =============================================================
-
 def now():
     return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
@@ -21,10 +17,7 @@ def get_connection():
 
 
 def column_exists(cur, table, column):
-    rows = cur.execute(
-        f"PRAGMA table_info({table})"
-    ).fetchall()
-
+    rows = cur.execute(f"PRAGMA table_info({table})").fetchall()
     return any(row["name"] == column for row in rows)
 
 
@@ -34,10 +27,6 @@ def add_column(cur, table, column, definition):
             f"ALTER TABLE {table} ADD COLUMN {column} {definition}"
         )
 
-
-# =============================================================
-# ساخت دیتابیس
-# =============================================================
 
 def create_tables():
 
@@ -299,10 +288,6 @@ def create_tables():
 
     """)
 
-    # =========================================================
-    # ارتقای دیتابیس قبلی
-    # =========================================================
-
     add_column(cur, "services", "system_id", "INTEGER")
     add_column(cur, "services", "parent_id", "INTEGER")
 
@@ -329,16 +314,11 @@ def create_tables():
     add_column(cur, "files", "admin_id", "INTEGER")
     add_column(cur, "files", "downloadable", "INTEGER DEFAULT 1")
 
-    # =========================================================
-    # مدیر اصلی
-    # =========================================================
-
     admin = cur.execute(
         "SELECT id FROM admins ORDER BY id LIMIT 1"
     ).fetchone()
 
     if not admin:
-
         cur.execute(
             """
             INSERT INTO admins
@@ -363,9 +343,7 @@ def create_tables():
                 now()
             )
         )
-
     else:
-
         cur.execute(
             """
             UPDATE admins
@@ -375,63 +353,26 @@ def create_tables():
             (admin["id"],)
         )
 
-    # =========================================================
-    # تنظیمات سایت
-    # =========================================================
-
     defaults = {
-
-        "site_name":
-            "کافی‌نت آنلاین نوین",
-
-        "manager":
-            "احمد محمدی مهر",
-
-        "phone":
-            "09920345139",
-
-        "logo":
-            "",
-
-        "tracking_prefix":
-            "",
-
-        "tracking_digits":
-            "3",
-
-        "tracking_separator":
-            "",
-
-        "warning_text":
-            "توجه: پرداخت هزینه خدمات فقط از طریق درگاه رسمی همین سایت انجام می‌شود.",
-
-        "currency":
-            "ریال",
-
-        "free_request_after_100_discount":
-            "1",
-
-        "notifications_once_permission":
-            "1",
-
-        "admin_request_notification":
-            "1",
-
-        "customer_request_notification":
-            "1",
-
-        "support_enabled":
-            "1",
-
-        "support_title":
-            "ارتباط با پشتیبانی",
-
-        "support_description":
-            "در صورت نیاز به راهنمایی یا پیگیری، پیام خود را برای پشتیبانی ارسال کنید."
+        "site_name": "کافی‌نت آنلاین نوین",
+        "manager": "احمد محمدی مهر",
+        "phone": "09920345139",
+        "logo": "",
+        "tracking_prefix": "",
+        "tracking_digits": "3",
+        "tracking_separator": "",
+        "warning_text": "توجه: پرداخت هزینه خدمات فقط از طریق درگاه رسمی همین سایت انجام می‌شود.",
+        "currency": "ریال",
+        "free_request_after_100_discount": "1",
+        "notifications_once_permission": "1",
+        "admin_request_notification": "1",
+        "customer_request_notification": "1",
+        "support_enabled": "1",
+        "support_title": "ارتباط با پشتیبانی",
+        "support_description": "در صورت نیاز به راهنمایی یا پیگیری، پیام خود را برای پشتیبانی ارسال کنید."
     }
 
     for key, value in defaults.items():
-
         cur.execute(
             """
             INSERT OR IGNORE INTO settings(key, value)
@@ -440,60 +381,26 @@ def create_tables():
             (key, value)
         )
 
-    # =========================================================
-    # پیامک
-    # =========================================================
-
     cur.execute(
         """
         INSERT OR IGNORE INTO sms_settings
-        (
-            id,
-            enabled,
-            provider,
-            api_key,
-            api_secret,
-            sender
-        )
+        (id, enabled, provider, api_key, api_secret, sender)
         VALUES (1, 0, '', '', '', '')
         """
     )
 
-    # =========================================================
-    # درگاه
-    # =========================================================
-
     cur.execute(
         """
         INSERT OR IGNORE INTO payment_settings
-        (
-            id,
-            enabled,
-            gateway,
-            merchant_id,
-            username,
-            password,
-            api_key,
-            test_mode
-        )
+        (id, enabled, gateway, merchant_id, username, password, api_key, test_mode)
         VALUES (1, 0, '', '', '', '', '', 1)
         """
     )
 
-    # =========================================================
-    # اعلان
-    # =========================================================
-
     cur.execute(
         """
         INSERT OR IGNORE INTO notification_settings
-        (
-            id,
-            browser_enabled,
-            customer_enabled,
-            admin_enabled,
-            sms_enabled
-        )
+        (id, browser_enabled, customer_enabled, admin_enabled, sms_enabled)
         VALUES (1, 1, 1, 1, 0)
         """
     )
@@ -501,10 +408,6 @@ def create_tables():
     con.commit()
     con.close()
 
-
-# =============================================================
-# مشتری
-# =============================================================
 
 def create_customer(name, national_id="", phone=""):
 
@@ -525,45 +428,23 @@ def create_customer(name, national_id="", phone=""):
     ).fetchone()
 
     if customer:
-
         customer_id = customer["id"]
 
         cur.execute(
             """
             UPDATE customers
-            SET
-                name = ?,
-                national_id = ?,
-                phone = ?
+            SET name = ?, national_id = ?, phone = ?
             WHERE id = ?
             """,
-            (
-                name,
-                national_id,
-                phone,
-                customer_id
-            )
+            (name, national_id, phone, customer_id)
         )
-
     else:
-
         cur.execute(
             """
-            INSERT INTO customers
-            (
-                name,
-                national_id,
-                phone,
-                created_at
-            )
+            INSERT INTO customers(name, national_id, phone, created_at)
             VALUES (?, ?, ?, ?)
             """,
-            (
-                name,
-                national_id,
-                phone,
-                now()
-            )
+            (name, national_id, phone, now())
         )
 
         customer_id = cur.lastrowid
@@ -574,17 +455,7 @@ def create_customer(name, national_id="", phone=""):
     return customer_id
 
 
-# =============================================================
-# سامانه
-# =============================================================
-
-def add_system(
-    name,
-    description="",
-    image="",
-    active=1,
-    sort_order=0
-):
+def add_system(name, description="", image="", active=1, sort_order=0):
 
     con = get_connection()
     cur = con.cursor()
@@ -592,24 +463,10 @@ def add_system(
     cur.execute(
         """
         INSERT INTO systems
-        (
-            name,
-            description,
-            image,
-            active,
-            sort_order,
-            created_at
-        )
+        (name, description, image, active, sort_order, created_at)
         VALUES (?, ?, ?, ?, ?, ?)
         """,
-        (
-            name,
-            description,
-            image,
-            active,
-            sort_order,
-            now()
-        )
+        (name, description, image, active, sort_order, now())
     )
 
     system_id = cur.lastrowid
@@ -619,10 +476,6 @@ def add_system(
 
     return system_id
 
-
-# =============================================================
-# خدمت
-# =============================================================
 
 def add_service(
     name,
@@ -684,10 +537,6 @@ def add_service(
     return service_id
 
 
-# =============================================================
-# درخواست مشتری
-# =============================================================
-
 def add_request(
     customer_id,
     service_id,
@@ -732,49 +581,30 @@ def add_request(
 
     request_id = cur.lastrowid
 
-    # =========================================================
-    # اعلان ثبت درخواست برای همه مدیران
-    # =========================================================
-
     setting = cur.execute(
         """
-        SELECT value
-        FROM settings
+        SELECT value FROM settings
         WHERE key = 'admin_request_notification'
         """
     ).fetchone()
 
-    notification_enabled = True
-
-    if setting and str(setting["value"]) == "0":
-        notification_enabled = False
-
-    if notification_enabled:
+    if not setting or str(setting["value"]) != "0":
 
         admins = cur.execute(
             """
-            SELECT id
-            FROM admins
+            SELECT id FROM admins
             WHERE active = 1
             AND notifications_enabled = 1
             """
         ).fetchall()
 
         customer = cur.execute(
-            """
-            SELECT name
-            FROM customers
-            WHERE id = ?
-            """,
+            "SELECT name FROM customers WHERE id = ?",
             (customer_id,)
         ).fetchone()
 
         service = cur.execute(
-            """
-            SELECT name
-            FROM services
-            WHERE id = ?
-            """,
+            "SELECT name FROM services WHERE id = ?",
             (service_id,)
         ).fetchone()
 
@@ -782,7 +612,6 @@ def add_request(
         service_name = service["name"] if service else "خدمت"
 
         for admin in admins:
-
             cur.execute(
                 """
                 INSERT INTO notifications
@@ -811,10 +640,6 @@ def add_request(
     return request_id
 
 
-# =============================================================
-# پذیرش پرونده توسط مدیر / کارشناس
-# =============================================================
-
 def accept_request(
     request_id,
     admin_id,
@@ -827,12 +652,7 @@ def accept_request(
 
     request = cur.execute(
         """
-        SELECT
-            id,
-            status,
-            assigned_admin_id,
-            customer_id,
-            tracking_code
+        SELECT id,status,assigned_admin_id,customer_id,tracking_code
         FROM requests
         WHERE id = ?
         """,
@@ -840,16 +660,15 @@ def accept_request(
     ).fetchone()
 
     if not request:
-
         con.close()
         return False
 
-    if request["assigned_admin_id"] is not None:
-
-        if request["assigned_admin_id"] != admin_id:
-
-            con.close()
-            return False
+    if (
+        request["assigned_admin_id"] is not None
+        and request["assigned_admin_id"] != admin_id
+    ):
+        con.close()
+        return False
 
     current_time = now()
 
@@ -865,10 +684,10 @@ def accept_request(
             updated_at = ?
         WHERE id = ?
         AND
-            (
-                assigned_admin_id IS NULL
-                OR assigned_admin_id = ?
-            )
+        (
+            assigned_admin_id IS NULL
+            OR assigned_admin_id = ?
+        )
         """,
         (
             admin_id,
@@ -908,9 +727,7 @@ def accept_request(
             )
         )
 
-        # اعلان برای مشتری
         if request["customer_id"]:
-
             cur.execute(
                 """
                 INSERT INTO notifications
@@ -939,10 +756,6 @@ def accept_request(
     return success
 
 
-# =============================================================
-# تغییر وضعیت درخواست
-# =============================================================
-
 def update_request_status(
     request_id,
     admin_id,
@@ -957,10 +770,7 @@ def update_request_status(
 
     request = cur.execute(
         """
-        SELECT
-            status,
-            customer_id,
-            tracking_code
+        SELECT status,customer_id,tracking_code
         FROM requests
         WHERE id = ?
         """,
@@ -968,17 +778,13 @@ def update_request_status(
     ).fetchone()
 
     if not request:
-
         con.close()
         return False
 
     old_status = request["status"]
 
-    if estimated_time is None:
-        estimated_time = ""
-
-    if expert_name is None:
-        expert_name = ""
+    estimated_time = estimated_time or ""
+    expert_name = expert_name or ""
 
     current_time = now()
 
@@ -988,15 +794,9 @@ def update_request_status(
         SET
             status = ?,
             estimated_time =
-                CASE
-                    WHEN ? != '' THEN ?
-                    ELSE estimated_time
-                END,
+                CASE WHEN ? != '' THEN ? ELSE estimated_time END,
             expert_name =
-                CASE
-                    WHEN ? != '' THEN ?
-                    ELSE expert_name
-                END,
+                CASE WHEN ? != '' THEN ? ELSE expert_name END,
             customer_note = ?,
             updated_at = ?
         WHERE id = ?
@@ -1040,13 +840,12 @@ def update_request_status(
             )
         )
 
-        # =====================================================
-        # اعلان تغییر وضعیت برای مشتری
-        # =====================================================
-
         if request["customer_id"]:
 
-            message = f"وضعیت درخواست شما از «{old_status}» به «{status}» تغییر کرد."
+            message = (
+                f"وضعیت درخواست شما از «{old_status}» "
+                f"به «{status}» تغییر کرد."
+            )
 
             if description:
                 message += f" توضیحات: {description}"
@@ -1079,10 +878,6 @@ def update_request_status(
     return success
 
 
-# =============================================================
-# پیام
-# =============================================================
-
 def add_message(
     request_id,
     customer_id=None,
@@ -1097,10 +892,7 @@ def add_message(
 
     request = cur.execute(
         """
-        SELECT
-            customer_id,
-            assigned_admin_id,
-            tracking_code
+        SELECT customer_id,assigned_admin_id,tracking_code
         FROM requests
         WHERE id = ?
         """,
@@ -1108,7 +900,6 @@ def add_message(
     ).fetchone()
 
     if not request:
-
         con.close()
         return None
 
@@ -1141,23 +932,17 @@ def add_message(
 
     message_id = cur.lastrowid
 
-    # =========================================================
-    # مشتری پیام داده → اعلان برای مدیران
-    # =========================================================
-
     if sender == "customer":
 
         admins = cur.execute(
             """
-            SELECT id
-            FROM admins
+            SELECT id FROM admins
             WHERE active = 1
             AND notifications_enabled = 1
             """
         ).fetchall()
 
         for admin in admins:
-
             cur.execute(
                 """
                 INSERT INTO notifications
@@ -1180,10 +965,6 @@ def add_message(
                 )
             )
 
-    # =========================================================
-    # مدیر / کارشناس پیام داده → اعلان برای مشتری
-    # =========================================================
-
     else:
 
         target_customer_id = request["customer_id"] or customer_id
@@ -1196,8 +977,7 @@ def add_message(
 
                 admin = cur.execute(
                     """
-                    SELECT name
-                    FROM admins
+                    SELECT name FROM admins
                     WHERE id = ?
                     """,
                     (sender_admin_id,)
@@ -1234,20 +1014,11 @@ def add_message(
     return message_id
 
 
-# =============================================================
-# ارتباط مستقیم با پشتیبانی
-# =============================================================
-
-def create_support_request(
-    customer_id,
-    message="",
-    admin_id=None
-):
+def create_support_request(customer_id, message="", admin_id=None):
 
     con = get_connection()
     cur = con.cursor()
 
-    # اگر برای پشتیبانی درخواست اختصاصی وجود داشته باشد
     existing = cur.execute(
         """
         SELECT id
@@ -1262,12 +1033,12 @@ def create_support_request(
     ).fetchone()
 
     if existing:
-
         request_id = existing["id"]
-
     else:
 
-        tracking_code = f"SUP-{datetime.now().strftime('%Y%m%d%H%M%S')}"
+        tracking_code = (
+            f"SUP-{datetime.now().strftime('%Y%m%d%H%M%S')}"
+        )
 
         cur.execute(
             """
@@ -1301,7 +1072,6 @@ def create_support_request(
     con.close()
 
     if message:
-
         add_message(
             request_id=request_id,
             customer_id=customer_id,
@@ -1312,15 +1082,7 @@ def create_support_request(
     return request_id
 
 
-# =============================================================
-# پیام پشتیبانی
-# =============================================================
-
-def add_support_message(
-    customer_id,
-    message,
-    admin_id=None
-):
+def add_support_message(customer_id, message, admin_id=None):
 
     request_id = create_support_request(
         customer_id=customer_id
@@ -1334,10 +1096,6 @@ def add_support_message(
         sender_admin_id=admin_id
     )
 
-
-# =============================================================
-# اعلان مشتری
-# =============================================================
 
 def add_customer_notification(
     customer_id,
@@ -1379,10 +1137,6 @@ def add_customer_notification(
     return notification_id
 
 
-# =============================================================
-# اعلان ادمین
-# =============================================================
-
 def add_admin_notification(
     admin_id,
     title,
@@ -1423,30 +1177,20 @@ def add_admin_notification(
     return notification_id
 
 
-# =============================================================
-# اعلان همه مدیران
-# =============================================================
-
-def notify_all_admins(
-    title,
-    message,
-    request_id=None
-):
+def notify_all_admins(title, message, request_id=None):
 
     con = get_connection()
     cur = con.cursor()
 
     admins = cur.execute(
         """
-        SELECT id
-        FROM admins
+        SELECT id FROM admins
         WHERE active = 1
         AND notifications_enabled = 1
         """
     ).fetchall()
 
     for admin in admins:
-
         cur.execute(
             """
             INSERT INTO notifications
@@ -1472,10 +1216,6 @@ def notify_all_admins(
     con.commit()
     con.close()
 
-
-# =============================================================
-# افزودن ادمین
-# =============================================================
 
 def add_admin(
     username,
@@ -1520,10 +1260,6 @@ def add_admin(
 
     return admin_id
 
-
-# =============================================================
-# دسترسی ادمین
-# =============================================================
 
 def set_admin_permission(
     admin_id,
@@ -1571,7 +1307,6 @@ def remove_admin_permission(
     cur = con.cursor()
 
     if system_id is None and service_id is None:
-
         cur.execute(
             """
             DELETE FROM admin_permissions
@@ -1580,14 +1315,10 @@ def remove_admin_permission(
             AND system_id IS NULL
             AND service_id IS NULL
             """,
-            (
-                admin_id,
-                permission
-            )
+            (admin_id, permission)
         )
 
     elif system_id is None:
-
         cur.execute(
             """
             DELETE FROM admin_permissions
@@ -1596,15 +1327,10 @@ def remove_admin_permission(
             AND system_id IS NULL
             AND service_id = ?
             """,
-            (
-                admin_id,
-                permission,
-                service_id
-            )
+            (admin_id, permission, service_id)
         )
 
     elif service_id is None:
-
         cur.execute(
             """
             DELETE FROM admin_permissions
@@ -1613,15 +1339,10 @@ def remove_admin_permission(
             AND system_id = ?
             AND service_id IS NULL
             """,
-            (
-                admin_id,
-                permission,
-                system_id
-            )
+            (admin_id, permission, system_id)
         )
 
     else:
-
         cur.execute(
             """
             DELETE FROM admin_permissions
@@ -1654,7 +1375,7 @@ def has_permission(
 
     admin = cur.execute(
         """
-        SELECT role, active
+        SELECT role,active
         FROM admins
         WHERE id = ?
         """,
@@ -1662,12 +1383,10 @@ def has_permission(
     ).fetchone()
 
     if not admin or not admin["active"]:
-
         con.close()
         return False
 
     if admin["role"] == "superadmin":
-
         con.close()
         return True
 
@@ -1702,10 +1421,6 @@ def has_permission(
 
     return row is not None
 
-
-# =============================================================
-# فایل
-# =============================================================
 
 def add_file(
     request_id,
@@ -1758,10 +1473,6 @@ def add_file(
     return file_id
 
 
-# =============================================================
-# تراکنش مالی
-# =============================================================
-
 def add_financial_transaction(
     amount,
     transaction_type="income",
@@ -1813,10 +1524,6 @@ def add_financial_transaction(
     return transaction_id
 
 
-# =============================================================
-# پرداخت
-# =============================================================
-
 def add_payment(
     customer_id,
     request_id,
@@ -1865,30 +1572,24 @@ def add_payment(
     return payment_id
 
 
-def mark_payment_paid(
-    payment_id,
-    transaction_id=""
-):
+def mark_payment_paid(payment_id, transaction_id=""):
 
     con = get_connection()
     cur = con.cursor()
 
     payment = cur.execute(
         """
-        SELECT *
-        FROM payments
+        SELECT * FROM payments
         WHERE id = ?
         """,
         (payment_id,)
     ).fetchone()
 
     if not payment:
-
         con.close()
         return False
 
     if payment["status"] == "paid":
-
         con.close()
         return False
 
@@ -1897,8 +1598,7 @@ def mark_payment_paid(
     cur.execute(
         """
         UPDATE payments
-        SET
-            status = 'paid',
+        SET status = 'paid',
             transaction_id = ?,
             paid_at = ?
         WHERE id = ?
@@ -1911,12 +1611,10 @@ def mark_payment_paid(
     )
 
     if payment["request_id"]:
-
         cur.execute(
             """
             UPDATE requests
-            SET
-                paid_price = paid_price + ?,
+            SET paid_price = paid_price + ?,
                 updated_at = ?
             WHERE id = ?
             """,
@@ -1953,9 +1651,7 @@ def mark_payment_paid(
         )
     )
 
-    # اعلان پرداخت موفق برای مشتری
     if payment["customer_id"]:
-
         cur.execute(
             """
             INSERT INTO notifications
@@ -1983,10 +1679,6 @@ def mark_payment_paid(
 
     return True
 
-
-# =============================================================
-# کد تخفیف
-# =============================================================
 
 def add_discount_code(
     code,
@@ -2043,8 +1735,7 @@ def use_discount_code(code):
 
     row = cur.execute(
         """
-        SELECT *
-        FROM discount_codes
+        SELECT * FROM discount_codes
         WHERE code = ?
         AND active = 1
         """,
@@ -2052,16 +1743,12 @@ def use_discount_code(code):
     ).fetchone()
 
     if not row:
-
         con.close()
         return None
 
-    if row["max_uses"] > 0:
-
-        if row["used_count"] >= row["max_uses"]:
-
-            con.close()
-            return None
+    if row["max_uses"] > 0 and row["used_count"] >= row["max_uses"]:
+        con.close()
+        return None
 
     cur.execute(
         """
@@ -2078,10 +1765,6 @@ def use_discount_code(code):
     return row
 
 
-# =============================================================
-# تنظیمات
-# =============================================================
-
 def get_setting(key, default=""):
 
     con = get_connection()
@@ -2089,8 +1772,7 @@ def get_setting(key, default=""):
 
     row = cur.execute(
         """
-        SELECT value
-        FROM settings
+        SELECT value FROM settings
         WHERE key = ?
         """,
         (key,)
@@ -2098,10 +1780,7 @@ def get_setting(key, default=""):
 
     con.close()
 
-    if row:
-        return row["value"]
-
-    return default
+    return row["value"] if row else default
 
 
 def set_setting(key, value):
@@ -2116,19 +1795,12 @@ def set_setting(key, value):
         ON CONFLICT(key)
         DO UPDATE SET value = excluded.value
         """,
-        (
-            key,
-            value
-        )
+        (key, value)
     )
 
     con.commit()
     con.close()
 
-
-# =============================================================
-# اعلان‌های خوانده‌نشده مشتری
-# =============================================================
 
 def unread_customer_notifications(customer_id):
 
@@ -2151,10 +1823,6 @@ def unread_customer_notifications(customer_id):
     return rows
 
 
-# =============================================================
-# اعلان‌های خوانده‌نشده ادمین
-# =============================================================
-
 def unread_admin_notifications(admin_id):
 
     con = get_connection()
@@ -2176,10 +1844,6 @@ def unread_admin_notifications(admin_id):
     return rows
 
 
-# =============================================================
-# همه اعلان‌های مشتری
-# =============================================================
-
 def get_customer_notifications(customer_id, limit=50):
 
     con = get_connection()
@@ -2193,20 +1857,13 @@ def get_customer_notifications(customer_id, limit=50):
         ORDER BY id DESC
         LIMIT ?
         """,
-        (
-            customer_id,
-            limit
-        )
+        (customer_id, limit)
     ).fetchall()
 
     con.close()
 
     return rows
 
-
-# =============================================================
-# همه اعلان‌های ادمین
-# =============================================================
 
 def get_admin_notifications(admin_id, limit=50):
 
@@ -2221,20 +1878,13 @@ def get_admin_notifications(admin_id, limit=50):
         ORDER BY id DESC
         LIMIT ?
         """,
-        (
-            admin_id,
-            limit
-        )
+        (admin_id, limit)
     ).fetchall()
 
     con.close()
 
     return rows
 
-
-# =============================================================
-# خواندن اعلان
-# =============================================================
 
 def mark_notification_read(notification_id):
 
@@ -2254,10 +1904,6 @@ def mark_notification_read(notification_id):
     con.close()
 
 
-# =============================================================
-# خواندن همه اعلان‌های مشتری
-# =============================================================
-
 def mark_all_customer_notifications_read(customer_id):
 
     con = get_connection()
@@ -2275,10 +1921,6 @@ def mark_all_customer_notifications_read(customer_id):
     con.commit()
     con.close()
 
-
-# =============================================================
-# خواندن همه اعلان‌های ادمین
-# =============================================================
 
 def mark_all_admin_notifications_read(admin_id):
 
@@ -2298,14 +1940,7 @@ def mark_all_admin_notifications_read(admin_id):
     con.close()
 
 
-# =============================================================
-# وضعیت اعلان مدیر
-# =============================================================
-
-def set_admin_notification_permission(
-    admin_id,
-    enabled
-):
+def set_admin_notification_permission(admin_id, enabled):
 
     con = get_connection()
     cur = con.cursor()
@@ -2325,10 +1960,6 @@ def set_admin_notification_permission(
     con.commit()
     con.close()
 
-
-# =============================================================
-# تاریخچه پرونده
-# =============================================================
 
 def get_request_history(request_id):
 
@@ -2354,10 +1985,6 @@ def get_request_history(request_id):
     return rows
 
 
-# =============================================================
-# پیام‌های پرونده
-# =============================================================
-
 def get_request_messages(request_id):
 
     con = get_connection()
@@ -2382,10 +2009,6 @@ def get_request_messages(request_id):
     return rows
 
 
-# =============================================================
-# پیام‌های پشتیبانی مشتری
-# =============================================================
-
 def get_support_messages(customer_id):
 
     con = get_connection()
@@ -2402,9 +2025,8 @@ def get_support_messages(customer_id):
             ON requests.id = messages.request_id
         LEFT JOIN admins
             ON admins.id = messages.sender_admin_id
-        WHERE
-            requests.customer_id = ?
-            AND requests.service_id IS NULL
+        WHERE requests.customer_id = ?
+        AND requests.service_id IS NULL
         ORDER BY messages.id ASC
         """,
         (customer_id,)
@@ -2414,10 +2036,6 @@ def get_support_messages(customer_id):
 
     return rows
 
-
-# =============================================================
-# پرونده‌های مشتری
-# =============================================================
 
 def get_customer_requests(customer_id):
 
@@ -2446,10 +2064,6 @@ def get_customer_requests(customer_id):
     return rows
 
 
-# =============================================================
-# تراکنش‌های مالی
-# =============================================================
-
 def get_financial_transactions():
 
     con = get_connection()
@@ -2474,10 +2088,6 @@ def get_financial_transactions():
 
     return rows
 
-
-# =============================================================
-# خلاصه مالی
-# =============================================================
 
 def get_financial_summary():
 
@@ -2509,12 +2119,6 @@ def get_financial_summary():
     }
 
 
-# =============================================================
-# اجرای اولیه
-# =============================================================
-
 if __name__ == "__main__":
-
     create_tables()
-
     print("Database initialized successfully.")
