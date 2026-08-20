@@ -1,107 +1,213 @@
-{% extends "base.html" %}
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{{ site.site_name }}</title>
 
-{% block title %}
-{{ site_name|default("کافی نت آنلاین نوین") }}
-{% endblock %}
+<style>
+:root{
+    --green:#3f5f32;
+    --green2:#526f3a;
+    --dark:#263b20;
+    --light:#eef2ea;
+    --border:#d5ddcf;
+    --white:#fff;
+}
 
-{% block content %}
+*{
+    box-sizing:border-box;
+}
 
-<div class="card" style="text-align:center;">
-    <h1>کافی نت آنلاین نوین</h1>
+body{
+    margin:0;
+    background:var(--light);
+    color:#263126;
+    font-family:Tahoma,Arial,sans-serif;
+}
 
-    <p>
-        ارائه خدمات کافی‌نت به صورت غیرحضوری
-    </p>
+header{
+    background:linear-gradient(135deg,var(--dark),var(--green));
+    color:#fff;
+    text-align:center;
+    padding:24px 15px;
+}
 
-    <p>
-        با مدیریت {{ manager|default("احمد محمدی مهر") }}
-    </p>
+header img{
+    width:90px;
+    height:90px;
+    object-fit:contain;
+    border-radius:50%;
+    background:#fff;
+    padding:5px;
+}
 
-    {% if phone %}
-        <p>شماره تماس: {{ phone }}</p>
-    {% endif %}
+header h1{
+    margin:12px 0 5px;
+    font-size:22px;
+}
+
+header p{
+    margin:0;
+    opacity:.9;
+}
+
+main{
+    max-width:900px;
+    margin:auto;
+    padding:18px 12px 40px;
+}
+
+.quick{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+    margin-bottom:18px;
+}
+
+.quick a{
+    background:var(--green);
+    color:#fff;
+    text-decoration:none;
+    text-align:center;
+    padding:13px 8px;
+    border-radius:11px;
+    font-size:14px;
+    font-weight:bold;
+}
+
+.quick a:hover{
+    background:var(--dark);
+}
+
+.notice{
+    background:#fff8df;
+    border:1px solid #e8d99b;
+    border-radius:12px;
+    padding:12px;
+    margin-bottom:18px;
+    font-size:13px;
+}
+
+h2{
+    color:var(--dark);
+    margin:15px 0;
+}
+
+.services{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+    gap:14px;
+}
+
+.card{
+    background:#fff;
+    border:1px solid var(--border);
+    border-radius:15px;
+    padding:17px;
+    box-shadow:0 3px 12px rgba(0,0,0,.05);
+}
+
+.card h3{
+    margin:0 0 8px;
+    color:var(--dark);
+}
+
+.card p{
+    color:#65705f;
+    font-size:14px;
+    line-height:1.8;
+}
+
+.btn{
+    display:block;
+    width:100%;
+    background:var(--green);
+    color:#fff;
+    text-decoration:none;
+    text-align:center;
+    border:0;
+    border-radius:10px;
+    padding:12px;
+    font-size:14px;
+    font-weight:bold;
+}
+
+.btn:hover{
+    background:var(--dark);
+}
+
+@media(max-width:500px){
+    .services{
+        grid-template-columns:1fr;
+    }
+
+    header h1{
+        font-size:19px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+
+{% if site.logo %}
+<img src="{{ url_for('static',filename=site.logo) }}" alt="لوگو">
+{% endif %}
+
+<h1>{{ site.site_name }}</h1>
+<p>با مدیریت : {{ site.manager }}</p>
+
+</header>
+
+<main>
+
+<div class="quick">
+
+<a href="{{ url_for('tracking') }}">
+🔎 پیگیری درخواست
+</a>
+
+<a href="{{ url_for('support') }}">
+💬 ارتباط با پشتیبانی
+</a>
+
 </div>
 
+{% if site.warning_text %}
+<div class="notice">
+⚠️ {{ site.warning_text }}
+</div>
+{% endif %}
+
+<h2>خدمات</h2>
+
+<div class="services">
+
+{% for service in services %}
 
 <div class="card">
-    <h2>خدمات قابل ارائه</h2>
 
-    {% if services %}
+<h3>{{ service.name }}</h3>
 
-        <div class="grid">
+<p>
+{{ service.description or "ثبت درخواست این خدمت به صورت آنلاین" }}
+</p>
 
-            {% for item in services %}
-
-                <div class="card" style="margin:0;">
-
-                    <h3>
-                        {{ item["name"] }}
-                    </h3>
-
-                    {% if item["category"] %}
-                        <div class="badge">
-                            {{ item["category"] }}
-                        </div>
-                    {% endif %}
-
-                    {% if item["description"] %}
-                        <p>
-                            {{ item["description"] }}
-                        </p>
-                    {% endif %}
-
-                    {% if item["price"] and item["price"] > 0 %}
-                        <div class="price">
-                            {{ "{:,}".format(item["price"]) }} تومان
-                        </div>
-                    {% else %}
-                        <div class="badge">
-                            استعلام قیمت
-                        </div>
-                    {% endif %}
-
-                    <br><br>
-
-                    <a
-                        class="btn"
-                        href="{{ url_for('service', service_id=item['id']) }}"
-                    >
-                        ثبت درخواست
-                    </a>
-
-                </div>
-
-            {% endfor %}
-
-        </div>
-
-    {% else %}
-
-        <div class="alert">
-            در حال حاضر خدمتی برای نمایش ثبت نشده است.
-        </div>
-
-    {% endif %}
+<a class="btn"
+   href="{{ url_for('service',sid=service.id) }}">
+ثبت درخواست
+</a>
 
 </div>
 
-
-<div class="card">
-
-    <h2>پیگیری درخواست</h2>
-
-    <p>
-        اگر قبلاً درخواست ثبت کرده‌اید،
-        با کد پیگیری خود وضعیت پرونده را مشاهده کنید.
-    </p>
-
-    <a
-        href="{{ url_for('tracking') }}"
-        class="btn btn-secondary"
-    >
-        پیگیری درخواست
-    </a>
+{% endfor %}
 
 </div>
 
-{% endblock %}
+</main>
+
+</body>
+</html>
