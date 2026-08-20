@@ -1,57 +1,32 @@
 {% extends "base.html" %}
 
-{% block title %}
-ورود مدیریت
-{% endblock %}
+{% block title %}ورود به پنل مدیریت{% endblock %}
 
 {% block content %}
 
-<div
-    class="card"
-    style="max-width:500px;margin:auto;"
->
+<div class="card" style="max-width:500px;margin:40px auto;">
+    <h1 style="text-align:center;">ورود به پنل مدیریت</h1>
+    <p style="text-align:center;">کافی نت آنلاین نوین</p>
 
-    <h1>
-        🔐 ورود به پنل مدیریت
-    </h1>
+    <form method="POST">
+        <label>نام کاربری</label>
+        <input type="text" name="username" required autocomplete="username" placeholder="نام کاربری">
 
-    <form
-        method="POST"
-    >
+        <label>رمز عبور</label>
+        <input type="password" name="password" required autocomplete="current-password" placeholder="رمز عبور">
 
-        <label>
-            نام کاربری
-        </label>
-
-        <input
-            type="text"
-            name="username"
-            required
-            autocomplete="username"
-        >
-
-
-        <label>
-            رمز عبور
-        </label>
-
-        <input
-            type="password"
-            name="password"
-            required
-            autocomplete="current-password"
-        >
-
-
-        <button
-            type="submit"
-            class="btn"
-        >
-            ورود
-        </button>
-
+        <button type="submit" class="btn" style="width:100%;">ورود به پنل</button>
     </form>
 
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div style="margin-top:20px;">
+                {% for category, message in messages %}
+                    <div class="alert">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
 </div>
 
 {% endblock %}
