@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+
+{% block title %}
+پیگیری درخواست
+{% endblock %}
+
+{% block content %}
+
+<div class="card">
+
+<h2>
+نتیجه درخواست
+</h2>
+
+<p>
+کد پیگیری:
+<strong>
+{{ item["tracking_code"] }}
+</strong>
+</p>
+
+<p>
+نام مشتری:
+{{ item["customer_name"] }}
+</p>
+
+<p>
+خدمت:
+{{ item["service_name"] or "پشتیبانی" }}
+</p>
+
+<p>
+وضعیت:
+<span class="badge">
+{{ item["status"] }}
+</span>
+</p>
+
+
+{% if item["estimated_time"] %}
+
+<p>
+زمان تقریبی:
+{{ item["estimated_time"] }}
+</p>
+
+{% endif %}
+
+
+{% if item["admin_name"] %}
+
+<p>
+کارشناس:
+{{ item["admin_name"] }}
+</p>
+
+{% endif %}
+
+
+{% if item["description"] %}
+
+<hr>
+
+<h3>
+توضیحات
+</h3>
+
+<p>
+{{ item["description"] }}
+</p>
+
+{% endif %}
+
+</div>
+
+
+
+{% if history %}
+
+<div class="card">
+
+<h2>
+تاریخچه پرونده
+</h2>
+
+
+{% for h in history %}
+
+<div class="card">
+
+<p>
+وضعیت:
+<strong>
+{{ h["status"] }}
+</strong>
+</p>
+
+<p>
+{{ h["description"] }}
+</p>
+
+{% if h["admin_name"] %}
+
+<small>
+ثبت توسط:
+{{ h["admin_name"] }}
+</small>
+
+{% endif %}
+
+</div>
+
+{% endfor %}
+
+</div>
+
+{% endif %}
+
+
+
+
+{% if messages %}
+
+<div class="card">
+
+<h2>
+پیام‌ها
+</h2>
+
+
+{% for msg in messages %}
+
+<div class="card">
+
+<p>
+{{ msg["message"] }}
+</p>
+
+
+{% if msg["admin_name"] %}
+
+<small>
+مدیر:
+{{ msg["admin_name"] }}
+</small>
+
+{% endif %}
+
+</div>
+
+{% endfor %}
+
+
+</div>
+
+{% endif %}
+
+
+
+<a
+href="{{ url_for('tracking') }}"
+class="btn"
+>
+پیگیری دوباره
+</a>
+
+
+{% endblock %}
