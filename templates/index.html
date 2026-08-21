@@ -4,521 +4,67 @@
 {{ site_name|default("کافی نت آنلاین نوین") }}
 {% endblock %}
 
-{% block head %}
-
-<style>
-
-    .hero {
-        background: linear-gradient(135deg, #0f172a, #1d4ed8);
-        color: white;
-        border-radius: 22px;
-        padding: 35px 25px;
-        margin-bottom: 25px;
-        text-align: center;
-    }
-
-    .hero-logo {
-        margin-bottom: 18px;
-    }
-
-    .hero-logo img {
-        width: 100px;
-        height: 100px;
-        object-fit: contain;
-        border-radius: 20px;
-        background: white;
-        padding: 8px;
-    }
-
-    .hero h1 {
-        font-size: 30px;
-        margin-bottom: 12px;
-    }
-
-    .hero-manager {
-        font-size: 17px;
-        margin-bottom: 10px;
-    }
-
-    .hero-text {
-        opacity: .9;
-        line-height: 2;
-        max-width: 700px;
-        margin: auto;
-    }
-
-    .section-title {
-        text-align: center;
-        margin: 30px 0 20px;
-    }
-
-    .section-title h2 {
-        margin-bottom: 8px;
-    }
-
-    .section-title p {
-        color: #64748b;
-    }
-
-    .services-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-        gap: 16px;
-    }
-
-    .service-icon-card {
-        background: white;
-        color: inherit;
-        text-decoration: none;
-        border-radius: 18px;
-        padding: 22px 15px;
-        min-height: 175px;
-        box-shadow: 0 4px 18px rgba(0,0,0,.07);
-        border: 1px solid #eef2f7;
-        text-align: center;
-        transition: .2s;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-    }
-
-    .service-icon-card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 8px 25px rgba(0,0,0,.12);
-        text-decoration: none;
-    }
-
-    .service-icon {
-        width: 70px;
-        height: 70px;
-        border-radius: 20px;
-        background: #eff6ff;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 36px;
-        margin-bottom: 13px;
-    }
-
-    .service-icon-card h3 {
-        font-size: 16px;
-        margin: 0 0 8px;
-        line-height: 1.7;
-        color: #0f172a;
-    }
-
-    .service-category {
-        font-size: 12px;
-        color: #64748b;
-        margin-bottom: 7px;
-    }
-
-    .service-price {
-        font-size: 12px;
-        color: #2563eb;
-        font-weight: bold;
-    }
-
-    .quick-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-        gap: 15px;
-    }
-
-    .quick-card {
-        background: white;
-        border-radius: 16px;
-        padding: 20px;
-        text-align: center;
-        border: 1px solid #e5e7eb;
-        box-shadow: 0 3px 14px rgba(0,0,0,.05);
-    }
-
-    .quick-card .quick-icon {
-        font-size: 32px;
-        margin-bottom: 10px;
-    }
-
-    .quick-card h3 {
-        font-size: 15px;
-        margin-bottom: 10px;
-    }
-
-    .quick-card .btn {
-        width: 100%;
-    }
-
-    .empty-services {
-        background: white;
-        border-radius: 18px;
-        padding: 35px 20px;
-        text-align: center;
-        color: #64748b;
-    }
-
-    .contact-card {
-        margin-top: 25px;
-        text-align: center;
-    }
-
-    .contact-phone {
-        display: inline-block;
-        margin-top: 10px;
-        font-weight: bold;
-        direction: ltr;
-    }
-
-    @media (max-width: 600px) {
-
-        .hero {
-            padding: 28px 18px;
-        }
-
-        .hero h1 {
-            font-size: 23px;
-        }
-
-        .services-grid {
-            grid-template-columns: repeat(2, 1fr);
-            gap: 12px;
-        }
-
-        .service-icon-card {
-            min-height: 155px;
-            padding: 17px 10px;
-        }
-
-        .service-icon {
-            width: 60px;
-            height: 60px;
-            font-size: 30px;
-        }
-
-        .service-icon-card h3 {
-            font-size: 14px;
-        }
-
-        .quick-grid {
-            grid-template-columns: 1fr 1fr;
-        }
-
-    }
-
-</style>
-
-{% endblock %}
-
-
 {% block content %}
 
-<div class="hero">
-
-    {% if settings.get("logo") %}
-
-        <div class="hero-logo">
-
-            <img
-                src="{{ url_for(
-                    'uploaded_file',
-                    filename=settings.get('logo')
-                ) }}"
-                alt="لوگوی {{ site_name }}"
-                loading="lazy"
-            >
-
-        </div>
-
-    {% endif %}
-
-    <h1>
-        {{ site_name|default("کافی نت آنلاین نوین") }}
-    </h1>
-
-    <div class="hero-manager">
-
-        با مدیریت
-
-        <strong>
-            {{ manager|default("احمد محمدی مهر") }}
-        </strong>
-
-    </div>
-
-    <div class="hero-text">
-
-        {{ settings.get(
-            "home_text",
-            "تمام خدمات کافی‌نت آنلاین نوین را به صورت غیرحضوری دریافت کنید."
-        ) }}
-
-    </div>
-
-</div>
-
-
-<div class="section-title">
-
-    <h2>
-        دسترسی سریع
-    </h2>
-
-</div>
-
-
-<div class="quick-grid">
-
-    <div class="quick-card">
-
-        <div class="quick-icon">
-            🔎
-        </div>
-
-        <h3>
-            پیگیری درخواست
-        </h3>
-
-        <a
-            href="{{ url_for('tracking') }}"
-            class="btn"
-        >
-            پیگیری
-        </a>
-
-    </div>
-
-
-    <div class="quick-card">
-
-        <div class="quick-icon">
-            💬
-        </div>
-
-        <h3>
-            ارتباط با کافی‌نت
-        </h3>
-
-        {% if phone %}
-
-            <a
-                href="tel:{{ phone }}"
-                class="btn btn-success"
-            >
-                تماس با ما
-            </a>
-
-        {% else %}
-
-            <span class="badge">
-                اطلاعات تماس ثبت نشده
-            </span>
-
-        {% endif %}
-
-    </div>
-
-</div>
-
-
-<div class="section-title">
-
-    <h2>
-        🧾 خدمات کافی‌نت
-    </h2>
-
-    <p>
-        برای مشاهده جزئیات هر خدمت روی آن بزنید
+<div class="card" style="text-align:center; background:#166534; color:white; border-radius:18px;">
+    <h1 style="margin:0; font-size:26px;">{{ site_name|default("کافی نت آنلاین نوین") }}</h1>
+    <p style="margin:8px 0 0 0; opacity:0.9;">
+        با مدیریت : {{ manager|default("احمد محمدی مهر") }}
     </p>
-
 </div>
 
+<div style="display:flex; gap:12px; margin:20px 0;">
+    <a href="{{ url_for('tracking') }}" class="btn" style="flex:1; background:#16a34a; text-align:center;">
+        پیگیری درخواست
+    </a>
+    <a href="{{ url_for('tracking') }}" class="btn btn-secondary" style="flex:1; text-align:center;">
+        ارتباط با پشتیبانی
+    </a>
+</div>
 
-{% if services %}
+<div class="alert" style="background:#fef3c7; color:#92400e; border:1px solid #fcd34d;">
+    ⚠ توجه: پرداخت هزینه خدمات فقط از طریق درگاه رسمی همین سایت انجام می‌شود.
+</div>
 
-    <div class="services-grid">
+<!-- لیست خدمات (دو تا در هر ردیف) -->
+<div class="card">
+    <h2 style="margin-bottom:18px;">خدمات ما</h2>
 
-        {% for service in services %}
+    {% if services %}
+        <div class="grid" style="grid-template-columns: repeat(2, 1fr); gap:16px;">
+            {% for service in services %}
+                <div class="card" style="margin:0; padding:16px; border:1px solid #e5e7eb;">
+                    <h3 style="margin:0 0 8px 0; font-size:17px;">{{ service["name"] }}</h3>
 
-            <a
-                href="{{ url_for(
-                    'service',
-                    service_id=service['id']
-                ) }}"
-                class="service-icon-card"
-                aria-label="مشاهده {{ service['name'] }}"
-            >
-
-                <div class="service-icon">
-
-                    {% set service_name = service["name"]|lower %}
-
-                    {% if "ازدواج" in service_name %}
-                        💍
-
-                    {% elif "فرزند" in service_name %}
-                        👶
-
-                    {% elif "وام" in service_name %}
-                        💰
-
-                    {% elif "مسکن" in service_name or "خانه" in service_name %}
-                        🏠
-
-                    {% elif "بیمه" in service_name %}
-                        🛡️
-
-                    {% elif "ثبت شرکت" in service_name %}
-                        🏢
-
-                    {% elif "ثبت نام" in service_name or "ثبت‌نام" in service_name %}
-                        📝
-
-                    {% elif "گواهینامه" in service_name %}
-                        🚗
-
-                    {% elif "خودرو" in service_name or "ماشین" in service_name %}
-                        🚘
-
-                    {% elif "مالیات" in service_name %}
-                        🧾
-
-                    {% elif "مجوز" in service_name or "جواز" in service_name %}
-                        📜
-
-                    {% elif "دانشگاه" in service_name or "دانشجو" in service_name %}
-                        🎓
-
-                    {% elif "مدرسه" in service_name %}
-                        🏫
-
-                    {% elif "پست" in service_name %}
-                        📦
-
-                    {% elif "کارت" in service_name %}
-                        💳
-
-                    {% elif "نوبت" in service_name %}
-                        📅
-
-                    {% elif "سابقه" in service_name %}
-                        📂
-
-                    {% elif "ترجمه" in service_name %}
-                        🌐
-
-                    {% elif "پرینت" in service_name or "چاپ" in service_name %}
-                        🖨️
-
-                    {% elif "اسکن" in service_name %}
-                        📄
-
-                    {% elif "عکس" in service_name %}
-                        📷
-
-                    {% elif "دادگستری" in service_name %}
-                        ⚖️
-
-                    {% elif "یارانه" in service_name %}
-                        💳
-
-                    {% else %}
-                        💻
+                    {% if service["category"] %}
+                        <span class="badge">{{ service["category"] }}</span>
                     {% endif %}
 
+                    {% if service["description"] %}
+                        <p style="font-size:13px; color:#4b5563; margin:8px 0;">
+                            {{ service["description"][:80] }}{% if service["description"]|length > 80 %}...{% endif %}
+                        </p>
+                    {% endif %}
+
+                    {% if service["price"] and service["price"] > 0 %}
+                        <div class="price" style="font-size:16px; margin:10px 0;">
+                            {{ "{:,}".format(service["price"]) }} تومان
+                        </div>
+                    {% else %}
+                        <div class="badge" style="margin:8px 0;">قیمت پس از بررسی</div>
+                    {% endif %}
+
+                    <a href="{{ url_for('service', service_id=service['id']) }}" class="btn" style="width:100%; text-align:center; margin-top:8px;">
+                        ثبت درخواست
+                    </a>
                 </div>
-
-
-                <h3>
-                    {{ service["name"] }}
-                </h3>
-
-
-                {% if service["category"] %}
-
-                    <div class="service-category">
-                        {{ service["category"] }}
-                    </div>
-
-                {% endif %}
-
-
-                {% if service["price"] and service["price"] > 0 %}
-
-                    <div class="service-price">
-
-                        {{ "{:,}".format(service["price"]|int) }}
-                        تومان
-
-                    </div>
-
-                {% else %}
-
-                    <div class="service-price">
-                        استعلام قیمت
-                    </div>
-
-                {% endif %}
-
-            </a>
-
-        {% endfor %}
-
-    </div>
-
-{% else %}
-
-    <div class="empty-services">
-
-        <div style="font-size:50px;">
-            📋
+            {% endfor %}
         </div>
-
-        <h3>
-            هنوز خدمتی ثبت نشده است
-        </h3>
-
-        <p>
-            خدمات از پنل مدیریت قابل اضافه شدن هستند.
-        </p>
-
-        <a
-            href="{{ url_for('admin_login') }}"
-            class="btn"
-        >
-            ورود به مدیریت
-        </a>
-
-    </div>
-
-{% endif %}
-
-
-<div class="card contact-card">
-
-    <h3>
-        💻 کافی‌نت آنلاین نوین
-    </h3>
-
-    <p style="line-height:2;">
-
-        تمامی خدمات به صورت غیرحضوری انجام می‌شود.
-        کافی است خدمت موردنظر خود را انتخاب کرده،
-        اطلاعات و مدارک لازم را ارسال کنید و
-        با کد پیگیری وضعیت درخواست خود را مشاهده کنید.
-
-    </p>
-
-    {% if phone %}
-
-        <a
-            href="tel:{{ phone }}"
-            class="contact-phone"
-        >
-            📞 {{ phone }}
-        </a>
-
+    {% else %}
+        <div class="alert">
+            هنوز خدمتی ثبت نشده است.
+        </div>
     {% endif %}
-
 </div>
 
 {% endblock %}
