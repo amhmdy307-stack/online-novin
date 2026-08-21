@@ -5,7 +5,16 @@
 {% block content %}
 
 <div class="card" style="text-align:center; background:#166534; color:white; border-radius:18px; padding:22px;">
-    <h1 style="margin:0; font-size:24px;">با مدیریت : {{ manager|default("احمد محمدی مهر") }}</h1>
+    <h1 style="margin:0 0 6px 0; font-size:24px;">{{ site_name|default("کافی نت آنلاین نوین") }}</h1>
+    <p style="margin:0 0 4px 0; opacity:0.95;">با مدیریت : {{ manager|default("احمد محمدی مهر") }}</p>
+    
+    {% if phone %}
+        <p style="margin:6px 0 0 0; font-size:15px;">{{ phone }}</p>
+    {% endif %}
+    
+    <p style="margin:8px 0 0 0; font-size:13px; opacity:0.9;">
+        {{ settings.get('manager_text', 'ارائه کلیه خدمات اینترنتی به صورت آنلاین و غیر حضوری') }}
+    </p>
 </div>
 
 <div style="display:flex; gap:12px; margin:20px 0;">
