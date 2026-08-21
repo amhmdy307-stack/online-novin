@@ -513,5 +513,6 @@ def customer_request(tracking_code):
 @app.route("/support", methods=["GET", "POST"])
 def support():
     conn = get_db()
-    experts = conn.execute(
-        "SELECT id, username FROM users WHERE role = 'expert
+experts = conn.execute(
+    "SELECT id, username FROM users WHERE role = 'expert' AND active = 1"
+).fetchall()
