@@ -10,64 +10,67 @@
     <a href="{{ url_for('admin_logout') }}" class="btn btn-secondary">خروج</a>
 </div>
 
+<!-- منوی آیکونی -->
+<div class="card">
+    <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap:16px; text-align:center;">
+        <a href="#requests" style="text-decoration:none; color:inherit;">
+            <div style="font-size:32px;">📋</div>
+            <div style="margin-top:6px; font-size:14px;">درخواست‌ها</div>
+        </a>
+        <a href="#services" style="text-decoration:none; color:inherit;">
+            <div style="font-size:32px;">🛠️</div>
+            <div style="margin-top:6px; font-size:14px;">خدمات</div>
+        </a>
+        <a href="#users" style="text-decoration:none; color:inherit;">
+            <div style="font-size:32px;">👥</div>
+            <div style="margin-top:6px; font-size:14px;">کاربران</div>
+        </a>
+        <a href="#discounts" style="text-decoration:none; color:inherit;">
+            <div style="font-size:32px;">🎟</div>
+            <div style="margin-top:6px; font-size:14px;">کد تخفیف</div>
+        </a>
+        <a href="#settings" style="text-decoration:none; color:inherit;">
+            <div style="font-size:32px;">⚙️</div>
+            <div style="margin-top:6px; font-size:14px;">تنظیمات</div>
+        </a>
+        <a href="#integrations" style="text-decoration:none; color:inherit;">
+            <div style="font-size:32px;">📱</div>
+            <div style="margin-top:6px; font-size:14px;">پیامک و درگاه</div>
+        </a>
+        <a href="#workhours" style="text-decoration:none; color:inherit;">
+            <div style="font-size:32px;">🕒</div>
+            <div style="margin-top:6px; font-size:14px;">ساعات کاری</div>
+        </a>
+        <a href="{{ url_for('admin_backup') }}" style="text-decoration:none; color:inherit;">
+            <div style="font-size:32px;">💾</div>
+            <div style="margin-top:6px; font-size:14px;">پشتیبان‌گیری</div>
+        </a>
+    </div>
+</div>
+
+<!-- آمار -->
 <div class="grid">
-    <div class="card"><h3>تعداد درخواست‌ها</h3><strong style="font-size:30px;">{{ requests|length }}</strong></div>
-    <div class="card"><h3>تعداد مشتریان</h3><strong style="font-size:30px;">{{ customers|length }}</strong></div>
-    <div class="card"><h3>درآمد</h3><strong style="font-size:25px;">{{ "{:,}".format(total_income or 0) }}</strong> تومان</div>
-    <div class="card"><h3>بدهی</h3><strong style="font-size:25px;">{{ "{:,}".format(total_debt or 0) }}</strong> تومان</div>
-</div>
-
-<!-- تنظیمات سایت -->
-<div class="card">
-    <h2>⚙️ تنظیمات سایت</h2>
-    <form method="POST" action="{{ url_for('admin_settings_save') }}" enctype="multipart/form-data">
-        <label>نام سایت</label>
-        <input type="text" name="site_name" value="{{ settings.get('site_name', '') }}">
-        <label>نام مدیر</label>
-        <input type="text" name="manager" value="{{ settings.get('manager', '') }}">
-        <label>شماره تلفن</label>
-        <input type="text" name="phone" value="{{ settings.get('phone', '') }}">
-        <label>متن زیر نام مدیر</label>
-        <textarea name="manager_text" rows="3">{{ settings.get('manager_text', '') }}</textarea>
-        <label>متن صفحه اصلی</label>
-        <textarea name="home_text" rows="4">{{ settings.get('home_text', '') }}</textarea>
-        <label>متن پایین صفحه</label>
-        <textarea name="footer_text" rows="3">{{ settings.get('footer_text', '') }}</textarea>
-        <label>لوگوی سایت</label>
-        {% if settings.get('logo') %}
-            <div style="margin:10px 0;">
-                <img src="{{ url_for('uploaded_logo', filename=settings.get('logo')) }}" style="max-width:160px;max-height:100px;border:1px solid #ddd;border-radius:8px;padding:6px;">
-            </div>
-        {% endif %}
-        <input type="file" name="logo" accept=".jpg,.jpeg,.png,.webp">
-        <br><br>
-        <button type="submit" class="btn">ذخیره تنظیمات</button>
-    </form>
-</div>
-
-<!-- تنظیمات پیامک و درگاه پرداخت -->
-<div class="card">
-    <h2>📱 تنظیمات پیامک و درگاه پرداخت (آماده آینده)</h2>
-    <form method="POST" action="{{ url_for('admin_integrations_save') }}">
-        <label><input type="checkbox" name="sms_enabled" value="1" {% if settings.get('sms_enabled')=='1' %}checked{% endif %}> فعال‌سازی پیامک</label>
-        <label>API Key پیامک</label>
-        <input type="text" name="sms_api_key" value="{{ settings.get('sms_api_key', '') }}">
-        <label>شماره فرستنده پیامک</label>
-        <input type="text" name="sms_sender" value="{{ settings.get('sms_sender', '') }}">
-        <hr>
-        <label><input type="checkbox" name="payment_enabled" value="1" {% if settings.get('payment_enabled')=='1' %}checked{% endif %}> فعال‌سازی درگاه پرداخت</label>
-        <label>کد مرچنت / Merchant ID</label>
-        <input type="text" name="payment_merchant" value="{{ settings.get('payment_merchant', '') }}">
-        <label>آدرس Callback</label>
-        <input type="text" name="payment_callback" value="{{ settings.get('payment_callback', '') }}">
-        <br><br>
-        <button type="submit" class="btn">ذخیره تنظیمات پیامک و درگاه</button>
-    </form>
+    <div class="card">
+        <h3>تعداد درخواست‌ها</h3>
+        <strong style="font-size:28px;">{{ requests|length }}</strong>
+    </div>
+    <div class="card">
+        <h3>تعداد مشتریان</h3>
+        <strong style="font-size:28px;">{{ customers|length }}</strong>
+    </div>
+    <div class="card">
+        <h3>درآمد</h3>
+        <strong style="font-size:22px;">{{ "{:,}".format(total_income or 0) }}</strong> تومان
+    </div>
+    <div class="card">
+        <h3>بدهی</h3>
+        <strong style="font-size:22px;">{{ "{:,}".format(total_debt or 0) }}</strong> تومان
+    </div>
 </div>
 
 <!-- درخواست‌ها -->
-<div class="card">
-    <h2>درخواست‌های مشتریان</h2>
+<div class="card" id="requests">
+    <h2>📋 درخواست‌های مشتریان</h2>
     {% if requests %}
     <div class="table-wrapper">
         <table>
@@ -89,7 +92,7 @@
                     <td>{{ req["service_name"] }}</td>
                     <td><span class="badge">{{ req["status"] }}</span></td>
                     <td>{{ "{:,}".format(req["total_price"] or 0) }} تومان</td>
-                    <td><a href="{{ url_for('admin_request', rid=req['id']) }}" class="btn">مشاهده پرونده</a></td>
+                    <td><a href="{{ url_for('admin_request', rid=req['id']) }}" class="btn">مشاهده</a></td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -100,35 +103,37 @@
     {% endif %}
 </div>
 
-<!-- افزودن خدمت -->
-<div class="card">
-    <h2>➕ افزودن خدمت جدید</h2>
+<!-- خدمات -->
+<div class="card" id="services">
+    <h2>🛠️ افزودن خدمت جدید</h2>
     <form method="POST" action="{{ url_for('admin_service_save') }}">
         <label>نام خدمت</label>
         <input type="text" name="name" required>
         <label>دسته‌بندی</label>
         <input type="text" name="category">
         <label>توضیحات</label>
-        <textarea name="description" rows="4"></textarea>
+        <textarea name="description" rows="3"></textarea>
         <label>قیمت پایه</label>
         <input type="number" name="price" min="0" value="0">
         <label>ترتیب نمایش</label>
         <input type="number" name="sort_order" value="0">
         <label>وضعیت</label>
-        <select name="active"><option value="1">فعال</option><option value="0">غیرفعال</option></select>
+        <select name="active">
+            <option value="1">فعال</option>
+            <option value="0">غیرفعال</option>
+        </select>
         <label>فیلدهای فرم (JSON)</label>
-        <textarea name="fields_json" rows="5">[]</textarea>
+        <textarea name="fields_json" rows="4">[]</textarea>
         <label>مدارک مورد نیاز (JSON)</label>
-        <textarea name="documents_json" rows="4">[]</textarea>
+        <textarea name="documents_json" rows="3">[]</textarea>
         <button type="submit" class="btn">افزودن خدمت</button>
     </form>
 </div>
 
-<!-- لیست خدمات -->
 <div class="card">
-    <h2>📋 خدمات موجود</h2>
+    <h2>لیست خدمات</h2>
     {% for service in services %}
-    <div style="padding:15px;margin-bottom:12px;border:1px solid #ddd;border-radius:12px;">
+    <div style="padding:14px; margin-bottom:12px; border:1px solid #e5e7eb; border-radius:12px;">
         <h3>{{ service["name"] }}</h3>
         {% if service["category"] %}<span class="badge">{{ service["category"] }}</span>{% endif %}
         <p>قیمت: <strong>{{ "{:,}".format(service["price"] or 0) }}</strong> تومان</p>
@@ -145,8 +150,8 @@
     {% endfor %}
 </div>
 
-<!-- افزودن کارشناس / مدیر -->
-<div class="card">
+<!-- کاربران -->
+<div class="card" id="users">
     <h2>👥 افزودن کارشناس یا مدیر</h2>
     {% if current_user and current_user["role"] == "admin" %}
     <form method="POST" action="{{ url_for('create_user') }}">
@@ -154,17 +159,20 @@
         <input type="text" name="username" required>
         <label>رمز عبور</label>
         <input type="password" name="password" minlength="6" required>
-        <label>شماره تلفن (برای فراموشی رمز)</label>
+        <label>شماره تلفن</label>
         <input type="text" name="phone">
         <label>سطح دسترسی</label>
-        <select name="role"><option value="expert">کارشناس</option><option value="admin">مدیر</option></select>
+        <select name="role">
+            <option value="expert">کارشناس</option>
+            <option value="admin">مدیر</option>
+        </select>
         <label>دسترسی به خدمات (برای کارشناس)</label>
-        <select name="allowed_services" multiple size="6">
+        <select name="allowed_services" multiple size="5">
             {% for s in services %}
             <option value="{{ s['id'] }}">{{ s["name"] }}</option>
             {% endfor %}
         </select>
-        <small>با نگه داشتن Ctrl می‌توانید چند خدمت انتخاب کنید</small>
+        <small>با نگه داشتن Ctrl چند مورد انتخاب کنید</small>
         <br><br>
         <button type="submit" class="btn">ایجاد کاربر</button>
     </form>
@@ -184,13 +192,16 @@
 </div>
 
 <!-- کد تخفیف -->
-<div class="card">
+<div class="card" id="discounts">
     <h2>🎟 مدیریت کدهای تخفیف</h2>
     <form method="POST" action="{{ url_for('create_discount') }}">
         <label>کد تخفیف</label>
         <input type="text" name="code" required>
         <label>نوع</label>
-        <select name="kind"><option value="percent">درصدی</option><option value="fixed">مبلغ ثابت</option></select>
+        <select name="kind">
+            <option value="percent">درصدی</option>
+            <option value="fixed">مبلغ ثابت</option>
+        </select>
         <label>مقدار</label>
         <input type="number" name="value" min="0" required>
         <label>حداکثر استفاده</label>
@@ -203,12 +214,58 @@
     </form>
 </div>
 
+<!-- تنظیمات سایت -->
+<div class="card" id="settings">
+    <h2>⚙️ تنظیمات سایت</h2>
+    <form method="POST" action="{{ url_for('admin_settings_save') }}" enctype="multipart/form-data">
+        <label>نام سایت</label>
+        <input type="text" name="site_name" value="{{ settings.get('site_name', '') }}">
+        <label>نام مدیر</label>
+        <input type="text" name="manager" value="{{ settings.get('manager', '') }}">
+        <label>شماره تلفن</label>
+        <input type="text" name="phone" value="{{ settings.get('phone', '') }}">
+        <label>متن زیر مدیریت</label>
+        <textarea name="manager_text" rows="2">{{ settings.get('manager_text', '') }}</textarea>
+        <label>متن صفحه اصلی</label>
+        <textarea name="home_text" rows="3">{{ settings.get('home_text', '') }}</textarea>
+        <label>لوگوی سایت</label>
+        {% if settings.get('logo') %}
+            <div style="margin:10px 0;">
+                <img src="{{ url_for('uploaded_logo', filename=settings.get('logo')) }}" style="max-width:140px; max-height:90px; border-radius:8px;">
+            </div>
+        {% endif %}
+        <input type="file" name="logo" accept=".jpg,.jpeg,.png,.webp">
+        <br><br>
+        <button type="submit" class="btn">ذخیره تنظیمات</button>
+    </form>
+</div>
+
+<!-- پیامک و درگاه -->
+<div class="card" id="integrations">
+    <h2>📱 تنظیمات پیامک و درگاه پرداخت</h2>
+    <form method="POST" action="{{ url_for('admin_integrations_save') }}">
+        <label><input type="checkbox" name="sms_enabled" value="1" {% if settings.get('sms_enabled')=='1' %}checked{% endif %}> فعال‌سازی پیامک</label>
+        <label>API Key پیامک</label>
+        <input type="text" name="sms_api_key" value="{{ settings.get('sms_api_key', '') }}">
+        <label>شماره فرستنده</label>
+        <input type="text" name="sms_sender" value="{{ settings.get('sms_sender', '') }}">
+        <hr>
+        <label><input type="checkbox" name="payment_enabled" value="1" {% if settings.get('payment_enabled')=='1' %}checked{% endif %}> فعال‌سازی درگاه</label>
+        <label>کد مرچنت</label>
+        <input type="text" name="payment_merchant" value="{{ settings.get('payment_merchant', '') }}">
+        <label>آدرس Callback</label>
+        <input type="text" name="payment_callback" value="{{ settings.get('payment_callback', '') }}">
+        <br><br>
+        <button type="submit" class="btn">ذخیره</button>
+    </form>
+</div>
+
 <!-- ساعات کاری -->
-<div class="card">
+<div class="card" id="workhours">
     <h2>🕒 ساعات کاری و روزهای استراحت</h2>
     <form method="POST" action="{{ url_for('save_work_hours') }}">
         {% for wh in work_hours %}
-        <div style="margin-bottom:12px;padding:10px;border:1px solid #eee;border-radius:8px;">
+        <div style="margin-bottom:12px; padding:10px; border:1px solid #eee; border-radius:8px;">
             <strong>{{ wh["day_name"] }}</strong>
             <input type="hidden" name="day_id" value="{{ wh['id'] }}">
             <label>شروع</label>
@@ -220,12 +277,6 @@
         {% endfor %}
         <button type="submit" class="btn">ذخیره ساعات کاری</button>
     </form>
-</div>
-
-<!-- پشتیبان‌گیری -->
-<div class="card">
-    <h2>💾 پشتیبان‌گیری از دیتابیس</h2>
-    <a href="{{ url_for('admin_backup') }}" class="btn">گرفتن پشتیبان الان</a>
 </div>
 
 {% endblock %}
