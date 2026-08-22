@@ -1,34 +1,26 @@
 {% extends "base.html" %}
-
 {% block title %}مدیریت پرونده{% endblock %}
-
 {% block content %}
-
 <div class="card">
     <h1>مدیریت پرونده</h1>
     <p>کد پیگیری: <strong>{{ req["tracking_code"] }}</strong></p>
     <p>مشتری: <strong>{{ req["customer_name"] }}</strong> - {{ req["customer_phone"] }}</p>
     <p>خدمت: <strong>{{ req["service_name"] }}</strong></p>
     {% if req["expert_name"] %}
-        <p>کارشناس: <strong>{{ req["expert_name"] }}</strong>
-            {% if req["expert_role"] == "admin" %}(مدیر اصلی){% endif %}
-        </p>
+    <p>کارشناس مسئول: <strong>{{ req["expert_name"] }}</strong>{% if req["expert_role"]=="admin" %} (مدیر اصلی){% endif %}</p>
     {% endif %}
 </div>
 
 <div class="card">
     <h2>اطلاعات فرم پر شده توسط مشتری</h2>
     {% if form_data %}
-        <ul>
+    <ul>
         {% for key, value in form_data.items() %}
-            <li>
-                <strong>{{ get_field_label(key) }}:</strong>
-                {{ value }}
-            </li>
+        <li><strong>{{ get_field_label(key) }}:</strong> {{ value }}</li>
         {% endfor %}
-        </ul>
+    </ul>
     {% else %}
-        <p>اطلاعات اضافی ثبت نشده.</p>
+    <p>اطلاعات اضافی ثبت نشده.</p>
     {% endif %}
 </div>
 
@@ -39,7 +31,7 @@
         <label>وضعیت</label>
         <select name="status">
             {% for st in ["در انتظار بررسی","پذیرش شد","در حال بررسی","در حال انجام","نقص مدارک","قطعی سامانه","رد شد","انصراف مشتری","انجام شد"] %}
-            <option value="{{ st }}" {% if req["status"] == st %}selected{% endif %}>{{ st }}</option>
+            <option value="{{ st }}" {% if req["status"]==st %}selected{% endif %}>{{ st }}</option>
             {% endfor %}
         </select>
         <button type="submit" class="btn">ثبت وضعیت</button>
@@ -58,13 +50,6 @@
         <input type="text" name="estimated_time" value="{{ req['estimated_time'] or '' }}" placeholder="مثلاً ۲ روز کاری">
         <label>توضیحات برای مشتری</label>
         <textarea name="admin_note">{{ req["admin_note"] or "" }}</textarea>
-        <label>انتخاب کارشناس (اختیاری)</label>
-        <select name="expert_id">
-            <option value="">بدون کارشناس</option>
-            {% for e in experts %}
-            <option value="{{ e['id'] }}" {% if req["expert_id"] == e["id"] %}selected{% endif %}>{{ e["username"] }}</option>
-            {% endfor %}
-        </select>
         <button type="submit" class="btn">ذخیره تغییرات</button>
     </form>
 </div>
@@ -86,18 +71,16 @@
     <h2>گفتگو با مشتری</h2>
     {% for m in messages %}
     <div class="alert">
-        <strong>{% if m["sender"] == "customer" %}مشتری:{% else %}مدیریت:{% endif %}</strong>
+        <strong>{% if m["sender"]=="customer" %}مشتری:{% else %}مدیریت:{% endif %}</strong>
         {{ m["message"] }}
         {% if m["file_path"] %}
-            <br>
-            <a href="{{ url_for('download_chat_file', filename=m['file_path']) }}" class="btn btn-secondary">دانلود فایل</a>
+        <br><a href="{{ url_for('download_chat_file', filename=m['file_path']) }}" class="btn btn-secondary">دانلود فایل</a>
         {% endif %}
         <br><small>{{ m["created_at"] }}</small>
     </div>
     {% else %}
     <p>پیامی وجود ندارد.</p>
     {% endfor %}
-
     <form method="POST" action="{{ url_for('admin_message') }}">
         <input type="hidden" name="id" value="{{ req['id'] }}">
         <textarea name="message" required placeholder="پاسخ خود را بنویسید..."></textarea>
@@ -108,5 +91,4 @@
 <div class="card">
     <a href="{{ url_for('admin') }}" class="btn btn-secondary">بازگشت به پنل</a>
 </div>
-
 {% endblock %}
