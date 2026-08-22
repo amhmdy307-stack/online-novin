@@ -12,7 +12,7 @@
 <div class="card">
     <form method="POST" enctype="multipart/form-data">
         <label>انتخاب کارشناس</label>
-        <select name="expert_id" required>
+        <select name="expert_id">
             <option value="">-- انتخاب کارشناس --</option>
             {% for expert in experts %}
                 <option value="{{ expert['id'] }}">{{ expert["username"] }}</option>
