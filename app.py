@@ -9,7 +9,7 @@ from functools import wraps
 
 from flask import (
     Flask, render_template, request, redirect, url_for,
-    session, flash, send_from_directory, abort, g, jsonify
+    session, flash, send_from_directory, abort, g, jsonify, Response
 )
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
@@ -813,7 +813,7 @@ def admin_notifications():
 
 @app.route("/17886038.txt")
 def enamad_file():
-    return "", 200, {"Content-Type": "text/plain"}
+    return Response("", status=200, mimetype="text/plain")
 
 @app.route("/download/document/<int:doc_id>")
 @login_required
