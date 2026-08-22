@@ -811,6 +811,10 @@ def admin_notifications():
     conn.commit()
     return jsonify([{"title": r["title"], "body": r["body"], "created_at": r["created_at"]} for r in rows])
 
+@app.route("/17886038.txt")
+def enamad_file():
+    return "", 200, {"Content-Type": "text/plain"}
+
 @app.route("/download/document/<int:doc_id>")
 @login_required
 def download_document(doc_id):
