@@ -36,7 +36,10 @@
 
         {% if fields %}
             {% for field in fields %}
-                {% set fname = field.get('name', 'field_' \~ loop.index) %}
+                {% set fname = field.get('name') %}
+                {% if not fname %}
+                    {% set fname = 'field_' + loop.index|string %}
+                {% endif %}
                 {% if fname not in ['name', 'phone', 'national_id'] %}
                     <label>{{ field.get('label', fname) }}{% if field.get('required') %} *{% endif %}</label>
                     {% if field.get('type') == 'textarea' %}
