@@ -9,7 +9,7 @@ from functools import wraps
 
 from flask import (
     Flask, render_template, request, redirect, url_for,
-    session, flash, send_from_directory, abort, g
+    session, flash, send_from_directory, abort, g, jsonify
 )
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
@@ -38,6 +38,14 @@ ALLOWED_STATUSES = [
     "نقص مدارک", "قطعی سامانه", "رد شد", "انصراف مشتری", "انجام شد"
 ]
 
+FIELD_LABELS = {
+    "name": "نام و نام خانوادگی",
+    "phone": "شماره موبایل",
+    "national_id": "کد ملی",
+    "customer_note": "توضیحات مشتری",
+    "discount_code": "کد تخفیف",
+}
+
 def get_db():
     if "db" not in g:
         g.db = sqlite3.connect(DATABASE)
@@ -62,16 +70,109 @@ def add_column_if_missing(conn, table, column, definition):
 def create_tables():
     conn = get_db()
     conn.executescript("""
-        CREATE TABLE IF NOT EXISTS settings (id INTEGER PRIMARY KEY AUTOINCREMENT, key TEXT UNIQUE NOT NULL, value TEXT DEFAULT '');
-        CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT UNIQUE NOT NULL, password TEXT NOT NULL, role TEXT NOT NULL DEFAULT 'expert', phone TEXT DEFAULT '', active INTEGER NOT NULL DEFAULT 1, allowed_services TEXT DEFAULT '[]', created_at TEXT DEFAULT CURRENT_TIMESTAMP);
-        CREATE TABLE IF NOT EXISTS customers (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, phone TEXT DEFAULT '', national_id TEXT DEFAULT '');
-        CREATE TABLE IF NOT EXISTS services (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, category TEXT DEFAULT '', description TEXT DEFAULT '', price INTEGER DEFAULT 0, sort_order INTEGER DEFAULT 0, active INTEGER DEFAULT 1, fields_json TEXT DEFAULT '[]', documents_json TEXT DEFAULT '[]', form_code TEXT DEFAULT '');
-        CREATE TABLE IF NOT EXISTS requests (id INTEGER PRIMARY KEY AUTOINCREMENT, customer_id INTEGER, service_id INTEGER, expert_id INTEGER, tracking_code TEXT UNIQUE NOT NULL, status TEXT DEFAULT 'در انتظار بررسی', customer_note TEXT DEFAULT '', admin_note TEXT DEFAULT '', estimated_time TEXT DEFAULT '', total_price INTEGER DEFAULT 0, paid_price INTEGER DEFAULT 0, discount_code TEXT DEFAULT '', discount_amount INTEGER DEFAULT 0, form_data TEXT DEFAULT '{}', is_paid INTEGER DEFAULT 0, created_at TEXT DEFAULT CURRENT_TIMESTAMP, updated_at TEXT DEFAULT CURRENT_TIMESTAMP);
-        CREATE TABLE IF NOT EXISTS messages (id INTEGER PRIMARY KEY AUTOINCREMENT, customer_id INTEGER, request_id INTEGER, sender TEXT NOT NULL, message TEXT NOT NULL, file_path TEXT DEFAULT '', original_name TEXT DEFAULT '', created_at TEXT DEFAULT CURRENT_TIMESTAMP);
-        CREATE TABLE IF NOT EXISTS documents (id INTEGER PRIMARY KEY AUTOINCREMENT, request_id INTEGER NOT NULL, customer_id INTEGER, file_path TEXT NOT NULL, original_name TEXT NOT NULL, created_at TEXT DEFAULT CURRENT_TIMESTAMP);
-        CREATE TABLE IF NOT EXISTS discounts (id INTEGER PRIMARY KEY AUTOINCREMENT, code TEXT UNIQUE NOT NULL, kind TEXT NOT NULL DEFAULT 'percent', value INTEGER NOT NULL DEFAULT 0, max_uses INTEGER DEFAULT 1, used_count INTEGER DEFAULT 0, start_date TEXT DEFAULT '', end_date TEXT DEFAULT '', active INTEGER DEFAULT 1);
-        CREATE TABLE IF NOT EXISTS notifications (id INTEGER PRIMARY KEY AUTOINCREMENT, user_type TEXT NOT NULL, user_id INTEGER, request_id INTEGER, title TEXT NOT NULL, body TEXT DEFAULT '', is_read INTEGER DEFAULT 0, created_at TEXT DEFAULT CURRENT_TIMESTAMP);
-        CREATE TABLE IF NOT EXISTS work_hours (id INTEGER PRIMARY KEY AUTOINCREMENT, day_name TEXT NOT NULL, start_time TEXT DEFAULT '', end_time TEXT DEFAULT '', is_rest INTEGER DEFAULT 0);
+        CREATE TABLE IF NOT EXISTS settings (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            key TEXT UNIQUE NOT NULL,
+            value TEXT DEFAULT ''
+        );
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT UNIQUE NOT NULL,
+            password TEXT NOT NULL,
+            role TEXT NOT NULL DEFAULT 'expert',
+            phone TEXT DEFAULT '',
+            active INTEGER NOT NULL DEFAULT 1,
+            allowed_services TEXT DEFAULT '[]',
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE TABLE IF NOT EXISTS customers (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            phone TEXT DEFAULT '',
+            national_id TEXT DEFAULT '',
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE TABLE IF NOT EXISTS services (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            category TEXT DEFAULT '',
+            description TEXT DEFAULT '',
+            price INTEGER DEFAULT 0,
+            sort_order INTEGER DEFAULT 0,
+            active INTEGER DEFAULT 1,
+            fields_json TEXT DEFAULT '[]',
+            documents_json TEXT DEFAULT '[]',
+            form_code TEXT DEFAULT '',
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE TABLE IF NOT EXISTS requests (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            customer_id INTEGER,
+            service_id INTEGER,
+            expert_id INTEGER,
+            tracking_code TEXT UNIQUE NOT NULL,
+            status TEXT DEFAULT 'در انتظار بررسی',
+            customer_note TEXT DEFAULT '',
+            admin_note TEXT DEFAULT '',
+            estimated_time TEXT DEFAULT '',
+            total_price INTEGER DEFAULT 0,
+            paid_price INTEGER DEFAULT 0,
+            discount_code TEXT DEFAULT '',
+            discount_amount INTEGER DEFAULT 0,
+            form_data TEXT DEFAULT '{}',
+            is_paid INTEGER DEFAULT 0,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY(customer_id) REFERENCES customers(id) ON DELETE SET NULL,
+            FOREIGN KEY(service_id) REFERENCES services(id) ON DELETE SET NULL,
+            FOREIGN KEY(expert_id) REFERENCES users(id) ON DELETE SET NULL
+        );
+        CREATE TABLE IF NOT EXISTS messages (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            customer_id INTEGER,
+            request_id INTEGER,
+            sender TEXT NOT NULL,
+            message TEXT NOT NULL,
+            file_path TEXT DEFAULT '',
+            original_name TEXT DEFAULT '',
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE TABLE IF NOT EXISTS documents (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            request_id INTEGER NOT NULL,
+            customer_id INTEGER,
+            file_path TEXT NOT NULL,
+            original_name TEXT NOT NULL,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE TABLE IF NOT EXISTS discounts (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            code TEXT UNIQUE NOT NULL,
+            kind TEXT NOT NULL DEFAULT 'percent',
+            value INTEGER NOT NULL DEFAULT 0,
+            max_uses INTEGER DEFAULT 1,
+            used_count INTEGER DEFAULT 0,
+            start_date TEXT DEFAULT '',
+            end_date TEXT DEFAULT '',
+            active INTEGER DEFAULT 1
+        );
+        CREATE TABLE IF NOT EXISTS notifications (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_type TEXT NOT NULL,
+            user_id INTEGER,
+            request_id INTEGER,
+            title TEXT NOT NULL,
+            body TEXT DEFAULT '',
+            is_read INTEGER DEFAULT 0,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE TABLE IF NOT EXISTS work_hours (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            day_name TEXT NOT NULL,
+            start_time TEXT DEFAULT '',
+            end_time TEXT DEFAULT '',
+            is_rest INTEGER DEFAULT 0
+        );
     """)
 
     add_column_if_missing(conn, "customers", "national_id", "TEXT DEFAULT ''")
@@ -93,8 +194,8 @@ def create_tables():
         "manager": MANAGER,
         "phone": PHONE,
         "manager_text": "ارائه کلیه خدمات اینترنتی به صورت آنلاین و غیر حضوری",
-        "home_text": "تمام خدمات کافی‌نت آنلاین نوین را به صورت غیرحضوری دریافت کنید.",
-        "footer_text": "کافی نت آنلاین نوین - با مدیریت احمد محمدی مهر",
+        "home_text": "",
+        "footer_text": "",
         "logo": "",
         "sms_enabled": "0",
         "sms_api_key": "",
@@ -113,7 +214,8 @@ def create_tables():
             conn.execute("INSERT INTO work_hours (day_name, start_time, end_time, is_rest) VALUES (?, '09:00', '18:00', 0)", (d,))
 
     if not conn.execute("SELECT id FROM users WHERE username=?", ("admin",)).fetchone():
-        conn.execute("INSERT INTO users (username, password, role, active) VALUES (?, ?, 'admin', 1)", ("admin", generate_password_hash("ChangeMe123!")))
+        conn.execute("INSERT INTO users (username, password, role, active) VALUES (?, ?, 'admin', 1)",
+                     ("admin", generate_password_hash("ChangeMe123!")))
 
     conn.commit()
 
@@ -129,16 +231,19 @@ def set_setting(key, value):
 
 def get_current_user():
     uid = session.get("user_id")
-    if not uid: return None
+    if not uid:
+        return None
     conn = get_db()
     user = conn.execute("SELECT id, username, role, active, phone, allowed_services FROM users WHERE id = ?", (uid,)).fetchone()
-    if not user or not user["active"]: return None
+    if not user or not user["active"]:
+        return None
     return user
 
 def login_required(f):
     @wraps(f)
     def wrap(*args, **kwargs):
-        if not get_current_user(): return redirect(url_for("admin_login"))
+        if not get_current_user():
+            return redirect(url_for("admin_login"))
         return f(*args, **kwargs)
     return wrap
 
@@ -160,17 +265,37 @@ def generate_tracking_code():
             return code
 
 def to_int(v, default=0):
-    try: return int(str(v).replace(",", "").strip())
-    except: return default
+    try:
+        return int(str(v).replace(",", "").strip())
+    except:
+        return default
 
 def parse_json(v, default=None):
-    if default is None: default = []
-    try: return json.loads(v) if v else default
-    except: return default
+    if default is None:
+        default = []
+    try:
+        return json.loads(v) if v else default
+    except:
+        return default
+
+def to_latin_digits(text):
+    if text is None:
+        return ""
+    persian = "۰۱۲۳۴۵۶۷۸۹"
+    arabic = "٠١٢٣٤٥٦٧٨٩"
+    latin = "0123456789"
+    trans = str.maketrans(persian + arabic, latin + latin)
+    return str(text).translate(trans)
+
+def get_field_label(key):
+    return FIELD_LABELS.get(key, key)
 
 def create_notification(user_type, user_id, request_id, title, body=""):
     conn = get_db()
-    conn.execute("INSERT INTO notifications (user_type, user_id, request_id, title, body) VALUES (?, ?, ?, ?, ?)", (user_type, user_id, request_id, title, body))
+    conn.execute(
+        "INSERT INTO notifications (user_type, user_id, request_id, title, body) VALUES (?, ?, ?, ?, ?)",
+        (user_type, user_id, request_id, title, body)
+    )
     conn.commit()
 
 @app.context_processor
@@ -183,7 +308,10 @@ def inject_globals():
         "phone": s.get("phone", PHONE),
         "current_user": get_current_user(),
         "logo": s.get("logo", ""),
+        "get_field_label": get_field_label,
     }
+
+# ===================== صفحات عمومی =====================
 
 @app.route("/")
 def home():
@@ -195,18 +323,22 @@ def home():
 def service(service_id):
     conn = get_db()
     row = conn.execute("SELECT * FROM services WHERE id = ?", (service_id,)).fetchone()
-    if not row: abort(404)
-    return render_template("service.html", service=row, fields=parse_json(row["fields_json"]), documents=parse_json(row["documents_json"]), settings=get_settings())
+    if not row:
+        abort(404)
+    fields = parse_json(row["fields_json"])
+    documents = parse_json(row["documents_json"])
+    return render_template("service.html", service=row, fields=fields, documents=documents, settings=get_settings())
 
 @app.route("/create-request/<int:service_id>", methods=["POST"])
 def create_request(service_id):
     conn = get_db()
     service_row = conn.execute("SELECT * FROM services WHERE id = ?", (service_id,)).fetchone()
-    if not service_row: abort(404)
+    if not service_row:
+        abort(404)
 
-    name = request.form.get("name", "").strip()
-    phone = request.form.get("phone", "").strip()
-    national_id = request.form.get("national_id", "").strip()
+    name = to_latin_digits(request.form.get("name", "").strip())
+    phone = to_latin_digits(request.form.get("phone", "").strip())
+    national_id = to_latin_digits(request.form.get("national_id", "").strip())
     customer_note = request.form.get("customer_note", "").strip()
     discount_code = request.form.get("discount_code", "").strip().upper()
 
@@ -225,7 +357,7 @@ def create_request(service_id):
     form_data = {}
     for k in request.form:
         if k not in ("name", "phone", "national_id", "customer_note", "discount_code"):
-            form_data[k] = request.form.get(k)
+            form_data[k] = to_latin_digits(request.form.get(k))
 
     base_price = to_int(service_row["price"])
     discount_amount = 0
@@ -236,13 +368,17 @@ def create_request(service_id):
         if d:
             today = datetime.now().strftime("%Y-%m-%d")
             valid = True
-            if d["start_date"] and today < d["start_date"]: valid = False
-            if d["end_date"] and today > d["end_date"]: valid = False
-            if d["max_uses"] > 0 and d["used_count"] >= d["max_uses"]: valid = False
+            if d["start_date"] and today < d["start_date"]:
+                valid = False
+            if d["end_date"] and today > d["end_date"]:
+                valid = False
+            if d["max_uses"] > 0 and d["used_count"] >= d["max_uses"]:
+                valid = False
             if valid:
                 if d["kind"] == "percent":
                     discount_amount = int(base_price * d["value"] / 100)
-                    if d["value"] >= 100: is_paid = 1
+                    if d["value"] >= 100:
+                        is_paid = 1
                 else:
                     discount_amount = min(base_price, d["value"])
                 conn.execute("UPDATE discounts SET used_count = used_count + 1 WHERE id=?", (d["id"],))
@@ -251,9 +387,11 @@ def create_request(service_id):
     tracking = generate_tracking_code()
 
     cur = conn.execute("""
-        INSERT INTO requests (customer_id, service_id, tracking_code, status, customer_note, total_price, paid_price, discount_code, discount_amount, form_data, is_paid)
+        INSERT INTO requests (customer_id, service_id, tracking_code, status, customer_note,
+            total_price, paid_price, discount_code, discount_amount, form_data, is_paid)
         VALUES (?,?,?,?,?,?,0,?,?,?,?)
-    """, (customer_id, service_id, tracking, "در انتظار بررسی", customer_note, final_price, discount_code, discount_amount, json.dumps(form_data, ensure_ascii=False), is_paid))
+    """, (customer_id, service_id, tracking, "در انتظار بررسی", customer_note,
+          final_price, discount_code, discount_amount, json.dumps(form_data, ensure_ascii=False), is_paid))
     rid = cur.lastrowid
 
     for f in request.files.getlist("documents"):
@@ -263,10 +401,13 @@ def create_request(service_id):
             if ext in (".jpg", ".jpeg", ".png", ".webp", ".pdf"):
                 newn = secrets.token_hex(8) + "_" + fn
                 f.save(os.path.join(DOCUMENTS_FOLDER, newn))
-                conn.execute("INSERT INTO documents (request_id, customer_id, file_path, original_name) VALUES (?,?,?,?)", (rid, customer_id, newn, fn))
+                conn.execute("INSERT INTO documents (request_id, customer_id, file_path, original_name) VALUES (?,?,?,?)",
+                             (rid, customer_id, newn, fn))
 
-    conn.execute("INSERT INTO messages (customer_id, request_id, sender, message) VALUES (?,?,?,?)", (customer_id, rid, "system", "درخواست شما با موفقیت ثبت شد."))
+    conn.execute("INSERT INTO messages (customer_id, request_id, sender, message) VALUES (?,?,?,?)",
+                 (customer_id, rid, "system", "درخواست شما با موفقیت ثبت شد."))
     create_notification("admin", None, rid, "درخواست جدید", f"کد پیگیری: {tracking}")
+    create_notification("expert", None, rid, "درخواست جدید", f"کد پیگیری: {tracking}")
     conn.commit()
 
     flash(f"درخواست ثبت شد. کد پیگیری شما: {tracking}", "success")
@@ -279,22 +420,56 @@ def tracking():
     if code:
         conn = get_db()
         result = conn.execute("""
-            SELECT r.*, c.name AS customer_name, c.phone AS customer_phone, s.name AS service_name
-            FROM requests r LEFT JOIN customers c ON c.id = r.customer_id LEFT JOIN services s ON s.id = r.service_id
+            SELECT r.*, c.name AS customer_name, c.phone AS customer_phone, s.name AS service_name,
+                   u.username AS expert_name, u.role AS expert_role
+            FROM requests r
+            LEFT JOIN customers c ON c.id = r.customer_id
+            LEFT JOIN services s ON s.id = r.service_id
+            LEFT JOIN users u ON u.id = r.expert_id
             WHERE r.tracking_code = ?
         """, (code,)).fetchone()
-        if not result: flash("کد پیگیری پیدا نشد.", "error")
+        if not result:
+            flash("کد پیگیری پیدا نشد.", "error")
     return render_template("tracking.html", result=result, settings=get_settings())
+
+@app.route("/upload-missing/<tracking_code>", methods=["POST"])
+def upload_missing_docs(tracking_code):
+    conn = get_db()
+    req = conn.execute("SELECT * FROM requests WHERE tracking_code = ?", (tracking_code,)).fetchone()
+    if not req or req["status"] != "نقص مدارک":
+        flash("امکان ارسال مدارک وجود ندارد.", "error")
+        return redirect(url_for("tracking", code=tracking_code))
+
+    for f in request.files.getlist("documents"):
+        if f and f.filename:
+            fn = secure_filename(f.filename)
+            ext = os.path.splitext(fn)[1].lower()
+            if ext in (".jpg", ".jpeg", ".png", ".webp", ".pdf"):
+                newn = secrets.token_hex(8) + "_" + fn
+                f.save(os.path.join(DOCUMENTS_FOLDER, newn))
+                conn.execute("INSERT INTO documents (request_id, customer_id, file_path, original_name) VALUES (?,?,?,?)",
+                             (req["id"], req["customer_id"], newn, fn))
+
+    conn.execute("UPDATE requests SET status = 'در انتظار بررسی', updated_at = CURRENT_TIMESTAMP WHERE id = ?", (req["id"],))
+    conn.commit()
+    create_notification("admin", None, req["id"], "مدارک ناقص ارسال شد", f"کد پیگیری: {tracking_code}")
+    flash("مدارک با موفقیت ارسال شد.", "success")
+    return redirect(url_for("tracking", code=tracking_code))
 
 @app.route("/customer/request/<tracking_code>", methods=["GET", "POST"])
 def customer_request(tracking_code):
     conn = get_db()
     req = conn.execute("""
-        SELECT r.*, c.name AS customer_name, c.phone AS customer_phone, s.name AS service_name
-        FROM requests r LEFT JOIN customers c ON c.id = r.customer_id LEFT JOIN services s ON s.id = r.service_id
+        SELECT r.*, c.name AS customer_name, c.phone AS customer_phone, s.name AS service_name,
+               u.username AS expert_name, u.role AS expert_role
+        FROM requests r
+        LEFT JOIN customers c ON c.id = r.customer_id
+        LEFT JOIN services s ON s.id = r.service_id
+        LEFT JOIN users u ON u.id = r.expert_id
         WHERE r.tracking_code = ?
     """, (tracking_code,)).fetchone()
-    if not req: abort(404)
+    if not req:
+        abort(404)
 
     if request.method == "POST":
         message = request.form.get("message", "").strip()
@@ -309,7 +484,8 @@ def customer_request(tracking_code):
                 file_path = newn
                 original_name = fn
         if message or file_path:
-            conn.execute("INSERT INTO messages (customer_id, request_id, sender, message, file_path, original_name) VALUES (?,?,?,?,?,?)", (req["customer_id"], req["id"], "customer", message or "فایل ارسال شد", file_path, original_name))
+            conn.execute("INSERT INTO messages (customer_id, request_id, sender, message, file_path, original_name) VALUES (?,?,?,?,?,?)",
+                         (req["customer_id"], req["id"], "customer", message or "فایل ارسال شد", file_path, original_name))
             conn.commit()
             flash("پیام ارسال شد.", "success")
         return redirect(url_for("customer_request", tracking_code=tracking_code))
@@ -324,8 +500,8 @@ def support():
     experts = conn.execute("SELECT id, username FROM users WHERE role = 'expert' AND active = 1").fetchall()
 
     if request.method == "POST":
-        name = request.form.get("name", "").strip()
-        phone = request.form.get("phone", "").strip()
+        name = to_latin_digits(request.form.get("name", "").strip())
+        phone = to_latin_digits(request.form.get("phone", "").strip())
         message = request.form.get("message", "").strip()
         file = request.files.get("file")
 
@@ -351,16 +527,20 @@ def support():
                 file_path = new_name
                 original_name = filename
 
-        conn.execute("INSERT INTO messages (customer_id, request_id, sender, message, file_path, original_name) VALUES (?, NULL, 'customer', ?, ?, ?)", (customer_id, message, file_path, original_name))
+        conn.execute("INSERT INTO messages (customer_id, request_id, sender, message, file_path, original_name) VALUES (?, NULL, 'customer', ?, ?, ?)",
+                     (customer_id, message, file_path, original_name))
         conn.commit()
-        flash("پیام شما با موفقیت برای پشتیبانی ارسال شد.", "success")
+        flash("پیام شما با موفقیت ارسال شد.", "success")
         return redirect(url_for("support"))
 
     return render_template("support.html", experts=experts, settings=get_settings())
 
+# ===================== مدیریت =====================
+
 @app.route("/admin/login", methods=["GET", "POST"])
 def admin_login():
-    if get_current_user(): return redirect(url_for("admin"))
+    if get_current_user():
+        return redirect(url_for("admin"))
     if request.method == "POST":
         username = request.form.get("username", "").strip()
         password = request.form.get("password", "")
@@ -390,22 +570,31 @@ def admin():
             placeholders = ",".join("?" * len(allowed))
             sql = f"""
                 SELECT r.*, c.name AS customer_name, c.phone AS customer_phone, s.name AS service_name
-                FROM requests r LEFT JOIN customers c ON c.id = r.customer_id LEFT JOIN services s ON s.id = r.service_id
-                WHERE (r.expert_id = ? OR r.expert_id IS NULL) AND (r.is_paid = 1 OR r.total_price = 0)
-                AND r.service_id IN ({placeholders}) ORDER BY r.id DESC
+                FROM requests r
+                LEFT JOIN customers c ON c.id = r.customer_id
+                LEFT JOIN services s ON s.id = r.service_id
+                WHERE (r.expert_id = ? OR r.expert_id IS NULL)
+                  AND (r.is_paid = 1 OR r.total_price = 0)
+                  AND r.service_id IN ({placeholders})
+                ORDER BY r.id DESC
             """
             requests_rows = conn.execute(sql, [user["id"]] + allowed).fetchall()
         else:
             requests_rows = conn.execute("""
                 SELECT r.*, c.name AS customer_name, c.phone AS customer_phone, s.name AS service_name
-                FROM requests r LEFT JOIN customers c ON c.id = r.customer_id LEFT JOIN services s ON s.id = r.service_id
-                WHERE (r.expert_id = ? OR r.expert_id IS NULL) AND (r.is_paid = 1 OR r.total_price = 0)
+                FROM requests r
+                LEFT JOIN customers c ON c.id = r.customer_id
+                LEFT JOIN services s ON s.id = r.service_id
+                WHERE (r.expert_id = ? OR r.expert_id IS NULL)
+                  AND (r.is_paid = 1 OR r.total_price = 0)
                 ORDER BY r.id DESC
             """, (user["id"],)).fetchall()
     else:
         requests_rows = conn.execute("""
             SELECT r.*, c.name AS customer_name, c.phone AS customer_phone, s.name AS service_name
-            FROM requests r LEFT JOIN customers c ON c.id = r.customer_id LEFT JOIN services s ON s.id = r.service_id
+            FROM requests r
+            LEFT JOIN customers c ON c.id = r.customer_id
+            LEFT JOIN services s ON s.id = r.service_id
             ORDER BY r.id DESC
         """).fetchall()
 
@@ -418,7 +607,22 @@ def admin():
     total_income = conn.execute("SELECT COALESCE(SUM(paid_price),0) FROM requests").fetchone()[0]
     total_debt = conn.execute("SELECT COALESCE(SUM(CASE WHEN total_price > paid_price THEN total_price - paid_price ELSE 0 END),0) FROM requests").fetchone()[0]
 
-    return render_template("admin.html", requests=requests_rows, customers=customers, services=services, discounts=discounts, users=users, work_hours=work_hours, total_income=total_income, total_debt=total_debt, settings=get_settings(), current_user=user)
+    unread = conn.execute("SELECT COUNT(*) FROM notifications WHERE is_read = 0").fetchone()[0]
+
+    return render_template(
+        "admin.html",
+        requests=requests_rows,
+        customers=customers,
+        services=services,
+        discounts=discounts,
+        users=users,
+        work_hours=work_hours,
+        total_income=total_income,
+        total_debt=total_debt,
+        settings=get_settings(),
+        current_user=user,
+        unread_count=unread
+    )
 
 @app.route("/admin/settings/save", methods=["POST"])
 @login_required
@@ -462,11 +666,17 @@ def admin_request(rid):
     conn = get_db()
     user = get_current_user()
     row = conn.execute("""
-        SELECT r.*, c.name AS customer_name, c.phone AS customer_phone, c.national_id AS customer_national_id, s.name AS service_name
-        FROM requests r LEFT JOIN customers c ON c.id = r.customer_id LEFT JOIN services s ON s.id = r.service_id
+        SELECT r.*, c.name AS customer_name, c.phone AS customer_phone,
+               c.national_id AS customer_national_id, s.name AS service_name,
+               u.username AS expert_name, u.role AS expert_role
+        FROM requests r
+        LEFT JOIN customers c ON c.id = r.customer_id
+        LEFT JOIN services s ON s.id = r.service_id
+        LEFT JOIN users u ON u.id = r.expert_id
         WHERE r.id = ?
     """, (rid,)).fetchone()
-    if not row: abort(404)
+    if not row:
+        abort(404)
 
     if user["role"] == "expert" and row["expert_id"] and row["expert_id"] != user["id"]:
         flash("این پرونده به کارشناس دیگری اختصاص دارد.", "error")
@@ -479,17 +689,21 @@ def admin_request(rid):
         total_price = to_int(request.form.get("total_price", row["total_price"]))
         paid_price = to_int(request.form.get("paid_price", row["paid_price"]))
         expert_id = request.form.get("expert_id") or None
-        if expert_id: expert_id = to_int(expert_id)
+        if expert_id:
+            expert_id = to_int(expert_id)
 
-        if user["role"] == "expert" and not row["expert_id"] and status in ("پذیرش شد", "در حال بررسی", "در حال انجام"):
+        # اگر کارشناس وضعیت را پذیرش کرد، خودش مسئول شود
+        if user["role"] == "expert" and status == "پذیرش شد" and not row["expert_id"]:
             expert_id = user["id"]
 
         paid_price = max(0, min(paid_price, total_price))
         conn.execute("""
-            UPDATE requests SET status=?, estimated_time=?, admin_note=?, total_price=?, paid_price=?, expert_id=?, updated_at=CURRENT_TIMESTAMP
+            UPDATE requests SET status=?, estimated_time=?, admin_note=?,
+                total_price=?, paid_price=?, expert_id=?, updated_at=CURRENT_TIMESTAMP
             WHERE id=?
         """, (status, estimated_time, admin_note, total_price, paid_price, expert_id, rid))
         conn.commit()
+
         create_notification("customer", row["customer_id"], rid, "تغییر وضعیت پرونده", f"وضعیت جدید: {status}")
         flash("پرونده به‌روزرسانی شد.", "success")
         return redirect(url_for("admin_request", rid=rid))
@@ -499,7 +713,8 @@ def admin_request(rid):
     experts = conn.execute("SELECT id, username FROM users WHERE role='expert' AND active=1").fetchall()
     form_data = parse_json(row["form_data"] or "{}", {})
 
-    return render_template("admin_request.html", req=row, messages=messages, documents=documents, experts=experts, form_data=form_data, settings=get_settings())
+    return render_template("admin_request.html", req=row, messages=messages, documents=documents,
+                           experts=experts, form_data=form_data, settings=get_settings())
 
 @app.route("/admin/request/status", methods=["POST"])
 @login_required
@@ -512,11 +727,15 @@ def admin_request_status():
     conn = get_db()
     user = get_current_user()
     row = conn.execute("SELECT * FROM requests WHERE id=?", (rid,)).fetchone()
-    if not row: abort(404)
+    if not row:
+        abort(404)
+
     expert_id = row["expert_id"]
-    if user["role"] == "expert" and not expert_id and status in ("پذیرش شد", "در حال بررسی", "در حال انجام"):
+    if user["role"] == "expert" and status == "پذیرش شد" and not expert_id:
         expert_id = user["id"]
-    conn.execute("UPDATE requests SET status=?, expert_id=?, updated_at=CURRENT_TIMESTAMP WHERE id=?", (status, expert_id, rid))
+
+    conn.execute("UPDATE requests SET status=?, expert_id=?, updated_at=CURRENT_TIMESTAMP WHERE id=?",
+                 (status, expert_id, rid))
     conn.commit()
     create_notification("customer", row["customer_id"], rid, "تغییر وضعیت", f"وضعیت جدید: {status}")
     flash("وضعیت پرونده تغییر کرد.", "success")
@@ -531,11 +750,13 @@ def admin_request_update():
     estimated_time = request.form.get("estimated_time", "").strip()
     admin_note = request.form.get("admin_note", "").strip()
     expert_id = request.form.get("expert_id") or None
-    if expert_id: expert_id = to_int(expert_id)
+    if expert_id:
+        expert_id = to_int(expert_id)
     paid_price = max(0, min(paid_price, total_price))
     conn = get_db()
     conn.execute("""
-        UPDATE requests SET total_price=?, paid_price=?, estimated_time=?, admin_note=?, expert_id=?, updated_at=CURRENT_TIMESTAMP WHERE id=?
+        UPDATE requests SET total_price=?, paid_price=?, estimated_time=?,
+            admin_note=?, expert_id=?, updated_at=CURRENT_TIMESTAMP WHERE id=?
     """, (total_price, paid_price, estimated_time, admin_note, expert_id, rid))
     conn.commit()
     flash("اطلاعات پرونده ذخیره شد.", "success")
@@ -546,11 +767,13 @@ def admin_request_update():
 def admin_message():
     rid = to_int(request.form.get("id"))
     message = request.form.get("message", "").strip()
-    if not message: return redirect(url_for("admin_request", rid=rid))
+    if not message:
+        return redirect(url_for("admin_request", rid=rid))
     conn = get_db()
     row = conn.execute("SELECT customer_id FROM requests WHERE id=?", (rid,)).fetchone()
     if row:
-        conn.execute("INSERT INTO messages (customer_id, request_id, sender, message) VALUES (?,?,?,?)", (row["customer_id"], rid, "admin", message))
+        conn.execute("INSERT INTO messages (customer_id, request_id, sender, message) VALUES (?,?,?,?)",
+                     (row["customer_id"], rid, "admin", message))
         conn.commit()
     flash("پیام ارسال شد.", "success")
     return redirect(url_for("admin_request", rid=rid))
@@ -605,7 +828,8 @@ def create_user():
     role = request.form.get("role", "expert")
     phone = request.form.get("phone", "").strip()
     allowed = request.form.getlist("allowed_services")
-    if role not in ("admin", "expert"): role = "expert"
+    if role not in ("admin", "expert"):
+        role = "expert"
     if not username or len(password) < 6:
         flash("اطلاعات نامعتبر است.", "error")
         return redirect(url_for("admin"))
@@ -613,7 +837,8 @@ def create_user():
     if conn.execute("SELECT id FROM users WHERE username=?", (username,)).fetchone():
         flash("نام کاربری تکراری است.", "error")
         return redirect(url_for("admin"))
-    conn.execute("INSERT INTO users (username, password, role, phone, allowed_services, active) VALUES (?,?,?,?,?,1)", (username, generate_password_hash(password), role, phone, json.dumps([to_int(x) for x in allowed])))
+    conn.execute("INSERT INTO users (username, password, role, phone, allowed_services, active) VALUES (?,?,?,?,?,1)",
+                 (username, generate_password_hash(password), role, phone, json.dumps([to_int(x) for x in allowed])))
     conn.commit()
     flash("کاربر ایجاد شد.", "success")
     return redirect(url_for("admin"))
@@ -659,7 +884,8 @@ def create_discount():
     conn.execute("""
         INSERT INTO discounts (code, kind, value, max_uses, start_date, end_date, active)
         VALUES (?,?,?,?,?,?,1)
-    """, (code, kind, value, to_int(request.form.get("max_uses", 0)), request.form.get("start_date", ""), request.form.get("end_date", "")))
+    """, (code, kind, value, to_int(request.form.get("max_uses", 0)),
+          request.form.get("start_date", ""), request.form.get("end_date", "")))
     conn.commit()
     flash("کد تخفیف ایجاد شد.", "success")
     return redirect(url_for("admin"))
@@ -688,7 +914,8 @@ def save_work_hours():
         start = request.form.get(f"start_{day_id}", "")
         end = request.form.get(f"end_{day_id}", "")
         is_rest = 1 if request.form.get(f"rest_{day_id}") else 0
-        conn.execute("UPDATE work_hours SET start_time=?, end_time=?, is_rest=? WHERE id=?", (start, end, is_rest, day_id))
+        conn.execute("UPDATE work_hours SET start_time=?, end_time=?, is_rest=? WHERE id=?",
+                     (start, end, is_rest, day_id))
     conn.commit()
     flash("ساعات کاری ذخیره شد.", "success")
     return redirect(url_for("admin"))
@@ -707,7 +934,8 @@ def admin_backup():
 def download_document(doc_id):
     conn = get_db()
     doc = conn.execute("SELECT * FROM documents WHERE id=?", (doc_id,)).fetchone()
-    if not doc: abort(404)
+    if not doc:
+        abort(404)
     return send_from_directory(DOCUMENTS_FOLDER, doc["file_path"], as_attachment=True, download_name=doc["original_name"])
 
 @app.route("/download/chat/<path:filename>")
