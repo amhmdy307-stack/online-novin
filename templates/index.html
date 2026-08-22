@@ -5,6 +5,11 @@
 {% block content %}
 
 <div class="card" style="text-align:center; background:#166534; color:white; border-radius:18px; padding:22px;">
+    {% if logo %}
+        <div style="margin-bottom:12px;">
+            <img src="{{ url_for('uploaded_logo', filename=logo) }}" alt="لوگو" style="max-width:120px; max-height:80px; border-radius:8px;">
+        </div>
+    {% endif %}
     <h1 style="margin:0 0 6px 0; font-size:24px;">{{ site_name|default("کافی نت آنلاین نوین") }}</h1>
     <p style="margin:0 0 4px 0; opacity:0.95;">با مدیریت : {{ manager|default("احمد محمدی مهر") }}</p>
     
