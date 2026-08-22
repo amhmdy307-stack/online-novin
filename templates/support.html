@@ -1,40 +1,31 @@
 {% extends "base.html" %}
-
 {% block title %}ارتباط با پشتیبانی{% endblock %}
-
 {% block content %}
-
 <div class="card">
     <h1>ارتباط با پشتیبانی</h1>
-    <p>لطفاً کارشناس مورد نظر خود را انتخاب کنید و پیام خود را ارسال کنید.</p>
+    <p>لطفاً کارشناس یا مدیر مورد نظر خود را انتخاب کنید.</p>
 </div>
-
 <div class="card">
     <form method="POST" enctype="multipart/form-data">
-        <label>انتخاب کارشناس</label>
+        <label>انتخاب کارشناس / مدیر</label>
         <select name="expert_id">
-            <option value="">-- انتخاب کارشناس --</option>
+            <option value="">-- انتخاب کنید --</option>
             {% for expert in experts %}
-                <option value="{{ expert['id'] }}">{{ expert["username"] }}</option>
+            <option value="{{ expert['id'] }}">
+                {{ expert["username"] }}{% if expert["role"]=="admin" %} (مدیر اصلی){% endif %}
+            </option>
             {% endfor %}
         </select>
-
         <label>نام شما</label>
         <input type="text" name="name" required placeholder="نام و نام خانوادگی">
-
         <label>شماره موبایل</label>
         <input type="tel" name="phone" required placeholder="09xxxxxxxxx">
-
         <label>پیام شما</label>
         <textarea name="message" required placeholder="پیام خود را بنویسید..."></textarea>
-
         <label>ارسال عکس یا فایل (اختیاری)</label>
         <input type="file" name="file" accept=".jpg,.jpeg,.png,.webp,.pdf">
-
         <button type="submit" class="btn" style="width:100%;">ارسال پیام</button>
     </form>
 </div>
-
 <a href="{{ url_for('home') }}" class="btn btn-secondary">بازگشت به صفحه اصلی</a>
-
 {% endblock %}
