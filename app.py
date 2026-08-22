@@ -4,6 +4,7 @@ import sqlite3
 import secrets
 import random
 import shutil
+import requests
 from datetime import datetime
 from functools import wraps
 
@@ -48,6 +49,7 @@ FIELD_LABELS = {
     "discount_code": "کد تخفیف",
 }
 
+
 def get_db():
     if "db" not in g:
         g.db = sqlite3.connect(DATABASE)
@@ -55,19 +57,23 @@ def get_db():
         g.db.execute("PRAGMA foreign_keys = ON")
     return g.db
 
+
 @app.teardown_appcontext
 def close_db(e=None):
     db = g.pop("db", None)
     if db is not None:
         db.close()
 
+
 def column_exists(conn, table, column):
     rows = conn.execute(f"PRAGMA table_info({table})").fetchall()
     return any(r["name"] == column for r in rows)
 
+
 def add_column_if_missing(conn, table, column, definition):
     if not column_exists(conn, table, column):
         conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
+
 
 def create_tables():
     conn = get_db()
@@ -118,15 +124,18 @@ def create_tables():
                      ("admin", generate_password_hash("ChangeMe123!")))
     conn.commit()
 
+
 def get_settings():
     conn = get_db()
     rows = conn.execute("SELECT key, value FROM settings").fetchall()
     return {r["key"]: r["value"] for r in rows}
 
+
 def set_setting(key, value):
     conn = get_db()
     conn.execute("INSERT INTO settings(key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value", (key, value))
     conn.commit()
+
 
 def get_current_user():
     uid = session.get("user_id")
@@ -138,6 +147,7 @@ def get_current_user():
         return None
     return user
 
+
 def login_required(f):
     @wraps(f)
     def wrap(*args, **kwargs):
@@ -145,6 +155,7 @@ def login_required(f):
             return redirect(url_for("admin_login"))
         return f(*args, **kwargs)
     return wrap
+
 
 def admin_required(f):
     @wraps(f)
@@ -156,6 +167,7 @@ def admin_required(f):
         return f(*args, **kwargs)
     return wrap
 
+
 def generate_tracking_code():
     conn = get_db()
     while True:
@@ -163,11 +175,13 @@ def generate_tracking_code():
         if not conn.execute("SELECT id FROM requests WHERE tracking_code = ?", (code,)).fetchone():
             return code
 
+
 def to_int(v, default=0):
     try:
         return int(str(v).replace(",", "").strip())
     except:
         return default
+
 
 def parse_json(v, default=None):
     if default is None:
@@ -177,6 +191,7 @@ def parse_json(v, default=None):
     except:
         return default
 
+
 def to_latin_digits(text):
     if text is None:
         return ""
@@ -185,14 +200,75 @@ def to_latin_digits(text):
     latin = "0123456789"
     return str(text).translate(str.maketrans(persian + arabic, latin + latin))
 
+
 def get_field_label(key):
     return FIELD_LABELS.get(key, key)
+
 
 def create_notification(user_type, user_id, request_id, title, body=""):
     conn = get_db()
     conn.execute("INSERT INTO notifications (user_type, user_id, request_id, title, body) VALUES (?, ?, ?, ?, ?)",
                  (user_type, user_id, request_id, title, body))
     conn.commit()
+
+
+def send_sms(mobile, message):
+    try:
+        mobile = to_latin_digits(str(mobile or "").strip())
+
+        if not mobile:
+            return False
+
+        if mobile.startswith("+98"):
+            mobile = "0" + mobile[3:]
+
+        if mobile.startswith("98") and len(mobile) == 12:
+            mobile = "0" + mobile[2:]
+
+        settings = get_settings()
+
+        if settings.get("sms_enabled") != "1":
+            return False
+
+        api_key = str(settings.get("sms_api_key", "") or "").strip()
+        sender = str(settings.get("sms_sender", "") or "").strip()
+
+        if not api_key or not sender:
+            return False
+
+        url = "https://api.sms.ir/v1/send/bulk"
+
+        headers = {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+            "x-api-key": api_key
+        }
+
+        payload = {
+            "lineNumber": int(sender),
+            "MessageText": str(message),
+            "Mobiles": [mobile]
+        }
+
+        response = requests.post(
+            url,
+            headers=headers,
+            json=payload,
+            timeout=20
+        )
+
+        if 200 <= response.status_code < 300:
+            try:
+                result = response.json()
+                return bool(result.get("status", True))
+            except Exception:
+                return True
+
+        return False
+
+    except Exception:
+        return False
+
 
 def auto_backup():
     try:
@@ -204,6 +280,7 @@ def auto_backup():
             os.remove(os.path.join(BACKUP_FOLDER, old))
     except Exception:
         pass
+
 
 @app.context_processor
 def inject_globals():
@@ -218,11 +295,13 @@ def inject_globals():
         "get_field_label": get_field_label,
     }
 
+
 @app.route("/")
 def home():
     conn = get_db()
     services = conn.execute("SELECT * FROM services WHERE active = 1 ORDER BY sort_order ASC, id DESC").fetchall()
     return render_template("index.html", services=services, settings=get_settings())
+
 
 @app.route("/service/<int:service_id>")
 def service(service_id):
@@ -233,6 +312,7 @@ def service(service_id):
     fields = parse_json(row["fields_json"])
     documents = parse_json(row["documents_json"])
     return render_template("service.html", service=row, fields=fields, documents=documents, settings=get_settings())
+
 
 @app.route("/create-request/<int:service_id>", methods=["POST"])
 def create_request(service_id):
@@ -314,9 +394,16 @@ def create_request(service_id):
     create_notification("admin", None, rid, "درخواست جدید", f"کد پیگیری: {tracking}")
     create_notification("expert", None, rid, "درخواست جدید", f"کد پیگیری: {tracking}")
     conn.commit()
+
+    send_sms(
+        phone,
+        f"{name} عزیز، درخواست شما در {SITE_NAME} با موفقیت ثبت شد.\nکد پیگیری: {tracking}"
+    )
+
     auto_backup()
     flash(f"درخواست ثبت شد. کد پیگیری شما: {tracking}", "success")
     return redirect(url_for("tracking", code=tracking))
+
 
 @app.route("/tracking", methods=["GET", "POST"])
 def tracking():
@@ -336,6 +423,7 @@ def tracking():
         if not result:
             flash("کد پیگیری پیدا نشد.", "error")
     return render_template("tracking.html", result=result, settings=get_settings())
+
 
 @app.route("/upload-missing/<tracking_code>", methods=["POST"])
 def upload_missing_docs(tracking_code):
@@ -360,9 +448,16 @@ def upload_missing_docs(tracking_code):
     create_notification("admin", None, req["id"], "مدارک ناقص ارسال شد", f"کد پیگیری: {tracking_code}")
     if req["expert_id"]:
         create_notification("expert", req["expert_id"], req["id"], "مدارک ناقص ارسال شد", f"کد پیگیری: {tracking_code}")
+
+    send_sms(
+        req["customer_phone"] if "customer_phone" in req.keys() else "",
+        f"مدارک پرونده {tracking_code} دریافت شد و پرونده مجدداً در انتظار بررسی قرار گرفت."
+    )
+
     auto_backup()
     flash("مدارک با موفقیت ارسال شد.", "success")
     return redirect(url_for("tracking", code=tracking_code))
+
 
 @app.route("/customer/request/<tracking_code>", methods=["GET", "POST"])
 def customer_request(tracking_code):
@@ -403,6 +498,7 @@ def customer_request(tracking_code):
     work_hours = conn.execute("SELECT * FROM work_hours ORDER BY id").fetchall()
     return render_template("chat.html", request_row=req, messages=messages, documents=documents,
                            work_hours=work_hours, settings=get_settings())
+
 
 @app.route("/support", methods=["GET", "POST"])
 def support():
@@ -449,6 +545,7 @@ def support():
 
     return render_template("support.html", experts=experts, settings=get_settings())
 
+
 @app.route("/admin/login", methods=["GET", "POST"])
 def admin_login():
     if get_current_user():
@@ -465,10 +562,12 @@ def admin_login():
         flash("نام کاربری یا رمز عبور اشتباه است.", "error")
     return render_template("admin_login.html", settings=get_settings())
 
+
 @app.route("/admin/logout")
 def admin_logout():
     session.clear()
     return redirect(url_for("admin_login"))
+
 
 @app.route("/admin")
 @login_required
@@ -509,6 +608,7 @@ def admin():
                            total_income=total_income, total_debt=total_debt,
                            settings=get_settings(), current_user=user, unread_count=unread)
 
+
 @app.route("/admin/settings/save", methods=["POST"])
 @login_required
 def admin_settings_save():
@@ -529,9 +629,11 @@ def admin_settings_save():
     flash("تنظیمات ذخیره شد.", "success")
     return redirect(url_for("admin"))
 
+
 @app.route("/uploads/logo/<path:filename>")
 def uploaded_logo(filename):
     return send_from_directory(UPLOAD_FOLDER, filename)
+
 
 @app.route("/admin/integrations/save", methods=["POST"])
 @admin_required
@@ -544,6 +646,7 @@ def admin_integrations_save():
     set_setting("payment_callback", request.form.get("payment_callback", "").strip())
     flash("تنظیمات پیامک و درگاه ذخیره شد.", "success")
     return redirect(url_for("admin"))
+
 
 @app.route("/admin/request/<int:rid>", methods=["GET", "POST"])
 @login_required
@@ -585,7 +688,14 @@ def admin_request(rid):
             WHERE id=?
         """, (status, estimated_time, admin_note, total_price, paid_price, expert_id, rid))
         conn.commit()
+
         create_notification("customer", row["customer_id"], rid, "تغییر وضعیت پرونده", f"وضعیت جدید: {status}")
+
+        send_sms(
+            row["customer_phone"],
+            f"{row['customer_name']} عزیز، وضعیت پرونده شما در {SITE_NAME} تغییر کرد.\nوضعیت جدید: {status}\nکد پیگیری: {row['tracking_code']}"
+        )
+
         auto_backup()
         flash("پرونده به‌روزرسانی شد.", "success")
         return redirect(url_for("admin_request", rid=rid))
@@ -596,6 +706,7 @@ def admin_request(rid):
     return render_template("admin_request.html", req=row, messages=messages, documents=documents,
                            form_data=form_data, settings=get_settings())
 
+
 @app.route("/admin/request/status", methods=["POST"])
 @login_required
 def admin_request_status():
@@ -604,9 +715,16 @@ def admin_request_status():
     if status not in ALLOWED_STATUSES:
         flash("وضعیت نامعتبر است.", "error")
         return redirect(url_for("admin"))
+
     conn = get_db()
     user = get_current_user()
-    row = conn.execute("SELECT * FROM requests WHERE id=?", (rid,)).fetchone()
+    row = conn.execute("""
+        SELECT r.*, c.phone AS customer_phone, c.name AS customer_name
+        FROM requests r
+        LEFT JOIN customers c ON c.id = r.customer_id
+        WHERE r.id=?
+    """, (rid,)).fetchone()
+
     if not row:
         abort(404)
 
@@ -617,10 +735,18 @@ def admin_request_status():
     conn.execute("UPDATE requests SET status=?, expert_id=?, updated_at=CURRENT_TIMESTAMP WHERE id=?",
                  (status, expert_id, rid))
     conn.commit()
+
     create_notification("customer", row["customer_id"], rid, "تغییر وضعیت", f"وضعیت جدید: {status}")
+
+    send_sms(
+        row["customer_phone"],
+        f"{row['customer_name']} عزیز، وضعیت پرونده شما در {SITE_NAME} تغییر کرد.\nوضعیت جدید: {status}\nکد پیگیری: {row['tracking_code']}"
+    )
+
     auto_backup()
     flash("وضعیت پرونده تغییر کرد.", "success")
     return redirect(url_for("admin_request", rid=rid))
+
 
 @app.route("/admin/request/update", methods=["POST"])
 @login_required
@@ -641,6 +767,7 @@ def admin_request_update():
     flash("اطلاعات پرونده ذخیره شد.", "success")
     return redirect(url_for("admin_request", rid=rid))
 
+
 @app.route("/admin/message", methods=["POST"])
 @login_required
 def admin_message():
@@ -656,6 +783,7 @@ def admin_message():
         conn.commit()
     flash("پیام ارسال شد.", "success")
     return redirect(url_for("admin_request", rid=rid))
+
 
 @app.route("/admin/service/save", methods=["POST"])
 @login_required
@@ -676,6 +804,7 @@ def admin_service_save():
     flash("خدمت جدید اضافه شد.", "success")
     return redirect(url_for("admin"))
 
+
 @app.route("/admin/service/<int:sid>/toggle", methods=["POST"])
 @login_required
 def toggle_service(sid):
@@ -683,6 +812,7 @@ def toggle_service(sid):
     conn.execute("UPDATE services SET active = CASE WHEN active=1 THEN 0 ELSE 1 END WHERE id=?", (sid,))
     conn.commit()
     return redirect(url_for("admin"))
+
 
 @app.route("/admin/service/<int:sid>/delete", methods=["POST"])
 @login_required
@@ -692,6 +822,7 @@ def delete_service(sid):
     conn.commit()
     flash("خدمت حذف شد.", "success")
     return redirect(url_for("admin"))
+
 
 @app.route("/admin/user/create", methods=["POST"])
 @admin_required
@@ -716,6 +847,7 @@ def create_user():
     flash("کاربر ایجاد شد.", "success")
     return redirect(url_for("admin"))
 
+
 @app.route("/admin/user/<int:uid>/toggle", methods=["POST"])
 @admin_required
 def toggle_user(uid):
@@ -726,6 +858,7 @@ def toggle_user(uid):
     conn.execute("UPDATE users SET active = CASE WHEN active=1 THEN 0 ELSE 1 END WHERE id=?", (uid,))
     conn.commit()
     return redirect(url_for("admin"))
+
 
 @app.route("/admin/password", methods=["POST"])
 @login_required
@@ -740,6 +873,7 @@ def admin_password():
     set_setting("force_change_password", "0")
     flash("رمز عبور با موفقیت تغییر کرد.", "success")
     return redirect(url_for("admin"))
+
 
 @app.route("/admin/discount/create", methods=["POST"])
 @login_required
@@ -763,6 +897,7 @@ def create_discount():
     flash("کد تخفیف ایجاد شد.", "success")
     return redirect(url_for("admin"))
 
+
 @app.route("/admin/discount/<int:did>/toggle", methods=["POST"])
 @login_required
 def toggle_discount(did):
@@ -771,13 +906,16 @@ def toggle_discount(did):
     conn.commit()
     return redirect(url_for("admin"))
 
+
 @app.route("/admin/discount/<int:did>/delete", methods=["POST"])
 @login_required
 def delete_discount(did):
     conn = get_db()
     conn.execute("DELETE FROM discounts WHERE id=?", (did,))
     conn.commit()
+    flash("کد تخفیف حذف شد.", "success")
     return redirect(url_for("admin"))
+
 
 @app.route("/admin/workhours/save", methods=["POST"])
 @admin_required
@@ -793,6 +931,7 @@ def save_work_hours():
     flash("ساعات کاری ذخیره شد.", "success")
     return redirect(url_for("admin"))
 
+
 @app.route("/admin/backup")
 @admin_required
 def admin_backup():
@@ -801,6 +940,7 @@ def admin_backup():
     shutil.copy2(DATABASE, backup_path)
     flash(f"پشتیبان‌گیری انجام شد: novin_manual_{ts}.db", "success")
     return redirect(url_for("admin"))
+
 
 @app.route("/admin/notifications")
 @login_required
@@ -811,9 +951,11 @@ def admin_notifications():
     conn.commit()
     return jsonify([{"title": r["title"], "body": r["body"], "created_at": r["created_at"]} for r in rows])
 
+
 @app.route("/17886038.txt")
 def enamad_file():
     return Response("", status=200, mimetype="text/plain")
+
 
 @app.route("/download/document/<int:doc_id>")
 @login_required
@@ -824,27 +966,34 @@ def download_document(doc_id):
         abort(404)
     return send_from_directory(DOCUMENTS_FOLDER, doc["file_path"], as_attachment=True, download_name=doc["original_name"])
 
+
 @app.route("/download/chat/<path:filename>")
 @login_required
 def download_chat_file(filename):
     return send_from_directory(CHAT_FOLDER, filename, as_attachment=True)
 
+
 @app.errorhandler(404)
 def not_found(e):
     return render_template("base.html", content="صفحه مورد نظر پیدا نشد."), 404
+
 
 @app.errorhandler(413)
 def too_large(e):
     flash("حجم فایل بیش از حد مجاز است.", "error")
     return redirect(request.referrer or url_for("home"))
 
+
 @app.errorhandler(500)
 def server_error(e):
     return "خطای داخلی سرور. لطفاً لاگ را بررسی کنید.", 500
 
+
 with app.app_context():
     create_tables()
+
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=False)
+```0
