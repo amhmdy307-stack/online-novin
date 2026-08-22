@@ -1,346 +1,40 @@
 {% extends "base.html" %}
 
-{% block title %}
-{{ service["name"] }}
-{% endblock %}
+{% block title %}ارتباط با پشتیبانی{% endblock %}
 
 {% block content %}
 
 <div class="card">
-
-<a
-    href="{{ url_for('home') }}"
-    class="btn btn-secondary"
->
-بازگشت
-</a>
-
-<br><br>
-
-<h1>
-{{ service["name"] }}
-</h1>
-
-{% if service["category"] %}
-
-<span class="badge">
-{{ service["category"] }}
-</span>
-
-{% endif %}
-
-{% if service["description"] %}
-
-<p>
-{{ service["description"] }}
-</p>
-
-{% endif %}
-
-{% if service["price"] and service["price"] > 0 %}
-
-<div class="price">
-
-قیمت پایه:
-
-{{ "{:,}".format(service["price"]) }}
-
-تومان
-
+    <h1>ارتباط با پشتیبانی</h1>
+    <p>لطفاً کارشناس مورد نظر خود را انتخاب کنید و پیام خود را ارسال کنید.</p>
 </div>
-
-{% else %}
-
-<div class="badge">
-قیمت پس از بررسی اعلام می‌شود
-</div>
-
-{% endif %}
-
-</div>
-
-
-{% if subservices %}
 
 <div class="card">
+    <form method="POST" enctype="multipart/form-data">
+        <label>انتخاب کارشناس</label>
+        <select name="expert_id">
+            <option value="">-- انتخاب کارشناس --</option>
+            {% for expert in experts %}
+                <option value="{{ expert['id'] }}">{{ expert["username"] }}</option>
+            {% endfor %}
+        </select>
 
-<h2>
-سامانه‌ها / زیرمجموعه‌ها
-</h2>
+        <label>نام شما</label>
+        <input type="text" name="name" required placeholder="نام و نام خانوادگی">
 
-<div class="icon-grid">
+        <label>شماره موبایل</label>
+        <input type="tel" name="phone" required placeholder="09xxxxxxxxx">
 
-{% for item in subservices %}
+        <label>پیام شما</label>
+        <textarea name="message" required placeholder="پیام خود را بنویسید..."></textarea>
 
-<a
-    class="icon-card"
-    href="{{ url_for('service', sid=item['id']) }}"
->
+        <label>ارسال عکس یا فایل (اختیاری)</label>
+        <input type="file" name="file" accept=".jpg,.jpeg,.png,.webp,.pdf">
 
-<div class="icon">
-🖥️
+        <button type="submit" class="btn" style="width:100%;">ارسال پیام</button>
+    </form>
 </div>
 
-<strong>
-{{ item["name"] }}
-</strong>
-
-<div class="mini">
-
-{% if item["price"] %}
-
-{{ "{:,}".format(item["price"]) }}
-تومان
-
-{% else %}
-
-قیمت پس از بررسی
-
-{% endif %}
-
-</div>
-
-</a>
-
-{% endfor %}
-
-</div>
-
-</div>
-
-{% endif %}
-
-
-<div class="card">
-
-<h2>
-ثبت درخواست
-</h2>
-
-<form
-    action="{{ url_for('create_request', service_id=service['id']) }}"
-    method="POST"
-    enctype="multipart/form-data"
->
-
-<label>
-نام و نام خانوادگی *
-</label>
-
-<input
-    type="text"
-    name="name"
-    required
->
-
-
-<label>
-کد ملی *
-</label>
-
-<input
-    type="text"
-    name="national_id"
-    maxlength="10"
-    required
->
-
-
-<label>
-شماره موبایل *
-</label>
-
-<input
-    type="tel"
-    name="phone"
-    required
-    placeholder="09xxxxxxxxx"
->
-
-
-{% if fields %}
-
-<hr>
-
-<h3>
-اطلاعات مورد نیاز
-</h3>
-
-{% for field in fields %}
-
-{% if field is string %}
-
-<label>
-{{ field }}
-</label>
-
-<input
-    type="text"
-    name="field_{{ loop.index }}"
->
-
-
-{% elif field is mapping %}
-
-<label>
-
-{{ field.get(
-    "label",
-    field.get(
-        "name",
-        "اطلاعات"
-    )
-) }}
-
-</label>
-
-
-{% if field.get("type") == "textarea" %}
-
-<textarea
-    name="{{ field.get(
-        'name',
-        'field_' ~ loop.index
-    ) }}"
-></textarea>
-
-
-{% elif field.get("type") == "select" %}
-
-<select
-    name="{{ field.get(
-        'name',
-        'field_' ~ loop.index
-    ) }}"
-    {% if field.get("required") %}required{% endif %}
->
-
-<option value="">
-انتخاب کنید
-</option>
-
-{% for option in field.get("options", []) %}
-
-<option value="{{ option }}">
-{{ option }}
-</option>
-
-{% endfor %}
-
-</select>
-
-
-{% elif field.get("type") in ["image","pdf","multi_file"] %}
-
-<input
-    type="file"
-    name="{{ field.get(
-        'name',
-        'field_' ~ loop.index
-    ) }}"
-    {% if field.get("type") == "multi_file" %}
-    multiple
-    {% endif %}
-    {% if field.get("required") %}
-    required
-    {% endif %}
->
-
-{% else %}
-
-<input
-    type="{{ field.get(
-        'type',
-        'text'
-    ) }}"
-    name="{{ field.get(
-        'name',
-        'field_' ~ loop.index
-    ) }}"
-    {% if field.get("required") %}
-    required
-    {% endif %}
->
-
-{% endif %}
-
-{% endif %}
-
-{% endfor %}
-
-{% endif %}
-
-
-<label>
-کد تخفیف
-</label>
-
-<input
-    type="text"
-    name="discount_code"
-    placeholder="در صورت داشتن کد تخفیف"
->
-
-
-<label>
-توضیحات مشتری
-</label>
-
-<textarea
-    name="customer_note"
-    placeholder="توضیحات درخواست..."
-></textarea>
-
-
-{% if documents %}
-
-<hr>
-
-<h3>
-مدارک مورد نیاز
-</h3>
-
-<ul>
-
-{% for document in documents %}
-
-<li>
-{{ document }}
-</li>
-
-{% endfor %}
-
-</ul>
-
-{% endif %}
-
-
-<label>
-ارسال مدارک
-</label>
-
-<input
-    type="file"
-    name="documents"
-    multiple
-    accept=".jpg,.jpeg,.png,.webp,.pdf"
->
-
-<small class="mini">
-JPG، JPEG، PNG، WEBP و PDF
-</small>
-
-<br><br>
-
-<button
-    type="submit"
-    class="btn btn-success"
->
-ثبت درخواست
-</button>
-
-</form>
-
-</div>
+<a href="{{ url_for('home') }}" class="btn btn-secondary">بازگشت به صفحه اصلی</a>
 
 {% endblock %}
