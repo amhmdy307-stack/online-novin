@@ -16,7 +16,7 @@
     {% if form_data %}
     <ul>
         {% for key, value in form_data.items() %}
-        <li><strong>{{ get_field_label(key) }}:</strong> {{ value }}</li>
+        <li><strong>{{ key }}:</strong> {{ value }}</li>
         {% endfor %}
     </ul>
     {% else %}
@@ -47,7 +47,7 @@
         <label>مبلغ پرداخت‌شده</label>
         <input type="number" name="paid_price" min="0" value="{{ req['paid_price'] or 0 }}">
         <label>مدت زمان تقریبی انجام</label>
-        <input type="text" name="estimated_time" value="{{ req['estimated_time'] or '' }}" placeholder="مثلاً ۲ روز کاری">
+        <input type="text" name="estimated_time" value="{{ req['estimated_time'] or '' }}">
         <label>توضیحات برای مشتری</label>
         <textarea name="admin_note">{{ req["admin_note"] or "" }}</textarea>
         <button type="submit" class="btn">ذخیره تغییرات</button>
