@@ -1,12 +1,10 @@
 {% extends "base.html" %}
-
 {% block title %}ارتباط با پشتیبانی{% endblock %}
-
 {% block content %}
 
 <div class="card">
     <h1>ارتباط با پشتیبانی</h1>
-    <p>زمان پاسخگویی: <strong>۸ تا ۲۲</strong></p>
+    <p>زمان پاسخگویی امروز: <strong>{{ work_hours_text }}</strong></p>
 </div>
 
 {% if within_hours %}
@@ -31,7 +29,7 @@
         <label>پیام شما</label>
         <textarea name="message" required placeholder="پیام خود را بنویسید..."></textarea>
 
-        <label>ارسال عکس یا فایل (اختیاری)</label>
+        <label>ارسال فایل (اختیاری)</label>
         <input type="file" name="file" accept=".jpg,.jpeg,.png,.webp,.pdf">
 
         <button type="submit" class="btn" style="width:100%;">ارسال پیام</button>
@@ -41,12 +39,10 @@
 <div class="card">
     <div class="alert alert-error">
         ساعت کاری کارشناسان به اتمام رسیده است.
-        <br>
-        زمان پاسخگویی: ۶ تا ۲۴
+        <br>زمان پاسخگویی امروز: {{ work_hours_text }}
     </div>
 </div>
 {% endif %}
 
 <a href="{{ url_for('home') }}" class="btn btn-secondary">بازگشت به صفحه اصلی</a>
-
 {% endblock %}
