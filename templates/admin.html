@@ -6,7 +6,8 @@
     <h1>پنل مدیریت</h1>
     <p>
         خوش آمدید
-        {% if current_user %}{{ current_user["username"] }}{% endif %}
+        {% if current_user %}{{ current_user["username"] }}
+        ({{ "مدیر" if current_user["role"]=="admin" else "کارشناس" }}){% endif %}
     </p>
     <a href="{{ url_for('admin_logout') }}" class="btn btn-secondary">خروج</a>
 </div>
@@ -21,22 +22,21 @@
     <a href="#services" class="card" style="text-align:center;text-decoration:none;">
         <div style="font-size:30px;">🛠️</div>
         <div>خدمات</div>
-        <small>{{ services|length }}</small>
     </a>
     <a href="#customers" class="card" style="text-align:center;text-decoration:none;">
         <div style="font-size:30px;">👥</div>
         <div>مشتریان</div>
-        <small>{{ customers|length }}</small>
     </a>
     <a href="{{ url_for('admin_support_messages') }}" class="card" style="text-align:center;text-decoration:none;">
         <div style="font-size:30px;">💬</div>
         <div>پیام پشتیبانی</div>
-        <small>{{ support_count or 0 }}</small>
+        {% if support_count %}<small>{{ support_count }}</small>{% endif %}
     </a>
     <a href="#discounts" class="card" style="text-align:center;text-decoration:none;">
         <div style="font-size:30px;">🎟</div>
         <div>کد تخفیف</div>
     </a>
+    {% if current_user and current_user["role"]=="admin" %}
     <a href="#users" class="card" style="text-align:center;text-decoration:none;">
         <div style="font-size:30px;">🧑‍💼</div>
         <div>کاربران</div>
@@ -45,25 +45,21 @@
         <div style="font-size:30px;">⏰</div>
         <div>ساعات کاری</div>
     </a>
+    <a href="#sms" class="card" style="text-align:center;text-decoration:none;">
+        <div style="font-size:30px;">📱</div>
+        <div>پیامک</div>
+    </a>
+    {% endif %}
     <a href="#settings" class="card" style="text-align:center;text-decoration:none;">
         <div style="font-size:30px;">⚙️</div>
         <div>تنظیمات</div>
-    </a>
-    <a href="#sms" class="card" style="text-align:center;text-decoration:none;">
-        <div style="font-size:30px;">📱</div>
-        <div>پیامک / درگاه</div>
     </a>
     <a href="{{ url_for('admin_backup') }}" class="card" style="text-align:center;text-decoration:none;">
         <div style="font-size:30px;">💾</div>
         <div>پشتیبان</div>
     </a>
-    <a href="{{ url_for('test_sms') }}" class="card" style="text-align:center;text-decoration:none;">
-        <div style="font-size:30px;">📤</div>
-        <div>تست پیامک</div>
-    </a>
 </div>
 
-<!-- آمار -->
 <div class="grid">
     <div class="card"><h3>درآمد</h3><strong>{{ "{:,}".format(total_income or 0) }}</strong> تومان</div>
     <div class="card"><h3>بدهی</h3><strong>{{ "{:,}".format(total_debt or 0) }}</strong> تومان</div>
@@ -75,9 +71,7 @@
     {% if requests %}
     <div style="overflow-x:auto;">
         <table>
-            <tr>
-                <th>کد</th><th>مشتری</th><th>خدمت</th><th>وضعیت</th><th></th>
-            </tr>
+            <tr><th>کد</th><th>مشتری</th><th>خدمت</th><th>وضعیت</th><th></th></tr>
             {% for r in requests %}
             <tr>
                 <td style="direction:ltr;">{{ r["tracking_code"] }}</td>
@@ -89,4 +83,145 @@
             {% endfor %}
         </table>
     </div>
-    {% else %
+    {% else %}<p>درخواستی نیست.</p>{% endif %}
+</div>
+
+<!-- خدمات -->
+<div class="card" id="services">
+    <h2>🛠️ خدمات</h2>
+    <form method="POST" action="{{ url_for('admin_service_save') }}">
+        <input type="text" name="name" required placeholder="نام خدمت">
+        <input type="text" name="category" placeholder="دسته">
+        <textarea name="description" placeholder="توضیحات"></textarea>
+        <input type="number" name="price" min="0" value="0" placeholder="قیمت">
+        <input type="number" name="sort_order" value="0" placeholder="ترتیب">
+        <textarea name="fields_json">[]</textarea>
+        <textarea name="documents_json">[]</textarea>
+        <label><input type="checkbox" name="active" value="1" checked> فعال</label>
+        <button class="btn" type="submit">افزودن خدمت</button>
+    </form>
+    {% if services %}
+    <hr>
+    {% for s in services %}
+    <div style="margin:8px 0;padding:8px;border:1px solid #eee;border-radius:8px;">
+        <strong>{{ s["name"] }}</strong> — {{ "{:,}".format(s["price"] or 0) }} تومان
+        ({% if s["active"] %}فعال{% else %}غیرفعال{% endif %})
+        <form method="POST" action="{{ url_for('toggle_service', sid=s['id']) }}" style="display:inline;">
+            <button class="btn btn-secondary" type="submit">فعال/غیرفعال</button>
+        </form>
+        <form method="POST" action="{{ url_for('delete_service', sid=s['id']) }}" style="display:inline;" onsubmit="return confirm('حذف؟');">
+            <button class="btn btn-secondary" type="submit">حذف</button>
+        </form>
+    </div>
+    {% endfor %}
+    {% endif %}
+</div>
+
+<!-- مشتریان -->
+<div class="card" id="customers">
+    <h2>👥 مشتریان</h2>
+    {% for c in customers %}
+    <div>{{ c["name"] }} — <span style="direction:ltr;">{{ c["phone"] }}</span></div>
+    {% else %}<p>مشتری نیست.</p>{% endfor %}
+</div>
+
+<!-- تخفیف -->
+<div class="card" id="discounts">
+    <h2>🎟 کد تخفیف</h2>
+    <form method="POST" action="{{ url_for('create_discount') }}">
+        <input type="text" name="code" required placeholder="کد">
+        <select name="kind"><option value="percent">درصدی</option><option value="fixed">ثابت</option></select>
+        <input type="number" name="value" min="0" required>
+        <input type="number" name="max_uses" min="0" value="1">
+        <input type="date" name="start_date">
+        <input type="date" name="end_date">
+        <button class="btn" type="submit">ایجاد</button>
+    </form>
+    {% for d in discounts %}
+    <div style="margin-top:8px;">
+        {{ d["code"] }} — {{ d["value"] }}{% if d["kind"]=="percent" %}%{% endif %}
+        <form method="POST" action="{{ url_for('toggle_discount', did=d['id']) }}" style="display:inline;">
+            <button class="btn btn-secondary" type="submit">فعال/غیرفعال</button>
+        </form>
+    </div>
+    {% endfor %}
+</div>
+
+{% if current_user and current_user["role"]=="admin" %}
+<!-- کاربران -->
+<div class="card" id="users">
+    <h2>🧑‍💼 کاربران</h2>
+    <form method="POST" action="{{ url_for('create_user') }}">
+        <input type="text" name="username" required placeholder="نام کاربری">
+        <input type="password" name="password" minlength="6" required placeholder="رمز">
+        <select name="role"><option value="expert">کارشناس</option><option value="admin">مدیر</option></select>
+        <input type="tel" name="phone" placeholder="09...">
+        <button class="btn" type="submit">ایجاد</button>
+    </form>
+    {% for u in users %}
+    <div style="margin-top:8px;">
+        {{ u["username"] }} ({{ "مدیر" if u["role"]=="admin" else "کارشناس" }}) — {{ u["phone"] }}
+        <form method="POST" action="{{ url_for('toggle_user', uid=u['id']) }}" style="display:inline;">
+            <button class="btn btn-secondary" type="submit">فعال/غیرفعال</button>
+        </form>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- ساعات کاری -->
+<div class="card" id="workhours">
+    <h2>⏰ ساعات کاری</h2>
+    <form method="POST" action="{{ url_for('save_work_hours') }}">
+        {% for wh in work_hours %}
+        <div style="margin-bottom:10px;padding:8px;border:1px solid #eee;border-radius:8px;">
+            <strong>{{ wh["day_name"] }}</strong>
+            <input type="hidden" name="day_id" value="{{ wh['id'] }}">
+            <input type="time" name="start_{{ wh['id'] }}" value="{{ wh['start_time'] or '08:00' }}">
+            <input type="time" name="end_{{ wh['id'] }}" value="{{ wh['end_time'] or '22:00' }}">
+            <label><input type="checkbox" name="rest_{{ wh['id'] }}" {% if wh["is_rest"] %}checked{% endif %}> تعطیل</label>
+        </div>
+        {% endfor %}
+        <button class="btn" type="submit">ذخیره</button>
+    </form>
+</div>
+
+<!-- پیامک -->
+<div class="card" id="sms">
+    <h2>📱 پیامک sms.ir</h2>
+    <form method="POST" action="{{ url_for('admin_integrations_save') }}">
+        <label><input type="checkbox" name="sms_enabled" {% if settings.get('sms_enabled')=='1' %}checked{% endif %}> فعال</label>
+        <input type="text" name="sms_api_key" value="{{ settings.get('sms_api_key','') }}" placeholder="API Key">
+        <input type="text" name="sms_sender" value="{{ settings.get('sms_sender','') }}" placeholder="شماره خط">
+        <label><input type="checkbox" name="payment_enabled" {% if settings.get('payment_enabled')=='1' %}checked{% endif %}> درگاه پرداخت</label>
+        <input type="text" name="payment_merchant" value="{{ settings.get('payment_merchant','') }}" placeholder="Merchant">
+        <input type="text" name="payment_callback" value="{{ settings.get('payment_callback','') }}" placeholder="Callback URL">
+        <button class="btn" type="submit">ذخیره</button>
+    </form>
+    <p style="margin-top:10px;"><a href="{{ url_for('test_sms') }}" class="btn btn-secondary">تست پیامک</a></p>
+</div>
+{% endif %}
+
+<!-- تنظیمات -->
+<div class="card" id="settings">
+    <h2>⚙️ تنظیمات</h2>
+    <form method="POST" action="{{ url_for('admin_settings_save') }}" enctype="multipart/form-data">
+        <input type="text" name="site_name" value="{{ settings.get('site_name','') }}" placeholder="نام سایت">
+        <input type="text" name="manager" value="{{ settings.get('manager','') }}" placeholder="مدیر">
+        <input type="text" name="phone" value="{{ settings.get('phone','') }}" placeholder="موبایل مدیر برای پیامک">
+        <input type="text" name="manager_text" value="{{ settings.get('manager_text','') }}">
+        <textarea name="home_text">{{ settings.get('home_text','') }}</textarea>
+        <textarea name="footer_text">{{ settings.get('footer_text','') }}</textarea>
+        <input type="file" name="logo" accept=".jpg,.jpeg,.png,.webp">
+        <button class="btn" type="submit">ذخیره</button>
+    </form>
+</div>
+
+<div class="card">
+    <h2>🔐 تغییر رمز</h2>
+    <form method="POST" action="{{ url_for('admin_password') }}">
+        <input type="password" name="password" minlength="6" required>
+        <button class="btn" type="submit">تغییر رمز</button>
+    </form>
+</div>
+
+{% endblock %}
