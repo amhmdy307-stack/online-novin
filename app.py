@@ -33,7 +33,8 @@ app.config["MAX_CONTENT_LENGTH"] = 12 * 1024 * 1024
 
 SITE_NAME = "کافی نت آنلاین نوین"
 MANAGER = "احمد محمدی مهر"
-PHONE = "09920345139"
+PHONE = ""
+IRAN_TZ = timezone(timedelta(hours=3, minutes=30))
 
 ALLOWED_STATUSES = [
     "در انتظار بررسی", "پذیرش شد", "در حال بررسی", "در حال انجام",
@@ -58,8 +59,6 @@ FIELD_LABELS = {
     "birth_date": "تاریخ تولد",
     "father_name": "نام پدر",
 }
-
-IRAN_TZ = timezone(timedelta(hours=3, minutes=30))
 
 
 def get_db():
@@ -227,10 +226,7 @@ def create_tables():
         "backup_email": "",
     }
     for k, v in defaults.items():
-        conn.execute(
-            "INSERT OR IGNORE INTO settings(key, value) VALUES (?, ?)",
-            (k, v)
-        )
+        conn.execute("INSERT OR IGNORE INTO settings(key, value) VALUES (?, ?)", (k, v))
 
     days = ["شنبه", "یکشنبه", "دوشنبه", "سه‌شنبه", "چهارشنبه", "پنجشنبه", "جمعه"]
     for d in days:
@@ -346,9 +342,11 @@ def create_notification(user_type, user_id, request_id, title, body=""):
 
 
 def send_sms(mobile, message):
+    """ارسال پیامک از طریق sms.ir"""
     settings = get_settings()
     if settings.get("sms_enabled") != "1":
         return False
+
     api_key = settings.get("sms_api_key", "").strip()
     line_number = settings.get("sms_sender", "").strip()
     if not api_key or not line_number or not mobile:
@@ -364,19 +362,21 @@ def send_sms(mobile, message):
 
     try:
         import requests
-        url = "https://api.sms.ir/v1/send/bulk"
-        headers = {
-            "X-API-KEY": api_key,
-            "Content-Type": "application/json",
-            "Accept": "application/json",
-        }
-        payload = {
-            "lineNumber": int(line_number) if str(line_number).isdigit() else line_number,
-            "messageText": message,
-            "mobiles": [mobile],
-            "sendDateTime": None,
-        }
-        r = requests.post(url, json=payload, headers=headers, timeout=15)
+        r = requests.post(
+            "https://api.sms.ir/v1/send/bulk",
+            headers={
+                "X-API-KEY": api_key,
+                "Content-Type": "application/json",
+                "Accept": "application/json",
+            },
+            json={
+                "lineNumber": int(line_number) if str(line_number).isdigit() else line_number,
+                "messageText": message,
+                "mobiles": [mobile],
+                "sendDateTime": None,
+            },
+            timeout=15,
+        )
         return r.status_code == 200
     except Exception:
         return False
@@ -399,8 +399,8 @@ def notify_staff_new_request(tracking, service_name=""):
 def auto_backup():
     try:
         ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-        backup_path = os.path.join(BACKUP_FOLDER, f"novin_auto_{ts}.db")
-        shutil.copy2(DATABASE, backup_path)
+        path = os.path.join(BACKUP_FOLDER, f"novin_auto_{ts}.db")
+        shutil.copy2(DATABASE, path)
         files = sorted(
             [f for f in os.listdir(BACKUP_FOLDER) if f.startswith("novin_auto_")],
             reverse=True
@@ -412,37 +412,29 @@ def auto_backup():
 
 
 def is_within_work_hours():
-    """ساعت کاری از پنل مدیر خوانده می‌شود — بر اساس زمان ایران"""
     now = datetime.now(IRAN_TZ)
     weekdays = ["دوشنبه", "سه‌شنبه", "چهارشنبه", "پنجشنبه", "جمعه", "شنبه", "یکشنبه"]
     today_name = weekdays[now.weekday()]
-
     conn = get_db()
     row = conn.execute(
         "SELECT * FROM work_hours WHERE day_name = ?",
         (today_name,)
     ).fetchone()
-
     if not row:
         return True
-
     if int(row["is_rest"] or 0) == 1:
         return False
-
     now_time = now.strftime("%H:%M")
     start = str(row["start_time"] or "00:00").strip()
     end = str(row["end_time"] or "23:59").strip()
-
     if len(start) == 4:
         start = "0" + start
     if len(end) == 4:
         end = "0" + end
-
     return start <= now_time <= end
 
 
 def work_hours_text():
-    """متن ساعت امروز برای نمایش به مشتری"""
     now = datetime.now(IRAN_TZ)
     weekdays = ["دوشنبه", "سه‌شنبه", "چهارشنبه", "پنجشنبه", "جمعه", "شنبه", "یکشنبه"]
     today_name = weekdays[now.weekday()]
@@ -455,9 +447,7 @@ def work_hours_text():
         return "طبق تنظیمات مدیر"
     if int(row["is_rest"] or 0) == 1:
         return "امروز تعطیل است"
-    start = row["start_time"] or "—"
-    end = row["end_time"] or "—"
-    return f"{start} تا {end}"
+    return f"{row['start_time'] or '—'} تا {row['end_time'] or '—'}"
 
 
 @app.context_processor
@@ -491,13 +481,11 @@ def service(service_id):
     row = conn.execute("SELECT * FROM services WHERE id = ?", (service_id,)).fetchone()
     if not row:
         abort(404)
-    fields = parse_json(row["fields_json"])
-    documents = parse_json(row["documents_json"])
     return render_template(
         "service.html",
         service=row,
-        fields=fields,
-        documents=documents,
+        fields=parse_json(row["fields_json"]),
+        documents=parse_json(row["documents_json"]),
         settings=get_settings()
     )
 
@@ -520,8 +508,7 @@ def create_request(service_id):
         return redirect(url_for("service", service_id=service_id))
 
     customer = conn.execute(
-        "SELECT * FROM customers WHERE phone = ? ORDER BY id DESC LIMIT 1",
-        (phone,)
+        "SELECT * FROM customers WHERE phone = ? ORDER BY id DESC LIMIT 1", (phone,)
     ).fetchone()
     if customer:
         customer_id = customer["id"]
@@ -537,25 +524,20 @@ def create_request(service_id):
         customer_id = cur.lastrowid
 
     form_data = {}
-    service_fields = parse_json(service_row["fields_json"])
     field_map = {}
-    for f in service_fields:
+    for f in parse_json(service_row["fields_json"]):
         if isinstance(f, dict) and f.get("name"):
             field_map[f["name"]] = f.get("label") or f.get("name")
-
     for k in request.form:
         if k not in ("name", "phone", "national_id", "customer_note", "discount_code"):
-            label = field_map.get(k) or get_field_label(k)
-            form_data[label] = to_latin_digits(request.form.get(k))
+            form_data[field_map.get(k) or get_field_label(k)] = to_latin_digits(request.form.get(k))
 
     base_price = to_int(service_row["price"])
     discount_amount = 0
     is_paid = 0
-
     if discount_code:
         d = conn.execute(
-            "SELECT * FROM discounts WHERE code=? AND active=1",
-            (discount_code,)
+            "SELECT * FROM discounts WHERE code=? AND active=1", (discount_code,)
         ).fetchone()
         if d:
             today = datetime.now(IRAN_TZ).strftime("%Y-%m-%d")
@@ -580,7 +562,6 @@ def create_request(service_id):
 
     final_price = max(0, base_price - discount_amount)
     tracking = generate_tracking_code()
-
     cur = conn.execute("""
         INSERT INTO requests (
             customer_id, service_id, tracking_code, status, customer_note,
@@ -645,8 +626,7 @@ def tracking():
 def upload_missing_docs(tracking_code):
     conn = get_db()
     req = conn.execute(
-        "SELECT * FROM requests WHERE tracking_code = ?",
-        (tracking_code,)
+        "SELECT * FROM requests WHERE tracking_code = ?", (tracking_code,)
     ).fetchone()
     if not req or req["status"] != "نقص مدارک":
         flash("امکان ارسال مدارک وجود ندارد.", "error")
@@ -682,8 +662,7 @@ def upload_missing_docs(tracking_code):
         send_sms(admin_phone, text)
     if req["expert_id"]:
         expert = conn.execute(
-            "SELECT phone FROM users WHERE id = ?",
-            (req["expert_id"],)
+            "SELECT phone FROM users WHERE id = ?", (req["expert_id"],)
         ).fetchone()
         if expert and expert["phone"]:
             send_sms(expert["phone"], text)
@@ -714,7 +693,6 @@ def customer_request(tracking_code):
         if not within_hours:
             flash("ساعت کاری کارشناسان به اتمام رسیده است.", "error")
             return redirect(url_for("customer_request", tracking_code=tracking_code))
-
         message = request.form.get("message", "").strip()
         file = request.files.get("file")
         file_path = original_name = ""
@@ -736,21 +714,17 @@ def customer_request(tracking_code):
         return redirect(url_for("customer_request", tracking_code=tracking_code))
 
     messages = conn.execute(
-        "SELECT * FROM messages WHERE request_id = ? ORDER BY id ASC",
-        (req["id"],)
+        "SELECT * FROM messages WHERE request_id = ? ORDER BY id ASC", (req["id"],)
     ).fetchall()
     documents = conn.execute(
-        "SELECT * FROM documents WHERE request_id = ?",
-        (req["id"],)
+        "SELECT * FROM documents WHERE request_id = ?", (req["id"],)
     ).fetchall()
-    work_hours = conn.execute("SELECT * FROM work_hours ORDER BY id").fetchall()
 
     return render_template(
         "chat.html",
         request_row=req,
         messages=messages,
         documents=documents,
-        work_hours=work_hours,
         within_hours=within_hours,
         settings=get_settings()
     )
@@ -780,16 +754,14 @@ def support():
             return redirect(url_for("support"))
 
         customer = conn.execute(
-            "SELECT * FROM customers WHERE phone = ? ORDER BY id DESC LIMIT 1",
-            (phone,)
+            "SELECT * FROM customers WHERE phone = ? ORDER BY id DESC LIMIT 1", (phone,)
         ).fetchone()
         if customer:
             customer_id = customer["id"]
             conn.execute("UPDATE customers SET name = ? WHERE id = ?", (name, customer_id))
         else:
             cursor = conn.execute(
-                "INSERT INTO customers (name, phone) VALUES (?, ?)",
-                (name, phone)
+                "INSERT INTO customers (name, phone) VALUES (?, ?)", (name, phone)
             )
             customer_id = cursor.lastrowid
 
@@ -813,6 +785,16 @@ def support():
                 "expert", to_int(expert_id), None,
                 "پیام پشتیبانی جدید", f"از {name} - {phone}"
             )
+        # پیامک به مدیر
+        admin_phone = get_settings().get("phone", "").strip()
+        if admin_phone:
+            send_sms(admin_phone, f"پیام پشتیبانی جدید از {name}\n{phone}")
+        if expert_id:
+            exp = conn.execute(
+                "SELECT phone FROM users WHERE id = ?", (to_int(expert_id),)
+            ).fetchone()
+            if exp and exp["phone"]:
+                send_sms(exp["phone"], f"پیام پشتیبانی جدید از {name}\n{phone}")
         conn.commit()
         flash("پیام شما با موفقیت ارسال شد.", "success")
         return redirect(url_for("support"))
@@ -834,8 +816,7 @@ def admin_login():
         password = request.form.get("password", "")
         conn = get_db()
         user = conn.execute(
-            "SELECT * FROM users WHERE username = ? AND active = 1",
-            (username,)
+            "SELECT * FROM users WHERE username = ? AND active = 1", (username,)
         ).fetchone()
         if user and check_password_hash(user["password"], password):
             session.clear()
@@ -888,6 +869,9 @@ def admin():
         "SELECT COALESCE(SUM(CASE WHEN total_price > paid_price THEN total_price - paid_price ELSE 0 END),0) FROM requests"
     ).fetchone()[0]
     unread = conn.execute("SELECT COUNT(*) FROM notifications WHERE is_read = 0").fetchone()[0]
+    support_count = conn.execute(
+        "SELECT COUNT(*) FROM messages WHERE request_id IS NULL"
+    ).fetchone()[0]
 
     return render_template(
         "admin.html",
@@ -901,7 +885,27 @@ def admin():
         total_debt=total_debt,
         settings=get_settings(),
         current_user=user,
-        unread_count=unread
+        unread_count=unread,
+        support_count=support_count
+    )
+
+
+@app.route("/admin/support-messages")
+@login_required
+def admin_support_messages():
+    conn = get_db()
+    rows = conn.execute("""
+        SELECT m.*, c.name AS customer_name, c.phone AS customer_phone
+        FROM messages m
+        LEFT JOIN customers c ON c.id = m.customer_id
+        WHERE m.request_id IS NULL
+        ORDER BY m.id DESC
+        LIMIT 100
+    """).fetchall()
+    return render_template(
+        "admin_support_messages.html",
+        messages=rows,
+        settings=get_settings()
     )
 
 
@@ -972,11 +976,9 @@ def admin_request(rid):
         admin_note = request.form.get("admin_note", "").strip()
         total_price = to_int(request.form.get("total_price", row["total_price"]))
         paid_price = to_int(request.form.get("paid_price", row["paid_price"]))
-
         expert_id = row["expert_id"]
         if status == "پذیرش شد" and not expert_id:
             expert_id = user["id"]
-
         paid_price = max(0, min(paid_price, total_price))
         conn.execute("""
             UPDATE requests SET status=?, estimated_time=?, admin_note=?,
@@ -984,32 +986,27 @@ def admin_request(rid):
             WHERE id=?
         """, (status, estimated_time, admin_note, total_price, paid_price, expert_id, rid))
         conn.commit()
-
         create_notification(
             "customer", row["customer_id"], rid,
             "تغییر وضعیت پرونده", f"وضعیت جدید: {status}"
         )
         cust = conn.execute(
-            "SELECT phone FROM customers WHERE id = ?",
-            (row["customer_id"],)
+            "SELECT phone FROM customers WHERE id = ?", (row["customer_id"],)
         ).fetchone()
         if cust and cust["phone"]:
             send_sms(
                 cust["phone"],
                 f"وضعیت پرونده شما: {status}\nکد پیگیری: {row['tracking_code']}\nکافی نت آنلاین نوین"
             )
-
         auto_backup()
         flash("پرونده به‌روزرسانی شد.", "success")
         return redirect(url_for("admin_request", rid=rid))
 
     messages = conn.execute(
-        "SELECT * FROM messages WHERE request_id=? ORDER BY id",
-        (rid,)
+        "SELECT * FROM messages WHERE request_id=? ORDER BY id", (rid,)
     ).fetchall()
     documents = conn.execute(
-        "SELECT * FROM documents WHERE request_id=?",
-        (rid,)
+        "SELECT * FROM documents WHERE request_id=?", (rid,)
     ).fetchall()
     form_data = parse_json(row["form_data"] or "{}", {})
     return render_template(
@@ -1035,31 +1032,25 @@ def admin_request_status():
     row = conn.execute("SELECT * FROM requests WHERE id=?", (rid,)).fetchone()
     if not row:
         abort(404)
-
     expert_id = row["expert_id"]
     if status == "پذیرش شد" and not expert_id:
         expert_id = user["id"]
-
     conn.execute(
         "UPDATE requests SET status=?, expert_id=?, updated_at=CURRENT_TIMESTAMP WHERE id=?",
         (status, expert_id, rid)
     )
     conn.commit()
     create_notification(
-        "customer", row["customer_id"], rid,
-        "تغییر وضعیت", f"وضعیت جدید: {status}"
+        "customer", row["customer_id"], rid, "تغییر وضعیت", f"وضعیت جدید: {status}"
     )
-
     cust = conn.execute(
-        "SELECT phone FROM customers WHERE id = ?",
-        (row["customer_id"],)
+        "SELECT phone FROM customers WHERE id = ?", (row["customer_id"],)
     ).fetchone()
     if cust and cust["phone"]:
         send_sms(
             cust["phone"],
             f"وضعیت پرونده شما: {status}\nکد پیگیری: {row['tracking_code']}\nکافی نت آنلاین نوین"
         )
-
     auto_backup()
     flash("وضعیت پرونده تغییر کرد.", "success")
     return redirect(url_for("admin_request", rid=rid))
@@ -1280,8 +1271,7 @@ def save_work_hours():
 @admin_required
 def admin_backup():
     ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-    backup_path = os.path.join(BACKUP_FOLDER, f"novin_manual_{ts}.db")
-    shutil.copy2(DATABASE, backup_path)
+    shutil.copy2(DATABASE, os.path.join(BACKUP_FOLDER, f"novin_manual_{ts}.db"))
     flash(f"پشتیبان‌گیری انجام شد: novin_manual_{ts}.db", "success")
     return redirect(url_for("admin"))
 
@@ -1299,10 +1289,8 @@ def download_document(doc_id):
     if not doc:
         abort(404)
     return send_from_directory(
-        DOCUMENTS_FOLDER,
-        doc["file_path"],
-        as_attachment=True,
-        download_name=doc["original_name"]
+        DOCUMENTS_FOLDER, doc["file_path"],
+        as_attachment=True, download_name=doc["original_name"]
     )
 
 
@@ -1330,7 +1318,6 @@ def server_error(e):
 
 with app.app_context():
     create_tables()
-
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
