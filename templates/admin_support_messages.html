@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}پیام‌های پشتیبانی{% endblock %}
+{% block content %}
+
+<div class="card">
+    <h1>پیام‌های ارتباط با پشتیبانی</h1>
+    <a href="{{ url_for('admin') }}" class="btn btn-secondary">بازگشت به پنل</a>
+</div>
+
+<div class="card">
+    {% if messages %}
+        {% for m in messages %}
+        <div class="alert" style="margin-bottom:12px;">
+            <strong>مشتری:</strong> {{ m["customer_name"] or "—" }}
+            — {{ m["customer_phone"] or "—" }}
+            <br>
+            <strong>پیام:</strong> {{ m["message"] }}
+            {% if m["file_path"] %}
+                <br>
+                <a href="{{ url_for('download_chat_file', filename=m['file_path']) }}" class="btn btn-secondary">دانلود فایل</a>
+            {% endif %}
+            <br>
+            <small>{{ m["created_at"] }}</small>
+        </div>
+        {% endfor %}
+    {% else %}
+        <p>پیامی وجود ندارد.</p>
+    {% endif %}
+</div>
+
+{% endblock %}
