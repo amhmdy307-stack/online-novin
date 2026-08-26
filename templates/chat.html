@@ -1,7 +1,5 @@
 {% extends "base.html" %}
-
 {% block title %}ارتباط با کارشناس - {{ request_row["tracking_code"] }}{% endblock %}
-
 {% block content %}
 
 <div class="card">
@@ -16,85 +14,46 @@
         {% if request_row["expert_role"] == "admin" %} (مدیر اصلی){% endif %}
     </p>
     {% endif %}
-    {% if request_row["estimated_time"] %}
-    <p>مدت زمان تقریبی: {{ request_row["estimated_time"] }}</p>
-    {% endif %}
-</div>
-
-<div class="card">
-    <h2>ساعات کاری پشتیبانی</h2>
-    <p>زمان پاسخگویی: <strong>۸ تا ۲۲</strong></p>
-    {% if work_hours %}
-    <ul>
-        {% for wh in work_hours %}
-        <li>
-            {{ wh["day_name"] }}:
-            {% if wh["is_rest"] %}
-                تعطیل
-            {% else %}
-                {{ wh["start_time"] or "06:00" }} تا {{ wh["end_time"] or "24:00" }}
-            {% endif %}
-        </li>
-        {% endfor %}
-    </ul>
-    {% endif %}
+    <p>زمان پاسخگویی امروز: <strong>{{ work_hours_text }}</strong></p>
 </div>
 
 <div class="card">
     <h2>گفتگو</h2>
-
     {% if messages %}
-        <div class="chat">
-            {% for m in messages %}
-                <div class="message {% if m['sender'] == 'customer' %}message-customer{% else %}message-admin{% endif %}">
-                    <strong>
-                        {% if m["sender"] == "customer" %}
-                            شما:
-                        {% elif m["sender"] == "system" %}
-                            سامانه:
-                        {% else %}
-                            کارشناس:
-                        {% endif %}
-                    </strong>
-                    {{ m["message"] }}
-                    {% if m["file_path"] %}
-                        <br>
-                        <small>فایل پیوست شده</small>
-                    {% endif %}
-                    <br>
-                    <small>{{ m["created_at"] }}</small>
-                </div>
-            {% endfor %}
+        {% for m in messages %}
+        <div class="alert">
+            <strong>
+                {% if m["sender"] == "customer" %}شما:
+                {% elif m["sender"] == "system" %}سامانه:
+                {% else %}کارشناس:{% endif %}
+            </strong>
+            {{ m["message"] }}
+            {% if m["file_path"] %}
+                <br><small>فایل پیوست شده</small>
+            {% endif %}
+            <br><small>{{ m["created_at"] }}</small>
         </div>
+        {% endfor %}
     {% else %}
-        <p>هنوز پیامی ارسال نشده است.</p>
+        <p>هنوز پیامی نیست.</p>
     {% endif %}
 </div>
 
 <div class="card">
     <h2>ارسال پیام</h2>
-
     {% if within_hours %}
-        <form method="POST" enctype="multipart/form-data">
-            <label>متن پیام</label>
-            <textarea name="message" placeholder="پیام خود را بنویسید..."></textarea>
-
-            <label>ارسال عکس یا PDF (اختیاری)</label>
-            <input type="file" name="file" accept=".jpg,.jpeg,.png,.webp,.pdf">
-
-            <button type="submit" class="btn">ارسال پیام</button>
-        </form>
+    <form method="POST" enctype="multipart/form-data">
+        <textarea name="message" placeholder="پیام خود را بنویسید..."></textarea>
+        <input type="file" name="file" accept=".jpg,.jpeg,.png,.webp,.pdf">
+        <button type="submit" class="btn">ارسال پیام</button>
+    </form>
     {% else %}
-        <div class="alert alert-error">
-            ساعت کاری کارشناسان به اتمام رسیده است.
-            <br>
-            زمان پاسخگویی: ۶ تا ۲۴
-        </div>
+    <div class="alert alert-error">
+        ساعت کاری کارشناسان به اتمام رسیده است.
+        <br>زمان پاسخگویی امروز: {{ work_hours_text }}
+    </div>
     {% endif %}
 </div>
 
-<div class="card">
-    <a href="{{ url_for('tracking', code=request_row['tracking_code']) }}" class="btn btn-secondary">بازگشت به پیگیری</a>
-</div>
-
+<a href="{{ url_for('tracking', code=request_row['tracking_code']) }}" class="btn btn-secondary">بازگشت</a>
 {% endblock %}
