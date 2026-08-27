@@ -269,7 +269,6 @@ def create_notification(user_type, user_id, request_id, title, body=""):
 
 
 def send_sms(mobile, message):
-    """برمی‌گرداند (موفق؟, توضیح)"""
     settings = get_settings()
     if settings.get("sms_enabled") != "1":
         return False, "پیامک غیرفعال است"
@@ -703,20 +702,18 @@ def support():
 
 @app.route("/api/notifications")
 def api_notifications():
-    """اعلان‌های خوانده‌نشده برای مدیر/کارشناس یا مشتری با tracking"""
     conn = get_db()
     user = get_current_user()
     tracking = request.args.get("tracking", "").strip()
 
     if user:
-        role = user["role"]
-        if role == "admin":
+        if user["role"] == "admin":
             rows = conn.execute(
                 "SELECT * FROM notifications WHERE is_read=0 AND user_type IN ('admin','expert') ORDER BY id DESC LIMIT 20"
             ).fetchall()
         else:
             rows = conn.execute(
-                "SELECT * FROM notifications WHERE is_read=0 AND (user_type='expert') AND (user_id IS NULL OR user_id=?) ORDER BY id DESC LIMIT 20",
+                "SELECT * FROM notifications WHERE is_read=0 AND user_type='expert' AND (user_id IS NULL OR user_id=?) ORDER BY id DESC LIMIT 20",
                 (user["id"],)
             ).fetchall()
     elif tracking:
@@ -737,8 +734,6 @@ def api_notifications():
 @app.route("/api/notifications/read", methods=["POST"])
 def api_notifications_read():
     ids = request.json.get("ids", []) if request.is_json else []
-    if not ids:
-        return jsonify({"ok": True})
     conn = get_db()
     for i in ids:
         conn.execute("UPDATE notifications SET is_read=1 WHERE id=?", (to_int(i),))
@@ -763,6 +758,93 @@ def admin_login():
             return redirect(url_for("admin"))
         flash("نام کاربری یا رمز عبور اشتباه است.", "error")
     return render_template("admin_login.html", settings=get_settings())
+
+
+@app.route("/admin/forgot-password", methods=["GET", "POST"])
+def admin_forgot_password():
+    step = "send"
+    username = ""
+
+    if request.method == "POST":
+        action = request.form.get("action", "send_code")
+        conn = get_db()
+
+        if action == "send_code":
+            username = request.form.get("username", "").strip()
+            user = conn.execute(
+                "SELECT * FROM users WHERE username = ? AND active = 1", (username,)
+            ).fetchone()
+            if not user:
+                flash("کاربری پیدا نشد.", "error")
+                return render_template("admin_forgot_password.html", step="send", settings=get_settings())
+            if not user["phone"]:
+                flash("برای این کاربر شماره موبایل ثبت نشده است.", "error")
+                return render_template("admin_forgot_password.html", step="send", settings=get_settings())
+
+            code = f"{random.randint(100000, 999999)}"
+            session["reset_user"] = username
+            session["reset_code"] = code
+            session["reset_expire"] = (datetime.now(IRAN_TZ) + timedelta(minutes=10)).isoformat()
+
+            ok, detail = send_sms(
+                user["phone"],
+                f"کد بازیابی رمز پنل:\n{code}\nکافی نت آنلاین نوین"
+            )
+            if ok:
+                flash("کد به موبایل شما ارسال شد.", "success")
+                return render_template(
+                    "admin_forgot_password.html",
+                    step="reset",
+                    username=username,
+                    settings=get_settings()
+                )
+            flash(f"ارسال پیامک ناموفق: {detail}", "error")
+            return render_template("admin_forgot_password.html", step="send", settings=get_settings())
+
+        if action == "reset":
+            username = request.form.get("username", "").strip()
+            code = request.form.get("code", "").strip()
+            password = request.form.get("password", "")
+            password2 = request.form.get("password2", "")
+
+            if password != password2:
+                flash("تکرار رمز مطابقت ندارد.", "error")
+                return render_template(
+                    "admin_forgot_password.html", step="reset", username=username, settings=get_settings()
+                )
+            if len(password) < 6:
+                flash("رمز حداقل ۶ کاراکتر باشد.", "error")
+                return render_template(
+                    "admin_forgot_password.html", step="reset", username=username, settings=get_settings()
+                )
+            if session.get("reset_user") != username or session.get("reset_code") != code:
+                flash("کد نامعتبر است.", "error")
+                return render_template(
+                    "admin_forgot_password.html", step="reset", username=username, settings=get_settings()
+                )
+            try:
+                expire = datetime.fromisoformat(session.get("reset_expire", ""))
+                if datetime.now(IRAN_TZ) > expire:
+                    flash("کد منقضی شده است. دوباره درخواست دهید.", "error")
+                    return render_template("admin_forgot_password.html", step="send", settings=get_settings())
+            except Exception:
+                flash("کد منقضی شده است.", "error")
+                return render_template("admin_forgot_password.html", step="send", settings=get_settings())
+
+            conn.execute(
+                "UPDATE users SET password = ? WHERE username = ?",
+                (generate_password_hash(password), username)
+            )
+            conn.commit()
+            session.pop("reset_user", None)
+            session.pop("reset_code", None)
+            session.pop("reset_expire", None)
+            flash("رمز با موفقیت تغییر کرد. وارد شوید.", "success")
+            return redirect(url_for("admin_login"))
+
+    return render_template(
+        "admin_forgot_password.html", step=step, username=username, settings=get_settings()
+    )
 
 
 @app.route("/admin/logout")
@@ -1090,7 +1172,10 @@ def admin_password():
         flash("رمز عبور باید حداقل ۶ کاراکتر باشد.", "error")
         return redirect(url_for("admin"))
     conn = get_db()
-    conn.execute("UPDATE users SET password=? WHERE id=?", (generate_password_hash(password), session["user_id"]))
+    conn.execute(
+        "UPDATE users SET password=? WHERE id=?",
+        (generate_password_hash(password), session["user_id"])
+    )
     conn.commit()
     set_setting("force_change_password", "0")
     flash("رمز عبور با موفقیت تغییر کرد.", "success")
