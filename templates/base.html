@@ -4,216 +4,161 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="enamad" content="17886038" />
-
     <title>
         {% block title %}
-        17886038 - {{ site_name|default("کافی نت آنلاین نوین") }}
+        {{ site_name|default("کافی نت آنلاین نوین") }}
         {% endblock %}
     </title>
-
     <style>
-        * {
-            box-sizing: border-box;
-        }
-
+        * { box-sizing: border-box; }
         body {
             margin: 0;
             font-family: Tahoma, Arial, sans-serif;
             background: #f5f7fb;
             color: #1f2937;
         }
-
-        a {
-            text-decoration: none;
-            color: inherit;
+        a { text-decoration: none; color: inherit; }
+        .navbar {
+            background: #0f172a;
+            color: white;
+            padding: 15px 20px;
         }
-
+        .nav-container {
+            max-width: 1100px;
+            margin: auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        .logo { font-size: 20px; font-weight: bold; }
+        .nav-links { display: flex; gap: 10px; flex-wrap: wrap; }
+        .nav-links a {
+            padding: 8px 12px;
+            border-radius: 8px;
+            background: rgba(255,255,255,.08);
+            color: white;
+        }
         .container {
             max-width: 1100px;
             margin: 25px auto;
             padding: 0 15px;
         }
-
         .card {
             background: white;
             border-radius: 15px;
             padding: 20px;
-            margin-bottom: 20px;
-            box-shadow: 0 3px 15px rgba(0,0,0,.06);
+            margin-bottom: 18px;
+            box-shadow: 0 2px 10px rgba(0,0,0,.04);
         }
-
         .grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 18px;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 12px;
+            margin-bottom: 18px;
         }
-
-        h1, h2, h3 {
-            margin-top: 0;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 7px;
-            font-weight: bold;
-        }
-
-        input,
-        textarea,
-        select {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #d1d5db;
-            border-radius: 9px;
-            font-family: inherit;
-            margin-bottom: 15px;
-            background: white;
-        }
-
-        textarea {
-            min-height: 110px;
-            resize: vertical;
-        }
-
-        button,
         .btn {
             display: inline-block;
-            border: 0;
-            border-radius: 9px;
-            padding: 11px 17px;
-            cursor: pointer;
-            font-family: inherit;
-            background: #166534;
-            color: white;
-        }
-
-        .btn-success {
-            background: #16a34a;
-        }
-
-        .btn-danger {
-            background: #dc2626;
-        }
-
-        .btn-warning {
-            background: #d97706;
-        }
-
-        .btn-secondary {
-            background: #475569;
-        }
-
-        .alert {
-            padding: 13px 15px;
+            background: #0f172a;
+            color: #fff;
+            border: none;
             border-radius: 10px;
-            margin-bottom: 15px;
-            background: #e0f2fe;
+            padding: 10px 16px;
+            cursor: pointer;
+            margin-top: 8px;
+            font-family: inherit;
         }
-
-        .alert-error {
-            background: #fee2e2;
-            color: #991b1b;
+        .btn-secondary { background: #64748b; }
+        .btn-success { background: #16a34a; }
+        input, select, textarea {
+            width: 100%;
+            padding: 10px 12px;
+            margin: 6px 0 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 10px;
+            font-family: inherit;
+            font-size: 15px;
         }
-
-        .alert-success {
-            background: #dcfce7;
-            color: #166534;
+        textarea { min-height: 90px; resize: vertical; }
+        label { display: block; margin-top: 6px; font-weight: 600; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td {
+            border-bottom: 1px solid #e5e7eb;
+            padding: 10px 8px;
+            text-align: right;
+            vertical-align: top;
         }
-
         .badge {
             display: inline-block;
-            padding: 5px 10px;
-            border-radius: 20px;
-            background: #e5e7eb;
+            background: #e2e8f0;
+            padding: 4px 10px;
+            border-radius: 999px;
             font-size: 13px;
         }
-
-        .status {
-            font-weight: bold;
-        }
-
-        .price {
-            font-size: 20px;
-            font-weight: bold;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        th,
-        td {
-            padding: 10px;
-            border-bottom: 1px solid #e5e7eb;
-            text-align: right;
-        }
-
-        .table-wrapper {
-            overflow-x: auto;
-        }
-
-        .chat {
-            max-height: 500px;
-            overflow-y: auto;
-            padding: 10px;
-            background: #f8fafc;
-            border-radius: 12px;
-        }
-
-        .message {
-            padding: 10px;
+        .alert {
+            background: #f1f5f9;
             border-radius: 10px;
+            padding: 12px;
             margin-bottom: 10px;
-            max-width: 85%;
         }
-
-        .message-customer {
-            background: #dbeafe;
-            margin-left: auto;
-        }
-
-        .message-admin {
-            background: #dcfce7;
-            margin-right: auto;
-        }
-
+        .alert-error { background: #fee2e2; color: #991b1b; }
+        .alert-success { background: #dcfce7; color: #166534; }
+        .price { font-size: 20px; font-weight: bold; color: #0f172a; }
         footer {
-            margin-top: 40px;
-            padding: 25px;
-            background: #166534;
-            color: white;
             text-align: center;
+            padding: 25px 15px;
+            color: #64748b;
+            font-size: 14px;
         }
-
+        .password-wrap {
+            position: relative;
+        }
+        .password-wrap input {
+            padding-left: 44px;
+        }
+        .toggle-eye {
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 18px;
+            padding: 4px;
+            line-height: 1;
+        }
         @media (max-width: 600px) {
-            .container {
-                margin-top: 15px;
-            }
-
-            table {
-                min-width: 700px;
-            }
+            table { min-width: 600px; }
         }
     </style>
-
     {% block head %}{% endblock %}
 </head>
-
 <body>
 
-<main class="container">
+<nav class="navbar">
+    <div class="nav-container">
+        <div class="logo">
+            {% if logo %}
+                <img src="{{ url_for('uploaded_logo', filename=logo) }}" alt="logo" style="height:36px;vertical-align:middle;margin-left:8px;">
+            {% endif %}
+            {{ site_name|default("کافی نت آنلاین نوین") }}
+        </div>
+        <div class="nav-links">
+            <a href="{{ url_for('home') }}">خانه</a>
+            <a href="{{ url_for('tracking') }}">پیگیری درخواست</a>
+            <a href="{{ url_for('support') }}">پشتیبانی</a>
+            <a href="{{ url_for('admin_login') }}">مدیریت</a>
+        </div>
+    </div>
+</nav>
 
+<main class="container">
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
             {% for category, message in messages %}
-                <div class="alert
-                    {% if category == 'error' %}
-                        alert-error
-                    {% elif category == 'success' %}
-                        alert-success
-                    {% endif %}
-                ">
+                <div class="alert {% if category == 'error' %}alert-error{% elif category == 'success' %}alert-success{% endif %}">
                     {{ message }}
                 </div>
             {% endfor %}
@@ -221,14 +166,19 @@
     {% endwith %}
 
     {% block content %}{% endblock %}
-
 </main>
 
 <footer>
-    تمامی حقوق محفوظ است
+    <div>{{ site_name|default("کافی نت آنلاین نوین") }}</div>
+    <div style="margin-top:6px;">با مدیریت {{ manager|default("احمد محمدی مهر") }}</div>
+    {% if phone %}
+        <div style="margin-top:6px;">تلفن: {{ phone }}</div>
+    {% endif %}
+    {% if site_settings and site_settings.get('manager_text') %}
+        <div style="margin-top:6px;">{{ site_settings.get('manager_text') }}</div>
+    {% endif %}
 </footer>
 
 {% block scripts %}{% endblock %}
-
 </body>
 </html>
