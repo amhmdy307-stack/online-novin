@@ -1,22 +1,44 @@
 {% extends "base.html" %}
-
 {% block title %}ورود مدیریت{% endblock %}
 
 {% block content %}
-
 <div class="card" style="max-width:480px;margin:40px auto;">
     <h1 style="text-align:center;">ورود به پنل مدیریت</h1>
-    <p style="text-align:center; color:#6b7280;">کافی نت آنلاین نوین</p>
+    <p style="text-align:center;">{{ site_name|default("کافی نت آنلاین نوین") }}</p>
 
-    <form method="POST">
+    <form method="POST" action="{{ url_for('admin_login') }}">
         <label>نام کاربری</label>
         <input type="text" name="username" required autocomplete="username" placeholder="نام کاربری">
 
         <label>رمز عبور</label>
-        <input type="password" name="password" required autocomplete="current-password" placeholder="رمز عبور">
+        <div class="password-wrap">
+            <input type="password" id="login-password" name="password" required autocomplete="current-password" placeholder="رمز عبور">
+            <button type="button" class="toggle-eye" onclick="togglePass('login-password', this)" aria-label="نمایش رمز">👁</button>
+        </div>
 
         <button type="submit" class="btn" style="width:100%;">ورود به پنل</button>
     </form>
-</div>
 
+    <p style="text-align:center;margin-top:16px;">
+        <a href="{{ url_for('admin_forgot_password') }}" style="color:#0f172a;text-decoration:underline;">
+            فراموشی رمز عبور (ارسال کد با پیامک)
+        </a>
+    </p>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function togglePass(id, btn) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    if (el.type === "password") {
+        el.type = "text";
+        btn.textContent = "🙈";
+    } else {
+        el.type = "password";
+        btn.textContent = "👁";
+    }
+}
+</script>
 {% endblock %}
