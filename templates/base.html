@@ -14,28 +14,6 @@
             color: #1f2937;
         }
         a { text-decoration: none; color: inherit; }
-        .navbar {
-            background: #0f172a;
-            color: #fff;
-            padding: 15px 20px;
-        }
-        .nav-container {
-            max-width: 1100px;
-            margin: auto;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 12px;
-            flex-wrap: wrap;
-        }
-        .logo { font-size: 18px; font-weight: bold; }
-        .nav-links { display: flex; gap: 8px; flex-wrap: wrap; }
-        .nav-links a {
-            padding: 8px 12px;
-            border-radius: 8px;
-            background: rgba(255,255,255,.08);
-            color: #fff;
-        }
         .container {
             max-width: 1100px;
             margin: 25px auto;
@@ -75,6 +53,11 @@
             border-radius: 10px;
             font-family: inherit;
             font-size: 15px;
+        }
+        input::placeholder,
+        textarea::placeholder {
+            color: #9ca3af;
+            opacity: 1;
         }
         textarea { min-height: 90px; }
         label { display: block; font-weight: 600; margin-top: 4px; }
@@ -123,6 +106,19 @@
         .admin-section.active { display: block; }
         .icon-card { text-align: center; cursor: pointer; }
         .icon-card .ico { font-size: 30px; margin-bottom: 6px; }
+        .doc-preview {
+            display: inline-block;
+            margin: 8px;
+            text-align: center;
+            vertical-align: top;
+        }
+        .doc-preview img {
+            max-width: 160px;
+            max-height: 160px;
+            border-radius: 10px;
+            border: 1px solid #e5e7eb;
+            object-fit: cover;
+        }
         @media (max-width: 600px) {
             table { min-width: 560px; }
         }
@@ -130,17 +126,6 @@
     {% block head %}{% endblock %}
 </head>
 <body>
-<nav class="navbar">
-    <div class="nav-container">
-        <div class="logo">{{ site_name|default("کافی نت آنلاین نوین") }}</div>
-        <div class="nav-links">
-            <a href="{{ url_for('home') }}">خانه</a>
-            <a href="{{ url_for('tracking') }}">پیگیری درخواست</a>
-            <a href="{{ url_for('support') }}">پشتیبانی</a>
-            <a href="{{ url_for('admin_login') }}">مدیریت</a>
-        </div>
-    </div>
-</nav>
 
 <main class="container">
     {% with messages = get_flashed_messages(with_categories=true) %}
@@ -156,9 +141,9 @@
 </main>
 
 <footer>
-    <div>{{ site_name|default("کافی نت آنلاین نوین") }}</div>
-    <div style="margin-top:6px;">با مدیریت {{ manager|default("احمد محمدی مهر") }}</div>
-    {% if phone %}<div style="margin-top:6px;">تلفن: {{ phone }}</div>{% endif %}
+    {% block footer %}
+    تمام حقوق محفوظ است
+    {% endblock %}
 </footer>
 
 {% block scripts %}{% endblock %}
