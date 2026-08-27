@@ -858,15 +858,32 @@ def admin_logout():
 def admin():
     conn = get_db()
     user = get_current_user()
+
     if user["role"] == "expert":
-        requests_rows = conn.execute("""
-            SELECT r.*, c.name AS customer_name, c.phone AS customer_phone, s.name AS service_name
-            FROM requests r
-            LEFT JOIN customers c ON c.id = r.customer_id
-            LEFT JOIN services s ON s.id = r.service_id
-            WHERE (r.expert_id = ? OR r.expert_id IS NULL) AND (r.is_paid = 1 OR r.total_price = 0)
-            ORDER BY r.id DESC
-        """, (user["id"],)).fetchall()
+        allowed = parse_json(user["allowed_services"] or "[]", [])
+        if allowed:
+            placeholders = ",".join("?" * len(allowed))
+            params = [user["id"]] + [to_int(x) for x in allowed]
+            requests_rows = conn.execute(f"""
+                SELECT r.*, c.name AS customer_name, c.phone AS customer_phone, s.name AS service_name
+                FROM requests r
+                LEFT JOIN customers c ON c.id = r.customer_id
+                LEFT JOIN services s ON s.id = r.service_id
+                WHERE (r.expert_id = ? OR r.expert_id IS NULL)
+                  AND r.service_id IN ({placeholders})
+                  AND (r.is_paid = 1 OR r.total_price = 0)
+                ORDER BY r.id DESC
+            """, params).fetchall()
+        else:
+            requests_rows = conn.execute("""
+                SELECT r.*, c.name AS customer_name, c.phone AS customer_phone, s.name AS service_name
+                FROM requests r
+                LEFT JOIN customers c ON c.id = r.customer_id
+                LEFT JOIN services s ON s.id = r.service_id
+                WHERE (r.expert_id = ? OR r.expert_id IS NULL)
+                  AND (r.is_paid = 1 OR r.total_price = 0)
+                ORDER BY r.id DESC
+            """, (user["id"],)).fetchall()
     else:
         requests_rows = conn.execute("""
             SELECT r.*, c.name AS customer_name, c.phone AS customer_phone, s.name AS service_name
@@ -1261,7 +1278,10 @@ def download_document(doc_id):
     doc = conn.execute("SELECT * FROM documents WHERE id=?", (doc_id,)).fetchone()
     if not doc:
         abort(404)
-    return send_from_directory(DOCUMENTS_FOLDER, doc["file_path"], as_attachment=True, download_name=doc["original_name"])
+    return send_from_directory(
+        DOCUMENTS_FOLDER, doc["file_path"],
+        as_attachment=True, download_name=doc["original_name"]
+    )
 
 
 @app.route("/download/chat/<path:filename>")
