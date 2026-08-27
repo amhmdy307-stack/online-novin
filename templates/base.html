@@ -4,11 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="enamad" content="17886038" />
-    <title>
-        {% block title %}
-        {{ site_name|default("کافی نت آنلاین نوین") }}
-        {% endblock %}
-    </title>
+    <title>{% block title %}{{ site_name|default("کافی نت آنلاین نوین") }}{% endblock %}</title>
     <style>
         * { box-sizing: border-box; }
         body {
@@ -20,7 +16,7 @@
         a { text-decoration: none; color: inherit; }
         .navbar {
             background: #0f172a;
-            color: white;
+            color: #fff;
             padding: 15px 20px;
         }
         .nav-container {
@@ -29,16 +25,16 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            gap: 15px;
+            gap: 12px;
             flex-wrap: wrap;
         }
-        .logo { font-size: 20px; font-weight: bold; }
-        .nav-links { display: flex; gap: 10px; flex-wrap: wrap; }
+        .logo { font-size: 18px; font-weight: bold; }
+        .nav-links { display: flex; gap: 8px; flex-wrap: wrap; }
         .nav-links a {
             padding: 8px 12px;
             border-radius: 8px;
             background: rgba(255,255,255,.08);
-            color: white;
+            color: #fff;
         }
         .container {
             max-width: 1100px;
@@ -46,17 +42,17 @@
             padding: 0 15px;
         }
         .card {
-            background: white;
+            background: #fff;
             border-radius: 15px;
-            padding: 20px;
-            margin-bottom: 18px;
-            box-shadow: 0 2px 10px rgba(0,0,0,.04);
+            padding: 18px;
+            margin-bottom: 16px;
+            box-shadow: 0 1px 6px rgba(0,0,0,.05);
         }
         .grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
             gap: 12px;
-            margin-bottom: 18px;
+            margin-bottom: 16px;
         }
         .btn {
             display: inline-block;
@@ -64,7 +60,7 @@
             color: #fff;
             border: none;
             border-radius: 10px;
-            padding: 10px 16px;
+            padding: 10px 14px;
             cursor: pointer;
             margin-top: 8px;
             font-family: inherit;
@@ -80,19 +76,19 @@
             font-family: inherit;
             font-size: 15px;
         }
-        textarea { min-height: 90px; resize: vertical; }
-        label { display: block; margin-top: 6px; font-weight: 600; }
+        textarea { min-height: 90px; }
+        label { display: block; font-weight: 600; margin-top: 4px; }
         table { width: 100%; border-collapse: collapse; }
         th, td {
             border-bottom: 1px solid #e5e7eb;
-            padding: 10px 8px;
+            padding: 10px 6px;
             text-align: right;
             vertical-align: top;
         }
         .badge {
             display: inline-block;
             background: #e2e8f0;
-            padding: 4px 10px;
+            padding: 3px 10px;
             border-radius: 999px;
             font-size: 13px;
         }
@@ -104,47 +100,39 @@
         }
         .alert-error { background: #fee2e2; color: #991b1b; }
         .alert-success { background: #dcfce7; color: #166534; }
-        .price { font-size: 20px; font-weight: bold; color: #0f172a; }
+        .price { font-size: 18px; font-weight: bold; }
         footer {
             text-align: center;
-            padding: 25px 15px;
+            padding: 20px 15px;
             color: #64748b;
             font-size: 14px;
         }
-        .password-wrap {
-            position: relative;
-        }
-        .password-wrap input {
-            padding-left: 44px;
-        }
+        .password-wrap { position: relative; }
+        .password-wrap input { padding-left: 42px; }
         .toggle-eye {
             position: absolute;
             left: 10px;
             top: 50%;
             transform: translateY(-50%);
-            background: none;
             border: none;
+            background: none;
             cursor: pointer;
             font-size: 18px;
-            padding: 4px;
-            line-height: 1;
         }
+        .admin-section { display: none; }
+        .admin-section.active { display: block; }
+        .icon-card { text-align: center; cursor: pointer; }
+        .icon-card .ico { font-size: 30px; margin-bottom: 6px; }
         @media (max-width: 600px) {
-            table { min-width: 600px; }
+            table { min-width: 560px; }
         }
     </style>
     {% block head %}{% endblock %}
 </head>
 <body>
-
 <nav class="navbar">
     <div class="nav-container">
-        <div class="logo">
-            {% if logo %}
-                <img src="{{ url_for('uploaded_logo', filename=logo) }}" alt="logo" style="height:36px;vertical-align:middle;margin-left:8px;">
-            {% endif %}
-            {{ site_name|default("کافی نت آنلاین نوین") }}
-        </div>
+        <div class="logo">{{ site_name|default("کافی نت آنلاین نوین") }}</div>
         <div class="nav-links">
             <a href="{{ url_for('home') }}">خانه</a>
             <a href="{{ url_for('tracking') }}">پیگیری درخواست</a>
@@ -164,19 +152,13 @@
             {% endfor %}
         {% endif %}
     {% endwith %}
-
     {% block content %}{% endblock %}
 </main>
 
 <footer>
     <div>{{ site_name|default("کافی نت آنلاین نوین") }}</div>
     <div style="margin-top:6px;">با مدیریت {{ manager|default("احمد محمدی مهر") }}</div>
-    {% if phone %}
-        <div style="margin-top:6px;">تلفن: {{ phone }}</div>
-    {% endif %}
-    {% if site_settings and site_settings.get('manager_text') %}
-        <div style="margin-top:6px;">{{ site_settings.get('manager_text') }}</div>
-    {% endif %}
+    {% if phone %}<div style="margin-top:6px;">تلفن: {{ phone }}</div>{% endif %}
 </footer>
 
 {% block scripts %}{% endblock %}
