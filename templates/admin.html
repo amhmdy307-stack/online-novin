@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block title %}پنل مدیریت{% endblock %}
+{% block footer %}{% endblock %}
 
 {% block content %}
 <div class="card">
@@ -52,7 +53,6 @@
     </div>
 </div>
 
-<!-- درخواست‌ها -->
 <div class="card admin-section" id="sec-requests">
     <h2>درخواست‌ها</h2>
     {% if requests %}
@@ -73,23 +73,29 @@
     {% else %}<p>درخواستی نیست.</p>{% endif %}
 </div>
 
-<!-- خدمات -->
 <div class="card admin-section" id="sec-services">
     <h2>خدمات</h2>
     <form method="POST" action="{{ url_for('admin_service_save') }}">
-        <input type="text" name="name" required placeholder="نام خدمت">
-        <input type="text" name="category" placeholder="دسته">
-        <textarea name="description" placeholder="توضیحات"></textarea>
-        <input type="number" name="price" min="0" value="0" placeholder="قیمت">
-        <input type="number" name="sort_order" value="0" placeholder="ترتیب">
-        <textarea name="fields_json" placeholder="fields json">[]</textarea>
-        <textarea name="documents_json" placeholder="documents json">[]</textarea>
+        <label>نام خدمت</label>
+        <input type="text" name="name" required placeholder="مثلاً ثبت‌نام خودرو سایپا">
+        <label>دسته</label>
+        <input type="text" name="category" placeholder="مثلاً خودرو / بیمه / ثبت احوال">
+        <label>توضیحات</label>
+        <textarea name="description" placeholder="توضیح کوتاه درباره این خدمت..."></textarea>
+        <label>قیمت (تومان)</label>
+        <input type="number" name="price" min="0" value="0" placeholder="مثلاً 150000">
+        <label>ترتیب نمایش</label>
+        <input type="number" name="sort_order" value="0" placeholder="عدد کوچکتر = بالاتر">
+        <label>فیلدهای فرم (JSON)</label>
+        <textarea name="fields_json" placeholder='[{"name":"plate","label":"شماره پلاک","type":"text","required":true}]'>[]</textarea>
+        <label>مدارک مورد نیاز (JSON)</label>
+        <textarea name="documents_json" placeholder='["کارت ملی","سند خودرو"]'>[]</textarea>
         <label><input type="checkbox" name="active" value="1" checked> فعال</label>
-        <button class="btn" type="submit">افزودن</button>
+        <button class="btn" type="submit">افزودن خدمت</button>
     </form>
     {% for s in services %}
     <div style="margin-top:10px;padding:10px;border:1px solid #e5e7eb;border-radius:10px;">
-        <strong>{{ s["name"] }}</strong> — {{ "{:,}".format(s["price"] or 0) }}
+        <strong>{{ s["name"] }}</strong> — {{ "{:,}".format(s["price"] or 0) }} تومان
         <form method="POST" action="{{ url_for('toggle_service', sid=s['id']) }}" style="display:inline;">
             <button class="btn btn-secondary" type="submit">فعال/غیرفعال</button>
         </form>
@@ -100,7 +106,6 @@
     {% endfor %}
 </div>
 
-<!-- مشتریان -->
 <div class="card admin-section" id="sec-customers">
     <h2>مشتریان</h2>
     {% for c in customers %}
@@ -108,15 +113,18 @@
     {% else %}<p>مشتری نیست.</p>{% endfor %}
 </div>
 
-<!-- تخفیف -->
 <div class="card admin-section" id="sec-discounts">
     <h2>کد تخفیف</h2>
     <form method="POST" action="{{ url_for('create_discount') }}">
-        <input type="text" name="code" required placeholder="کد">
-        <select name="kind"><option value="percent">درصدی</option><option value="fixed">ثابت</option></select>
-        <input type="number" name="value" min="0" required>
-        <input type="number" name="max_uses" min="0" value="1">
-        <input type="date" name="start_date"><input type="date" name="end_date">
+        <input type="text" name="code" required placeholder="مثلاً NOVIN50">
+        <select name="kind">
+            <option value="percent">درصدی</option>
+            <option value="fixed">مبلغ ثابت</option>
+        </select>
+        <input type="number" name="value" min="0" required placeholder="مقدار تخفیف">
+        <input type="number" name="max_uses" min="0" value="1" placeholder="حداکثر تعداد استفاده">
+        <input type="date" name="start_date">
+        <input type="date" name="end_date">
         <button class="btn" type="submit">ایجاد</button>
     </form>
     {% for d in discounts %}
@@ -131,17 +139,38 @@
 
 {% if current_user and current_user["role"]=="admin" %}
 <div class="card admin-section" id="sec-users">
-    <h2>کاربران</h2>
+    <h2>کاربران (مدیر / کارشناس)</h2>
     <form method="POST" action="{{ url_for('create_user') }}">
-        <input type="text" name="username" required placeholder="نام کاربری">
-        <input type="password" name="password" minlength="6" required placeholder="رمز">
-        <select name="role"><option value="expert">کارشناس</option><option value="admin">مدیر</option></select>
-        <input type="tel" name="phone" placeholder="09...">
-        <button class="btn" type="submit">ایجاد</button>
+        <label>نام کاربری</label>
+        <input type="text" name="username" required placeholder="نام کاربری برای ورود">
+        <label>رمز عبور</label>
+        <input type="password" name="password" minlength="6" required placeholder="حداقل ۶ کاراکتر">
+        <label>نقش</label>
+        <select name="role">
+            <option value="expert">کارشناس</option>
+            <option value="admin">مدیر</option>
+        </select>
+        <label>شماره موبایل (برای پیامک)</label>
+        <input type="tel" name="phone" placeholder="09xxxxxxxxx">
+
+        <label>دسترسی به خدمات (برای کارشناس)</label>
+        <div style="margin:8px 0 12px;">
+            {% if services %}
+                {% for s in services %}
+                <label style="font-weight:normal;display:block;margin:4px 0;">
+                    <input type="checkbox" name="allowed_services" value="{{ s['id'] }}">
+                    {{ s["name"] }}
+                </label>
+                {% endfor %}
+            {% else %}
+                <small style="color:#9ca3af;">ابتدا خدمت تعریف کنید</small>
+            {% endif %}
+        </div>
+        <button class="btn" type="submit">ایجاد کاربر</button>
     </form>
     {% for u in users %}
-    <div style="margin-top:8px;">
-        {{ u["username"] }} — {{ u["role"] }} — {{ u["phone"] or "—" }}
+    <div style="margin-top:8px;padding:8px;border:1px solid #eee;border-radius:8px;">
+        {{ u["username"] }} — {{ "مدیر" if u["role"]=="admin" else "کارشناس" }} — {{ u["phone"] or "—" }}
         <form method="POST" action="{{ url_for('toggle_user', uid=u['id']) }}" style="display:inline;">
             <button class="btn btn-secondary" type="submit">فعال/غیرفعال</button>
         </form>
@@ -169,11 +198,11 @@
     <h2>پیامک sms.ir</h2>
     <form method="POST" action="{{ url_for('admin_integrations_save') }}">
         <label><input type="checkbox" name="sms_enabled" {% if settings.get('sms_enabled')=='1' %}checked{% endif %}> فعال</label>
-        <input type="text" name="sms_api_key" value="{{ settings.get('sms_api_key','') }}" placeholder="API Key">
-        <input type="text" name="sms_sender" value="{{ settings.get('sms_sender','') }}" placeholder="شماره خط">
-        <label><input type="checkbox" name="payment_enabled" {% if settings.get('payment_enabled')=='1' %}checked{% endif %}> درگاه</label>
-        <input type="text" name="payment_merchant" value="{{ settings.get('payment_merchant','') }}">
-        <input type="text" name="payment_callback" value="{{ settings.get('payment_callback','') }}">
+        <input type="text" name="sms_api_key" value="{{ settings.get('sms_api_key','') }}" placeholder="API Key از پنل sms.ir">
+        <input type="text" name="sms_sender" value="{{ settings.get('sms_sender','') }}" placeholder="شماره خط فرستنده">
+        <label><input type="checkbox" name="payment_enabled" {% if settings.get('payment_enabled')=='1' %}checked{% endif %}> درگاه پرداخت</label>
+        <input type="text" name="payment_merchant" value="{{ settings.get('payment_merchant','') }}" placeholder="کد پذیرنده">
+        <input type="text" name="payment_callback" value="{{ settings.get('payment_callback','') }}" placeholder="آدرس Callback">
         <button class="btn" type="submit">ذخیره</button>
     </form>
     <a href="{{ url_for('test_sms') }}" class="btn btn-secondary">تست پیامک</a>
@@ -184,11 +213,11 @@
     <h2>تنظیمات</h2>
     <form method="POST" action="{{ url_for('admin_settings_save') }}" enctype="multipart/form-data">
         <input type="text" name="site_name" value="{{ settings.get('site_name','') }}" placeholder="نام سایت">
-        <input type="text" name="manager" value="{{ settings.get('manager','') }}" placeholder="مدیر">
-        <input type="text" name="phone" value="{{ settings.get('phone','') }}" placeholder="موبایل مدیر">
-        <input type="text" name="manager_text" value="{{ settings.get('manager_text','') }}">
-        <textarea name="home_text">{{ settings.get('home_text','') }}</textarea>
-        <textarea name="footer_text">{{ settings.get('footer_text','') }}</textarea>
+        <input type="text" name="manager" value="{{ settings.get('manager','') }}" placeholder="نام مدیر">
+        <input type="text" name="phone" value="{{ settings.get('phone','') }}" placeholder="موبایل مدیر برای پیامک 09...">
+        <input type="text" name="manager_text" value="{{ settings.get('manager_text','') }}" placeholder="متن زیر نام مدیر">
+        <textarea name="home_text" placeholder="متن صفحه اصلی">{{ settings.get('home_text','') }}</textarea>
+        <textarea name="footer_text" placeholder="متن فوتر (در صورت نیاز)">{{ settings.get('footer_text','') }}</textarea>
         <input type="file" name="logo" accept=".jpg,.jpeg,.png,.webp">
         <button class="btn" type="submit">ذخیره</button>
     </form>
@@ -197,7 +226,7 @@
 <div class="card admin-section" id="sec-password">
     <h2>تغییر رمز</h2>
     <form method="POST" action="{{ url_for('admin_password') }}">
-        <input type="password" name="password" minlength="6" required>
+        <input type="password" name="password" minlength="6" required placeholder="رمز جدید">
         <button class="btn" type="submit">تغییر رمز</button>
     </form>
 </div>
@@ -206,29 +235,19 @@
 {% block scripts %}
 <script>
 function showSec(name) {
-    document.querySelectorAll(".admin-section").forEach(function (el) {
-        el.classList.remove("active");
-    });
+    document.querySelectorAll(".admin-section").forEach(function (el) { el.classList.remove("active"); });
     var el = document.getElementById("sec-" + name);
-    if (el) {
-        el.classList.add("active");
-        el.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
+    if (el) { el.classList.add("active"); el.scrollIntoView({ behavior: "smooth", block: "start" }); }
 }
-
 function playDing() {
     try {
         var ctx = new (window.AudioContext || window.webkitAudioContext)();
-        var o = ctx.createOscillator();
-        var g = ctx.createGain();
-        o.frequency.value = 880;
-        g.gain.value = 0.12;
-        o.connect(g); g.connect(ctx.destination);
-        o.start();
+        var o = ctx.createOscillator(); var g = ctx.createGain();
+        o.frequency.value = 880; g.gain.value = 0.12;
+        o.connect(g); g.connect(ctx.destination); o.start();
         setTimeout(function () { o.stop(); ctx.close(); }, 180);
     } catch (e) {}
 }
-
 var lastIds = [];
 function checkNotif() {
     fetch("/api/notifications").then(function (r) { return r.json(); }).then(function (data) {
