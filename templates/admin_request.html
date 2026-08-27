@@ -1,56 +1,47 @@
 {% extends "base.html" %}
 {% block title %}مدیریت پرونده{% endblock %}
+{% block footer %}{% endblock %}
+
 {% block content %}
 <div class="card">
     <h1>مدیریت پرونده</h1>
-    <p>کد پیگیری: <strong>{{ req["tracking_code"] }}</strong></p>
-    <p>مشتری: <strong>{{ req["customer_name"] }}</strong> - {{ req["customer_phone"] }}</p>
+    <p>کد پیگیری: <strong style="direction:ltr;">{{ req["tracking_code"] }}</strong></p>
+    <p>مشتری: <strong>{{ req["customer_name"] }}</strong></p>
+    <p>موبایل: <span style="direction:ltr;">{{ req["customer_phone"] }}</span></p>
+    <p>کد ملی: <span style="direction:ltr;">{{ req["customer_national_id"] or "—" }}</span></p>
     <p>خدمت: <strong>{{ req["service_name"] }}</strong></p>
     {% if req["expert_name"] %}
-    <p>کارشناس مسئول: <strong>{{ req["expert_name"] }}</strong>{% if req["expert_role"]=="admin" %} (مدیر اصلی){% endif %}</p>
+    <p>کارشناس: {{ req["expert_name"] }}{% if req["expert_role"]=="admin" %} (مدیر){% endif %}</p>
     {% endif %}
 </div>
 
+{% if form_data %}
 <div class="card">
-    <h2>اطلاعات فرم پر شده توسط مشتری</h2>
-    {% if form_data %}
-    <ul>
-        {% for key, value in form_data.items() %}
-        <li><strong>{{ key }}:</strong> {{ value }}</li>
-        {% endfor %}
-    </ul>
-    {% else %}
-    <p>اطلاعات اضافی ثبت نشده.</p>
-    {% endif %}
+    <h2>اطلاعات فرم مشتری</h2>
+    {% for k, v in form_data.items() %}
+    <p><strong>{{ k }}:</strong> {{ v }}</p>
+    {% endfor %}
 </div>
+{% endif %}
 
 <div class="card">
-    <h2>تغییر وضعیت پرونده</h2>
-    <form method="POST" action="{{ url_for('admin_request_status') }}">
-        <input type="hidden" name="id" value="{{ req['id'] }}">
+    <h2>تغییر وضعیت / جزئیات</h2>
+    <form method="POST">
         <label>وضعیت</label>
         <select name="status">
             {% for st in ["در انتظار بررسی","پذیرش شد","در حال بررسی","در حال انجام","نقص مدارک","قطعی سامانه","رد شد","انصراف مشتری","انجام شد"] %}
             <option value="{{ st }}" {% if req["status"]==st %}selected{% endif %}>{{ st }}</option>
             {% endfor %}
         </select>
-        <button type="submit" class="btn">ثبت وضعیت</button>
-    </form>
-</div>
-
-<div class="card">
-    <h2>اطلاعات مالی و توضیحات</h2>
-    <form method="POST" action="{{ url_for('admin_request_update') }}">
-        <input type="hidden" name="id" value="{{ req['id'] }}">
-        <label>مبلغ کل</label>
-        <input type="number" name="total_price" min="0" value="{{ req['total_price'] or 0 }}">
-        <label>مبلغ پرداخت‌شده</label>
-        <input type="number" name="paid_price" min="0" value="{{ req['paid_price'] or 0 }}">
-        <label>مدت زمان تقریبی انجام</label>
-        <input type="text" name="estimated_time" value="{{ req['estimated_time'] or '' }}">
+        <label>مدت زمان تقریبی</label>
+        <input type="text" name="estimated_time" value="{{ req['estimated_time'] or '' }}" placeholder="مثلاً ۲ ساعت / تا فردا">
         <label>توضیحات برای مشتری</label>
-        <textarea name="admin_note">{{ req["admin_note"] or "" }}</textarea>
-        <button type="submit" class="btn">ذخیره تغییرات</button>
+        <textarea name="admin_note" placeholder="توضیح وضعیت برای مشتری...">{{ req["admin_note"] or "" }}</textarea>
+        <label>مبلغ کل</label>
+        <input type="number" name="total_price" value="{{ req['total_price'] or 0 }}">
+        <label>مبلغ پرداخت‌شده</label>
+        <input type="number" name="paid_price" value="{{ req['paid_price'] or 0 }}">
+        <button class="btn" type="submit">ذخیره</button>
     </form>
 </div>
 
@@ -58,37 +49,39 @@
     <h2>مدارک مشتری</h2>
     {% if documents %}
         {% for d in documents %}
-        <div style="margin-bottom:8px;">
-            <a href="{{ url_for('download_document', doc_id=d['id']) }}" class="btn btn-secondary">{{ d["original_name"] }}</a>
+        <div class="doc-preview">
+            {% set name = (d["original_name"] or d["file_path"] or "")|lower %}
+            {% if name.endswith('.jpg') or name.endswith('.jpeg') or name.endswith('.png') or name.endswith('.webp') %}
+                <img src="{{ url_for('download_document', doc_id=d['id']) }}" alt="مدرک">
+            {% else %}
+                <div class="badge">PDF / فایل</div>
+                <div>{{ d["original_name"] }}</div>
+            {% endif %}
+            <div>
+                <a class="btn btn-secondary" href="{{ url_for('download_document', doc_id=d['id']) }}">دانلود</a>
+            </div>
         </div>
         {% endfor %}
     {% else %}
-        <p>مدرکی ارسال نشده.</p>
+        <p>مدرکی ارسال نشده است.</p>
     {% endif %}
 </div>
 
 <div class="card">
-    <h2>گفتگو با مشتری</h2>
+    <h2>گفتگو</h2>
     {% for m in messages %}
     <div class="alert">
-        <strong>{% if m["sender"]=="customer" %}مشتری:{% else %}مدیریت:{% endif %}</strong>
+        <strong>{% if m["sender"]=="customer" %}مشتری:{% elif m["sender"]=="system" %}سامانه:{% else %}مدیر:{% endif %}</strong>
         {{ m["message"] }}
-        {% if m["file_path"] %}
-        <br><a href="{{ url_for('download_chat_file', filename=m['file_path']) }}" class="btn btn-secondary">دانلود فایل</a>
-        {% endif %}
         <br><small>{{ m["created_at"] }}</small>
     </div>
-    {% else %}
-    <p>پیامی وجود ندارد.</p>
-    {% endfor %}
+    {% else %}<p>پیامی نیست.</p>{% endfor %}
     <form method="POST" action="{{ url_for('admin_message') }}">
         <input type="hidden" name="id" value="{{ req['id'] }}">
-        <textarea name="message" required placeholder="پاسخ خود را بنویسید..."></textarea>
-        <button type="submit" class="btn">ارسال پاسخ</button>
+        <textarea name="message" required placeholder="پاسخ به مشتری..."></textarea>
+        <button class="btn" type="submit">ارسال پاسخ</button>
     </form>
 </div>
 
-<div class="card">
-    <a href="{{ url_for('admin') }}" class="btn btn-secondary">بازگشت به پنل</a>
-</div>
+<a href="{{ url_for('admin') }}" class="btn btn-secondary">بازگشت</a>
 {% endblock %}
