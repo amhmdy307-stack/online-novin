@@ -1,65 +1,28 @@
 {% extends "base.html" %}
-
-{% block title %}17886038 - {{ site_name|default("کافی نت آنلاین نوین") }}{% endblock %}
-
+{% block title %}{{ site_name|default("کافی نت آنلاین نوین") }}{% endblock %}
 {% block content %}
-
-<div class="card" style="text-align:center; background:#166534; color:white; border-radius:18px; padding:22px;">
-    {% if logo %}
-        <div style="margin-bottom:12px;">
-            <img src="{{ url_for('uploaded_logo', filename=logo) }}" alt="لوگو" style="max-width:120px; max-height:80px; border-radius:8px;">
-        </div>
-    {% endif %}
-    <h1 style="margin:0 0 6px 0; font-size:24px;">{{ site_name|default("کافی نت آنلاین نوین") }}</h1>
-    <p style="margin:0 0 4px 0; opacity:0.95;">با مدیریت : {{ manager|default("احمد محمدی مهر") }}</p>
-    
-    {% if phone %}
-        <p style="margin:6px 0 0 0; font-size:15px;">{{ phone }}</p>
-    {% endif %}
-    
-    <p style="margin:8px 0 0 0; font-size:13px; opacity:0.9;">
-        {{ settings.get('manager_text', 'ارائه کلیه خدمات اینترنتی به صورت آنلاین و غیر حضوری') }}
-    </p>
-</div>
-
-<div style="display:flex; gap:12px; margin:20px 0;">
-    <a href="{{ url_for('tracking') }}" class="btn" style="flex:1; background:#16a34a; text-align:center; padding:14px;">
-        پیگیری درخواست
-    </a>
-    <a href="{{ url_for('support') }}" class="btn btn-secondary" style="flex:1; text-align:center; padding:14px;">
-        ارتباط با پشتیبانی
-    </a>
-</div>
-
-<div class="alert" style="background:#fef3c7; color:#92400e; border:1px solid #fcd34d;">
-    ⚠ توجه: پرداخت هزینه خدمات فقط از طریق درگاه رسمی همین سایت انجام می‌شود.
-</div>
-
 <div class="card">
-    <h2 style="margin-bottom:16px;">خدمات ما</h2>
-
-    {% if services %}
-        <div class="grid" style="grid-template-columns: repeat(2, 1fr); gap:14px;">
-            {% for service in services %}
-                <div class="card" style="margin:0; padding:14px; border:1px solid #e5e7eb;">
-                    <h3 style="margin:0 0 6px 0; font-size:16px;">{{ service["name"] }}</h3>
-                    {% if service["category"] %}
-                        <span class="badge">{{ service["category"] }}</span>
-                    {% endif %}
-                    {% if service["price"] and service["price"] > 0 %}
-                        <div class="price" style="margin:8px 0;">{{ "{:,}".format(service["price"]) }} تومان</div>
-                    {% else %}
-                        <div class="badge" style="margin:6px 0;">قیمت پس از بررسی</div>
-                    {% endif %}
-                    <a href="{{ url_for('service', service_id=service['id']) }}" class="btn" style="width:100%; text-align:center; margin-top:6px;">
-                        ثبت درخواست
-                    </a>
-                </div>
-            {% endfor %}
-        </div>
-    {% else %}
-        <div class="alert">هنوز خدمتی ثبت نشده است.</div>
-    {% endif %}
+    <h1>{{ site_name|default("کافی نت آنلاین نوین") }}</h1>
+    <p>{{ settings.get('home_text', 'تمام خدمات کافی‌نت آنلاین نوین را به صورت غیرحضوری دریافت کنید.') }}</p>
 </div>
-
+<div class="grid">
+    {% for service in services %}
+    <div class="card">
+        <h3>{{ service.name }}</h3>
+        {% if service.category %}<span class="badge">{{ service.category }}</span>{% endif %}
+        <p>{{ service.description[:120] }}{% if service.description|length > 120 %}...{% endif %}</p>
+        <div class="price">
+            {% if service.price and service.price > 0 %}
+                {{ "{:,}".format(service.price) }} تومان
+            {% else %}
+                قیمت پس از بررسی
+            {% endif %}
+        </div>
+        <br>
+        <a href="{{ url_for('service', service_id=service.id) }}" class="btn">ثبت درخواست</a>
+    </div>
+    {% else %}
+    <div class="card"><p>هنوز خدمتی ثبت نشده است.</p></div>
+    {% endfor %}
+</div>
 {% endblock %}
