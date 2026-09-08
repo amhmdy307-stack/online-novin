@@ -1,87 +1,55 @@
 {% extends "base.html" %}
 {% block title %}مدیریت پرونده{% endblock %}
-{% block footer %}{% endblock %}
-
 {% block content %}
 <div class="card">
     <h1>مدیریت پرونده</h1>
-    <p>کد پیگیری: <strong style="direction:ltr;">{{ req["tracking_code"] }}</strong></p>
-    <p>مشتری: <strong>{{ req["customer_name"] }}</strong></p>
-    <p>موبایل: <span style="direction:ltr;">{{ req["customer_phone"] }}</span></p>
-    <p>کد ملی: <span style="direction:ltr;">{{ req["customer_national_id"] or "—" }}</span></p>
-    <p>خدمت: <strong>{{ req["service_name"] }}</strong></p>
-    {% if req["expert_name"] %}
-    <p>کارشناس: {{ req["expert_name"] }}{% if req["expert_role"]=="admin" %} (مدیر){% endif %}</p>
-    {% endif %}
+    <p>کد پیگیری: <strong>{{ req.tracking_code }}</strong></p>
+    <p>مشتری: <strong>{{ req.customer_name }}</strong> - {{ req.customer_phone }}</p>
+    <p>خدمت: <strong>{{ req.service_name }}</strong></p>
+    <p>وضعیت فعلی: <span class="badge">{{ req.status }}</span></p>
 </div>
-
-{% if form_data %}
 <div class="card">
-    <h2>اطلاعات فرم مشتری</h2>
-    {% for k, v in form_data.items() %}
-    <p><strong>{{ k }}:</strong> {{ v }}</p>
-    {% endfor %}
-</div>
-{% endif %}
-
-<div class="card">
-    <h2>تغییر وضعیت / جزئیات</h2>
+    <h2>تغییر وضعیت پرونده</h2>
     <form method="POST">
+        <input type="hidden" name="action" value="status">
         <label>وضعیت</label>
         <select name="status">
-            {% for st in ["در انتظار بررسی","پذیرش شد","در حال بررسی","در حال انجام","نقص مدارک","قطعی سامانه","رد شد","انصراف مشتری","انجام شد"] %}
-            <option value="{{ st }}" {% if req["status"]==st %}selected{% endif %}>{{ st }}</option>
-            {% endfor %}
+            <option value="پذیرش شد" {% if req.status == "پذیرش شد" %}selected{% endif %}>پذیرش شد</option>
+            <option value="در حال بررسی" {% if req.status == "در حال بررسی" %}selected{% endif %}>در حال بررسی</option>
+            <option value="نقص مدارک" {% if req.status == "نقص مدارک" %}selected{% endif %}>نقص مدارک</option>
+            <option value="قطعی سامانه" {% if req.status == "قطعی سامانه" %}selected{% endif %}>قطعی سامانه</option>
+            <option value="رد شد" {% if req.status == "رد شد" %}selected{% endif %}>رد شد</option>
+            <option value="انصراف مشتری" {% if req.status == "انصراف مشتری" %}selected{% endif %}>انصراف مشتری</option>
+            <option value="انجام شد" {% if req.status == "انجام شد" %}selected{% endif %}>انجام شد</option>
         </select>
-        <label>مدت زمان تقریبی</label>
-        <input type="text" name="estimated_time" value="{{ req['estimated_time'] or '' }}" placeholder="مثلاً ۲ ساعت / تا فردا">
+        <label>مدت زمان تقریبی انجام</label>
+        <input type="text" name="estimated_time" value="{{ req.estimated_time or '' }}" placeholder="مثلاً ۲ روز کاری">
         <label>توضیحات برای مشتری</label>
-        <textarea name="admin_note" placeholder="توضیح وضعیت برای مشتری...">{{ req["admin_note"] or "" }}</textarea>
-        <label>مبلغ کل</label>
-        <input type="number" name="total_price" value="{{ req['total_price'] or 0 }}">
-        <label>مبلغ پرداخت‌شده</label>
-        <input type="number" name="paid_price" value="{{ req['paid_price'] or 0 }}">
-        <button class="btn" type="submit">ذخیره</button>
+        <textarea name="admin_note">{{ req.admin_note or '' }}</textarea>
+        <button type="submit" class="btn">ثبت وضعیت</button>
     </form>
 </div>
-
 <div class="card">
-    <h2>مدارک مشتری</h2>
-    {% if documents %}
-        {% for d in documents %}
-        <div class="doc-preview">
-            {% set name = (d["original_name"] or d["file_path"] or "")|lower %}
-            {% if name.endswith('.jpg') or name.endswith('.jpeg') or name.endswith('.png') or name.endswith('.webp') %}
-                <img src="{{ url_for('download_document', doc_id=d['id']) }}" alt="مدرک">
-            {% else %}
-                <div class="badge">PDF / فایل</div>
-                <div>{{ d["original_name"] }}</div>
-            {% endif %}
-            <div>
-                <a class="btn btn-secondary" href="{{ url_for('download_document', doc_id=d['id']) }}">دانلود</a>
-            </div>
-        </div>
-        {% endfor %}
-    {% else %}
-        <p>مدرکی ارسال نشده است.</p>
-    {% endif %}
+    <h2>ارسال پیام دستی به مشتری</h2>
+    <form method="POST">
+        <input type="hidden" name="action" value="message">
+        <textarea name="message" required placeholder="پیام خود را بنویسید..."></textarea>
+        <button type="submit" class="btn">ارسال پیام</button>
+    </form>
 </div>
-
 <div class="card">
     <h2>گفتگو</h2>
-    {% for m in messages %}
+    {% for message in messages %}
     <div class="alert">
-        <strong>{% if m["sender"]=="customer" %}مشتری:{% elif m["sender"]=="system" %}سامانه:{% else %}مدیر:{% endif %}</strong>
-        {{ m["message"] }}
-        <br><small>{{ m["created_at"] }}</small>
+        <strong>{% if message.sender == 'customer' %}مشتری:{% elif message.sender == 'admin' %}مدیر/کارشناس:{% else %}سیستم:{% endif %}</strong>
+        {{ message.message }}
+        <br><small>{{ message.created_at }}</small>
     </div>
-    {% else %}<p>پیامی نیست.</p>{% endfor %}
-    <form method="POST" action="{{ url_for('admin_message') }}">
-        <input type="hidden" name="id" value="{{ req['id'] }}">
-        <textarea name="message" required placeholder="پاسخ به مشتری..."></textarea>
-        <button class="btn" type="submit">ارسال پاسخ</button>
-    </form>
+    {% else %}
+    <p>هنوز پیامی وجود ندارد.</p>
+    {% endfor %}
 </div>
-
-<a href="{{ url_for('admin') }}" class="btn btn-secondary">بازگشت</a>
+<div class="card">
+    <a href="{{ url_for('admin') }}" class="btn btn-secondary">بازگشت به پنل مدیریت</a>
+</div>
 {% endblock %}
