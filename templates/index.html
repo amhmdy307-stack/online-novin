@@ -1,28 +1,37 @@
 {% extends "base.html" %}
+
 {% block title %}{{ site_name|default("کافی نت آنلاین نوین") }}{% endblock %}
+
 {% block content %}
-<div class="card">
-    <h1>{{ site_name|default("کافی نت آنلاین نوین") }}</h1>
-    <p>{{ settings.get('home_text', 'تمام خدمات کافی‌نت آنلاین نوین را به صورت غیرحضوری دریافت کنید.') }}</p>
-</div>
+
 <div class="grid">
     {% for service in services %}
-    <div class="card">
-        <h3>{{ service.name }}</h3>
-        {% if service.category %}<span class="badge">{{ service.category }}</span>{% endif %}
-        <p>{{ service.description[:120] }}{% if service.description|length > 120 %}...{% endif %}</p>
-        <div class="price">
+    <div class="card" style="margin:0;">
+        <h3 style="font-size:15px; margin-bottom:6px;">{{ service.name }}</h3>
+        {% if service.category %}
+            <span class="badge">{{ service.category }}</span>
+        {% endif %}
+        {% if service.description %}
+        <p style="font-size:13px; color:#4b5563; margin:8px 0;">
+            {{ service.description[:70] }}{% if service.description|length > 70 %}...{% endif %}
+        </p>
+        {% endif %}
+        <div class="price" style="margin:10px 0;">
             {% if service.price and service.price > 0 %}
                 {{ "{:,}".format(service.price) }} تومان
             {% else %}
                 قیمت پس از بررسی
             {% endif %}
         </div>
-        <br>
-        <a href="{{ url_for('service', service_id=service.id) }}" class="btn">ثبت درخواست</a>
+        <a href="{{ url_for('service', service_id=service.id) }}" class="btn" style="width:100%; text-align:center; padding:10px; display:block;">
+            ثبت درخواست
+        </a>
     </div>
     {% else %}
-    <div class="card"><p>هنوز خدمتی ثبت نشده است.</p></div>
+    <div class="card" style="grid-column: 1 / -1; text-align:center;">
+        هنوز خدمتی ثبت نشده است.
+    </div>
     {% endfor %}
 </div>
+
 {% endblock %}
