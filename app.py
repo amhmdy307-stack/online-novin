@@ -28,7 +28,7 @@ app.config["MAX_CONTENT_LENGTH"] = 10 * 1024 * 1024
 
 SITE_NAME = "کافی نت آنلاین نوین"
 MANAGER = "احمد محمدی مهر"
-PHONE = ""
+PHONE = "۰۹۹۲۰۳۴۵۱۳۹"
 ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "123456")
 
 
@@ -164,9 +164,9 @@ def create_tables():
         "site_name": SITE_NAME,
         "manager": MANAGER,
         "phone": PHONE,
-        "manager_text": "ارائه کلیه خدمات کافی‌نت به صورت غیرحضوری",
-        "home_text": "تمام خدمات کافی‌نت آنلاین نوین را به صورت غیرحضوری دریافت کنید.",
-        "footer_text": "کافی نت آنلاین نوین - با مدیریت احمد محمدی مهر",
+        "manager_text": "ارائه کلیه خدمات اینترنتی و کافی نتی",
+        "home_text": "",
+        "footer_text": "تمامی حقوق محفوظ است",
         "logo": "",
         "default_payment_mode": "gateway",
     }
@@ -357,7 +357,7 @@ def service(service_id):
         final_price = max(0, base_price - discount_amount)
         tracking_code = generate_tracking_code()
 
-        # منطق پرداخت سراسری
+        # پرداخت سراسری
         if final_price == 0 or payment_mode != "gateway":
             status = "در انتظار بررسی"
         else:
@@ -494,7 +494,7 @@ def admin():
 @app.route("/admin/settings/save", methods=["POST"])
 @login_required
 def admin_settings_save():
-    for key in ["site_name", "manager", "phone", "manager_text", "home_text", "footer_text", "default_payment_mode"]:
+    for key in ["site_name", "manager", "phone", "manager_text", "default_payment_mode"]:
         set_setting(key, request.form.get(key, "").strip())
 
     logo = request.files.get("logo")
@@ -559,7 +559,6 @@ def admin_request(rid):
         )
         conn.commit()
 
-        # پیام وضعیت (برای ارسال دستی در حالت غیر درگاه)
         msg = f"وضعیت پرونده شما: {status}\nکد پیگیری: {row['tracking_code']}"
         if estimated_time:
             msg += f"\nمدت زمان تقریبی: {estimated_time}"
