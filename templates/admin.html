@@ -184,3 +184,9 @@
     </form>
 </div>
 {% endblock %}
+<label>حالت پرداخت سراسری سایت</label>
+<select name="default_payment_mode">
+    <option value="gateway" {% if settings.get('default_payment_mode') == 'gateway' %}selected{% endif %}>درگاه پرداخت</option>
+    <option value="card_to_card" {% if settings.get('default_payment_mode') == 'card_to_card' %}selected{% endif %}>کارت به کارت</option>
+    <option value="payment_link" {% if settings.get('default_payment_mode') == 'payment_link' %}selected{% endif %}>لینک پرداخت</option>
+</select>
