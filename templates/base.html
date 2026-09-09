@@ -20,24 +20,23 @@
             background: #166534;
             color: white;
             border-radius: 18px;
-            padding: 22px 18px;
-            text-align: center;
+            padding: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
             box-shadow: 0 6px 20px rgba(22, 101, 52, 0.25);
         }
+        .customer-header .info { flex: 1; text-align: right; }
+        .customer-header h1 { font-size: 18px; margin-bottom: 6px; }
+        .customer-header p { font-size: 13px; margin: 3px 0; opacity: 0.95; }
         .customer-header img {
-            max-width: 90px;
-            max-height: 70px;
-            margin-bottom: 10px;
-            border-radius: 10px;
-        }
-        .customer-header h1 {
-            font-size: 20px;
-            margin-bottom: 8px;
-        }
-        .customer-header p {
-            font-size: 14px;
-            margin: 4px 0;
-            opacity: 0.95;
+            width: 75px;
+            height: 75px;
+            object-fit: contain;
+            border-radius: 12px;
+            background: white;
+            padding: 4px;
         }
 
         .quick-links {
@@ -45,37 +44,37 @@
             margin: 18px auto;
             display: flex;
             justify-content: center;
-            gap: 40px;
+            gap: 45px;
         }
         .quick-link {
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 8px;
+            gap: 7px;
             color: #166534;
-            font-size: 14px;
+            font-size: 13px;
             font-weight: bold;
         }
         .quick-link .icon {
-            width: 54px;
-            height: 54px;
+            width: 52px;
+            height: 52px;
             background: white;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 24px;
+            font-size: 22px;
             box-shadow: 0 3px 12px rgba(0,0,0,0.1);
             border: 2px solid #166534;
         }
 
         .warning-box {
             max-width: 480px;
-            margin: 0 auto 25px;
+            margin: 0 auto 22px;
             background: #fef9c3;
             color: #854d0e;
             text-align: center;
-            padding: 11px 15px;
+            padding: 10px 14px;
             border-radius: 12px;
             font-size: 13px;
             font-weight: bold;
@@ -91,18 +90,18 @@
         .card {
             background: white;
             border-radius: 16px;
-            padding: 20px;
-            margin-bottom: 18px;
+            padding: 18px;
+            margin-bottom: 16px;
             box-shadow: 0 3px 14px rgba(0,0,0,0.06);
         }
 
         .grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 16px;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 14px;
         }
 
-        h1, h2, h3 { margin-top: 0; margin-bottom: 12px; }
+        h1, h2, h3 { margin-top: 0; margin-bottom: 10px; }
         label { display: block; margin-bottom: 6px; font-weight: bold; font-size: 14px; }
 
         input, textarea, select {
@@ -150,7 +149,7 @@
             background: #e5e7eb;
             font-size: 12px;
         }
-        .price { font-size: 18px; font-weight: bold; color: #166534; }
+        .price { font-size: 16px; font-weight: bold; color: #166534; }
 
         table { width: 100%; border-collapse: collapse; font-size: 14px; }
         th, td {
@@ -162,14 +161,13 @@
 
         footer.customer-footer {
             max-width: 480px;
-            margin: 30px auto 20px;
+            margin: 25px auto 20px;
             text-align: center;
             color: #6b7280;
             font-size: 13px;
             padding: 12px;
         }
 
-        /* مخفی کردن در پنل مدیر */
         body.admin-page .customer-header,
         body.admin-page .quick-links,
         body.admin-page .warning-box,
@@ -183,22 +181,23 @@
                 margin-right: 12px;
                 max-width: none;
             }
-            .quick-links { gap: 30px; }
+            .grid { grid-template-columns: 1fr; }
         }
     </style>
     {% block head %}{% endblock %}
 </head>
 <body class="{% block body_class %}{% endblock %}">
 
-<!-- هدر مشتری (همیشه نمایش داده می‌شود مگر در پنل مدیر) -->
 <div class="customer-header">
+    <div class="info">
+        <h1>{{ site_name|default("کافی نت آنلاین نوین") }}</h1>
+        <p>{{ phone|default("۰۹۹۲۰۳۴۵۱۳۹") }}</p>
+        <p>با مدیریت {{ manager|default("احمد محمدی مهر") }}</p>
+        <p>ارائه کلیه خدمات اینترنتی و کافی نتی</p>
+    </div>
     {% if site_settings.get('logo') %}
         <img src="{{ url_for('uploaded_logo', filename=site_settings.get('logo')) }}" alt="لوگو">
     {% endif %}
-    <h1>{{ site_name|default("کافی نت آنلاین نوین") }}</h1>
-    <p>{{ phone|default("۰۹۹۲۰۳۴۵۱۳۹") }}</p>
-    <p>با مدیریت {{ manager|default("احمد محمدی مهر") }}</p>
-    <p>ارائه کلیه خدمات اینترنتی و کافی نتی</p>
 </div>
 
 <div class="quick-links">
@@ -206,7 +205,7 @@
         <div class="icon">🔍</div>
         <span>پیگیری درخواست</span>
     </a>
-    <a href="#" class="quick-link">
+    <a href="{{ url_for('support') }}" class="quick-link">
         <div class="icon">💬</div>
         <span>ارتباط با پشتیبانی</span>
     </a>
