@@ -357,7 +357,6 @@ def service(service_id):
         final_price = max(0, base_price - discount_amount)
         tracking_code = generate_tracking_code()
 
-        # پرداخت سراسری
         if final_price == 0 or payment_mode != "gateway":
             status = "در انتظار بررسی"
         else:
@@ -416,6 +415,45 @@ def tracking():
         if not result:
             flash("کد پیگیری پیدا نشد.", "error")
     return render_template("tracking.html", result=result, settings=get_settings())
+
+
+@app.route("/support", methods=["GET", "POST"])
+def support():
+    conn = get_db()
+    experts = conn.execute(
+        "SELECT id, username, role FROM users WHERE active = 1 AND role IN ('admin', 'expert') ORDER BY role, username"
+    ).fetchall()
+    conn.close()
+
+    if request.method == "POST":
+        expert_id = request.form.get("expert_id")
+        name = request.form.get("name", "").strip()
+        phone = request.form.get("phone", "").strip()
+        message = request.form.get("message", "").strip()
+
+        if not name or not phone or not message or not expert_id:
+            flash("لطفاً همه فیلدها را پر کنید.", "error")
+            return redirect(url_for("support"))
+
+        conn = get_db()
+        customer = conn.execute("SELECT id FROM customers WHERE phone = ?", (phone,)).fetchone()
+        if customer:
+            customer_id = customer["id"]
+        else:
+            cursor = conn.execute("INSERT INTO customers (name, phone) VALUES (?, ?)", (name, phone))
+            customer_id = cursor.lastrowid
+
+        conn.execute(
+            "INSERT INTO messages (customer_id, request_id, sender, message) VALUES (?, NULL, 'customer', ?)",
+            (customer_id, f"[پشتیبانی برای کاربر {expert_id}] {message}")
+        )
+        conn.commit()
+        conn.close()
+
+        flash("پیام شما با موفقیت ارسال شد.", "success")
+        return redirect(url_for("index"))
+
+    return render_template("support.html", experts=experts, settings=get_settings())
 
 
 @app.route("/admin/login", methods=["GET", "POST"])
