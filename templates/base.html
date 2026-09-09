@@ -20,23 +20,24 @@
             background: #166534;
             color: white;
             border-radius: 18px;
-            padding: 18px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 15px;
+            padding: 20px 18px;
+            text-align: center;
+            position: relative;
             box-shadow: 0 6px 20px rgba(22, 101, 52, 0.25);
         }
-        .customer-header .info { flex: 1; text-align: right; }
-        .customer-header h1 { font-size: 18px; margin-bottom: 6px; }
-        .customer-header p { font-size: 13px; margin: 3px 0; opacity: 0.95; }
+        .customer-header h1 { font-size: 19px; margin-bottom: 8px; }
+        .customer-header p { font-size: 13px; margin: 4px 0; opacity: 0.95; }
         .customer-header img {
-            width: 75px;
-            height: 75px;
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 68px;
+            height: 68px;
             object-fit: contain;
-            border-radius: 12px;
             background: white;
-            padding: 4px;
+            border-radius: 12px;
+            padding: 3px;
         }
 
         .quick-links {
@@ -189,12 +190,10 @@
 <body class="{% block body_class %}{% endblock %}">
 
 <div class="customer-header">
-    <div class="info">
-        <h1>{{ site_name|default("کافی نت آنلاین نوین") }}</h1>
-        <p>{{ phone|default("۰۹۹۲۰۳۴۵۱۳۹") }}</p>
-        <p>با مدیریت {{ manager|default("احمد محمدی مهر") }}</p>
-        <p>ارائه کلیه خدمات اینترنتی و کافی نتی</p>
-    </div>
+    <h1>{{ site_name|default("کافی نت آنلاین نوین") }}</h1>
+    <p>{{ phone|default("۰۹۹۲۰۳۴۵۱۳۹") }}</p>
+    <p>با مدیریت {{ manager|default("احمد محمدی مهر") }}</p>
+    <p>ارائه کلیه خدمات اینترنتی و کافی نتی</p>
     {% if site_settings.get('logo') %}
         <img src="{{ url_for('uploaded_logo', filename=site_settings.get('logo')) }}" alt="لوگو">
     {% endif %}
