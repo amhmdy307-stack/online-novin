@@ -32,7 +32,7 @@ os.makedirs(BACKUP_FOLDER, exist_ok=True)
 
 app = Flask(__name__)
 
-app.secret_key = os.environ.get("SECRET_KEY", "novin-secret-key-change-this")
+app.secret_key = os.environ.get("SECRET_KEY", "novin-secret-key-change-this-please")
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 app.config["MAX_CONTENT_LENGTH"] = 10 * 1024 * 1024
 
@@ -853,8 +853,6 @@ def delete_discount(discount_id):
     conn.close()
     return redirect(url_for("admin"))
 
-
-# ==================== پشتیبان‌گیری ====================
 
 @app.route("/admin/backup", methods=["POST"])
 @admin_required
