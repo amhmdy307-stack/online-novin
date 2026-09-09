@@ -7,20 +7,11 @@ from datetime import datetime
 from functools import wraps
 
 from flask import (
-    Flask,
-    render_template,
-    request,
-    redirect,
-    url_for,
-    session,
-    flash,
-    send_from_directory,
-    abort,
+    Flask, render_template, request, redirect, url_for,
+    session, flash, send_from_directory, abort
 )
-
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
-
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 DATABASE = os.path.join(BASE_DIR, "novin.db")
@@ -31,8 +22,7 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(BACKUP_FOLDER, exist_ok=True)
 
 app = Flask(__name__)
-
-app.secret_key = os.environ.get("SECRET_KEY", "novin-secret-key-change-this-please")
+app.secret_key = os.environ.get("SECRET_KEY", "novin-secret-key-change-this")
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 app.config["MAX_CONTENT_LENGTH"] = 10 * 1024 * 1024
 
@@ -101,7 +91,6 @@ def create_tables():
             price INTEGER DEFAULT 0,
             sort_order INTEGER DEFAULT 0,
             active INTEGER DEFAULT 1,
-            payment_mode TEXT DEFAULT 'gateway',
             fields_json TEXT DEFAULT '[]',
             documents_json TEXT DEFAULT '[]',
             created_at TEXT DEFAULT CURRENT_TIMESTAMP
@@ -169,7 +158,6 @@ def create_tables():
     add_column_if_missing(conn, "requests", "discount_amount", "INTEGER DEFAULT 0")
     add_column_if_missing(conn, "requests", "expert_id", "INTEGER")
     add_column_if_missing(conn, "requests", "payment_mode", "TEXT DEFAULT 'gateway'")
-    add_column_if_missing(conn, "services", "payment_mode", "TEXT DEFAULT 'gateway'")
     add_column_if_missing(conn, "users", "allowed_services", "TEXT DEFAULT '[]'")
 
     defaults = {
@@ -180,6 +168,7 @@ def create_tables():
         "home_text": "تمام خدمات کافی‌نت آنلاین نوین را به صورت غیرحضوری دریافت کنید.",
         "footer_text": "کافی نت آنلاین نوین - با مدیریت احمد محمدی مهر",
         "logo": "",
+        "default_payment_mode": "gateway",
     }
 
     for key, value in defaults.items():
@@ -253,9 +242,7 @@ def admin_required(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
         user = get_current_user()
-        if not user:
-            return redirect(url_for("admin_login"))
-        if user["role"] != "admin":
+        if not user or user["role"] != "admin":
             flash("دسترسی فقط برای مدیر امکان‌پذیر است.", "error")
             return redirect(url_for("admin"))
         return func(*args, **kwargs)
@@ -304,13 +291,12 @@ def service(service_id):
     conn = get_db()
     service_row = conn.execute("SELECT * FROM services WHERE id = ?", (service_id,)).fetchone()
     conn.close()
-
     if not service_row:
         abort(404)
 
     fields = parse_json_list(service_row["fields_json"])
     documents = parse_json_list(service_row["documents_json"])
-    payment_mode = service_row["payment_mode"] or "gateway"
+    payment_mode = get_settings().get("default_payment_mode", "gateway")
 
     if request.method == "POST":
         name = request.form.get("name", "").strip()
@@ -324,7 +310,6 @@ def service(service_id):
             return redirect(url_for("service", service_id=service_id))
 
         conn = get_db()
-
         customer = None
         if phone:
             customer = conn.execute(
@@ -333,10 +318,7 @@ def service(service_id):
 
         if customer:
             customer_id = customer["id"]
-            conn.execute(
-                "UPDATE customers SET name = ?, national_id = ? WHERE id = ?",
-                (name, national_id, customer_id)
-            )
+            conn.execute("UPDATE customers SET name=?, national_id=? WHERE id=?", (name, national_id, customer_id))
         else:
             cursor = conn.execute(
                 "INSERT INTO customers (name, phone, national_id) VALUES (?, ?, ?)",
@@ -354,26 +336,28 @@ def service(service_id):
 
         if discount_code:
             discount = conn.execute(
-                "SELECT * FROM discounts WHERE code = ? AND active = 1", (discount_code,)
+                "SELECT * FROM discounts WHERE code=? AND active=1", (discount_code,)
             ).fetchone()
             if discount:
                 today = datetime.now().strftime("%Y-%m-%d")
-                valid_start = not discount["start_date"] or today >= discount["start_date"]
-                valid_end = not discount["end_date"] or today <= discount["end_date"]
-                valid_uses = discount["max_uses"] <= 0 or discount["used_count"] < discount["max_uses"]
-                if valid_start and valid_end and valid_uses:
+                valid = True
+                if discount["start_date"] and today < discount["start_date"]:
+                    valid = False
+                if discount["end_date"] and today > discount["end_date"]:
+                    valid = False
+                if discount["max_uses"] > 0 and discount["used_count"] >= discount["max_uses"]:
+                    valid = False
+                if valid:
                     if discount["kind"] == "percent":
                         discount_amount = int(base_price * discount["value"] / 100)
                     else:
                         discount_amount = min(base_price, discount["value"])
-                    conn.execute(
-                        "UPDATE discounts SET used_count = used_count + 1 WHERE id = ?",
-                        (discount["id"],)
-                    )
+                    conn.execute("UPDATE discounts SET used_count = used_count + 1 WHERE id=?", (discount["id"],))
 
         final_price = max(0, base_price - discount_amount)
         tracking_code = generate_tracking_code()
 
+        # منطق پرداخت سراسری
         if final_price == 0 or payment_mode != "gateway":
             status = "در انتظار بررسی"
         else:
@@ -386,12 +370,9 @@ def service(service_id):
              total_price, paid_price, discount_code, discount_amount, payment_mode, form_data, documents)
             VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?)
             """,
-            (
-                customer_id, service_id, tracking_code, status, customer_note,
-                final_price, discount_code, discount_amount, payment_mode,
-                json.dumps(form_data, ensure_ascii=False),
-                json.dumps([], ensure_ascii=False)
-            )
+            (customer_id, service_id, tracking_code, status, customer_note,
+             final_price, discount_code, discount_amount, payment_mode,
+             json.dumps(form_data, ensure_ascii=False), json.dumps([], ensure_ascii=False))
         )
         request_id = cursor.lastrowid
 
@@ -399,32 +380,21 @@ def service(service_id):
             "INSERT INTO messages (customer_id, request_id, sender, message) VALUES (?, ?, 'system', ?)",
             (customer_id, request_id, f"درخواست شما با کد پیگیری {tracking_code} ثبت شد.")
         )
-
         conn.commit()
         conn.close()
 
-        return render_template(
-            "tracking.html",
-            result={
-                "tracking_code": tracking_code,
-                "status": status,
-                "total_price": final_price,
-                "estimated_time": "",
-                "customer_name": name,
-                "service_name": service_row["name"],
-                "admin_note": "",
-            },
-            created=True,
-            settings=get_settings(),
-        )
+        return render_template("tracking.html", result={
+            "tracking_code": tracking_code,
+            "status": status,
+            "total_price": final_price,
+            "estimated_time": "",
+            "customer_name": name,
+            "service_name": service_row["name"],
+            "admin_note": "",
+        }, created=True, settings=get_settings())
 
-    return render_template(
-        "service.html",
-        service=service_row,
-        fields=fields,
-        documents=documents,
-        settings=get_settings(),
-    )
+    return render_template("service.html", service=service_row, fields=fields,
+                           documents=documents, settings=get_settings())
 
 
 @app.route("/tracking", methods=["GET", "POST"])
@@ -440,13 +410,11 @@ def tracking():
             LEFT JOIN customers c ON c.id = r.customer_id
             LEFT JOIN services s ON s.id = r.service_id
             WHERE r.tracking_code = ?
-            """,
-            (tracking_code,)
+            """, (tracking_code,)
         ).fetchone()
         conn.close()
         if not result:
             flash("کد پیگیری پیدا نشد.", "error")
-
     return render_template("tracking.html", result=result, settings=get_settings())
 
 
@@ -454,22 +422,17 @@ def tracking():
 def admin_login():
     if get_current_user():
         return redirect(url_for("admin"))
-
     if request.method == "POST":
         username = request.form.get("username", "").strip()
         password = request.form.get("password", "")
         conn = get_db()
-        user = conn.execute(
-            "SELECT * FROM users WHERE username = ? AND active = 1", (username,)
-        ).fetchone()
+        user = conn.execute("SELECT * FROM users WHERE username=? AND active=1", (username,)).fetchone()
         conn.close()
-
         if user and check_password_hash(user["password"], password):
             session.clear()
             session["user_id"] = user["id"]
             return redirect(url_for("admin"))
         flash("نام کاربری یا رمز عبور اشتباه است.", "error")
-
     return render_template("admin_login.html", settings=get_settings())
 
 
@@ -505,11 +468,9 @@ def admin():
                 FROM requests r
                 LEFT JOIN customers c ON c.id = r.customer_id
                 LEFT JOIN services s ON s.id = r.service_id
-                WHERE r.service_id IN ({placeholders})
-                  AND (r.expert_id IS NULL OR r.expert_id = ?)
+                WHERE r.service_id IN ({placeholders}) AND (r.expert_id IS NULL OR r.expert_id = ?)
                 ORDER BY r.id DESC
-                """,
-                (*[int(x) for x in allowed], user["id"])
+                """, (*[int(x) for x in allowed], user["id"])
             ).fetchall()
         else:
             requests_rows = []
@@ -517,38 +478,23 @@ def admin():
     customers = conn.execute("SELECT * FROM customers ORDER BY id DESC").fetchall()
     services = conn.execute("SELECT * FROM services ORDER BY sort_order ASC, id DESC").fetchall()
     discounts = conn.execute("SELECT * FROM discounts ORDER BY id DESC").fetchall()
-    users = conn.execute(
-        "SELECT id, username, role, active, allowed_services, created_at FROM users ORDER BY id DESC"
-    ).fetchall()
-
+    users = conn.execute("SELECT id, username, role, active, allowed_services, created_at FROM users ORDER BY id DESC").fetchall()
     total_income = conn.execute("SELECT COALESCE(SUM(paid_price), 0) FROM requests").fetchone()[0]
     total_debt = conn.execute(
-        """
-        SELECT COALESCE(SUM(CASE WHEN total_price > paid_price THEN total_price - paid_price ELSE 0 END), 0)
-        FROM requests
-        """
+        "SELECT COALESCE(SUM(CASE WHEN total_price > paid_price THEN total_price - paid_price ELSE 0 END), 0) FROM requests"
     ).fetchone()[0]
-
     conn.close()
 
-    return render_template(
-        "admin.html",
-        requests=requests_rows,
-        customers=customers,
-        services=services,
-        discounts=discounts,
-        users=users,
-        total_income=total_income,
-        total_debt=total_debt,
-        settings=get_settings(),
-        current_user=user,
-    )
+    return render_template("admin.html", requests=requests_rows, customers=customers,
+                           services=services, discounts=discounts, users=users,
+                           total_income=total_income, total_debt=total_debt,
+                           settings=get_settings(), current_user=user)
 
 
 @app.route("/admin/settings/save", methods=["POST"])
 @login_required
 def admin_settings_save():
-    for key in ["site_name", "manager", "phone", "manager_text", "home_text", "footer_text"]:
+    for key in ["site_name", "manager", "phone", "manager_text", "home_text", "footer_text", "default_payment_mode"]:
         set_setting(key, request.form.get(key, "").strip())
 
     logo = request.files.get("logo")
@@ -559,7 +505,7 @@ def admin_settings_save():
             logo.save(os.path.join(UPLOAD_FOLDER, filename))
             set_setting("logo", filename)
 
-    flash("تنظیمات سایت ذخیره شد.", "success")
+    flash("تنظیمات ذخیره شد.", "success")
     return redirect(url_for("admin"))
 
 
@@ -580,8 +526,7 @@ def admin_request(rid):
         LEFT JOIN customers c ON c.id = r.customer_id
         LEFT JOIN services s ON s.id = r.service_id
         WHERE r.id = ?
-        """,
-        (rid,)
+        """, (rid,)
     ).fetchone()
 
     if not row:
@@ -589,7 +534,6 @@ def admin_request(rid):
         abort(404)
 
     current = get_current_user()
-
     if current["role"] != "admin" and row["expert_id"] and row["expert_id"] != current["id"]:
         flash("این پرونده توسط کارشناس دیگری پذیرش شده است.", "error")
         conn.close()
@@ -609,57 +553,43 @@ def admin_request(rid):
 
         conn.execute(
             """
-            UPDATE requests SET
-                status=?, estimated_time=?, admin_note=?, total_price=?, paid_price=?,
-                expert_id=?, updated_at=CURRENT_TIMESTAMP
-            WHERE id=?
-            """,
-            (status, estimated_time, admin_note, total_price, paid_price, expert_id, rid)
+            UPDATE requests SET status=?, estimated_time=?, admin_note=?, total_price=?, paid_price=?,
+                expert_id=?, updated_at=CURRENT_TIMESTAMP WHERE id=?
+            """, (status, estimated_time, admin_note, total_price, paid_price, expert_id, rid)
         )
         conn.commit()
 
+        # پیام وضعیت (برای ارسال دستی در حالت غیر درگاه)
         msg = f"وضعیت پرونده شما: {status}\nکد پیگیری: {row['tracking_code']}"
         if estimated_time:
             msg += f"\nمدت زمان تقریبی: {estimated_time}"
-
         conn.execute(
             "INSERT INTO messages (customer_id, request_id, sender, message) VALUES (?, ?, 'admin', ?)",
             (row["customer_id"], rid, msg)
         )
         conn.commit()
-
-        flash("پرونده درخواست به‌روزرسانی شد.", "success")
+        flash("پرونده به‌روزرسانی شد.", "success")
         return redirect(url_for("admin_request", rid=rid))
 
-    messages = conn.execute(
-        "SELECT * FROM messages WHERE request_id = ? ORDER BY id ASC", (rid,)
-    ).fetchall()
+    messages = conn.execute("SELECT * FROM messages WHERE request_id=? ORDER BY id ASC", (rid,)).fetchall()
     conn.close()
-
-    return render_template(
-        "admin_request.html",
-        req=row,
-        messages=messages,
-        settings=get_settings(),
-    )
+    return render_template("admin_request.html", req=row, messages=messages, settings=get_settings())
 
 
 @app.route("/admin/request/<int:rid>/message", methods=["POST"])
 @login_required
 def admin_request_message(rid):
     message = request.form.get("message", "").strip()
-    if not message:
-        return redirect(url_for("admin_request", rid=rid))
-
-    conn = get_db()
-    row = conn.execute("SELECT customer_id FROM requests WHERE id = ?", (rid,)).fetchone()
-    if row:
-        conn.execute(
-            "INSERT INTO messages (customer_id, request_id, sender, message) VALUES (?, ?, 'admin', ?)",
-            (row["customer_id"], rid, message)
-        )
-        conn.commit()
-    conn.close()
+    if message:
+        conn = get_db()
+        row = conn.execute("SELECT customer_id FROM requests WHERE id=?", (rid,)).fetchone()
+        if row:
+            conn.execute(
+                "INSERT INTO messages (customer_id, request_id, sender, message) VALUES (?, ?, 'admin', ?)",
+                (row["customer_id"], rid, message)
+            )
+            conn.commit()
+        conn.close()
     return redirect(url_for("admin_request", rid=rid))
 
 
@@ -672,22 +602,18 @@ def admin_service_save():
     price = to_int(request.form.get("price"))
     sort_order = to_int(request.form.get("sort_order"))
     active = 1 if request.form.get("active", "1") == "1" else 0
-    payment_mode = request.form.get("payment_mode", "gateway")
     fields_json = request.form.get("fields_json", "[]")
     documents_json = request.form.get("documents_json", "[]")
 
     try:
-        fields = json.loads(fields_json)
-        if not isinstance(fields, list):
+        if not isinstance(json.loads(fields_json), list):
             fields_json = "[]"
-    except Exception:
+    except:
         fields_json = "[]"
-
     try:
-        documents = json.loads(documents_json)
-        if not isinstance(documents, list):
+        if not isinstance(json.loads(documents_json), list):
             documents_json = "[]"
-    except Exception:
+    except:
         documents_json = "[]"
 
     if not name:
@@ -697,11 +623,9 @@ def admin_service_save():
     conn = get_db()
     conn.execute(
         """
-        INSERT INTO services
-        (name, category, description, price, sort_order, active, payment_mode, fields_json, documents_json)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """,
-        (name, category, description, price, sort_order, active, payment_mode, fields_json, documents_json)
+        INSERT INTO services (name, category, description, price, sort_order, active, fields_json, documents_json)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """, (name, category, description, price, sort_order, active, fields_json, documents_json)
     )
     conn.commit()
     conn.close()
@@ -713,7 +637,7 @@ def admin_service_save():
 @login_required
 def toggle_service(service_id):
     conn = get_db()
-    conn.execute("UPDATE services SET active = CASE WHEN active = 1 THEN 0 ELSE 1 END WHERE id = ?", (service_id,))
+    conn.execute("UPDATE services SET active = CASE WHEN active=1 THEN 0 ELSE 1 END WHERE id=?", (service_id,))
     conn.commit()
     conn.close()
     return redirect(url_for("admin"))
@@ -723,7 +647,7 @@ def toggle_service(service_id):
 @login_required
 def delete_service(service_id):
     conn = get_db()
-    conn.execute("DELETE FROM services WHERE id = ?", (service_id,))
+    conn.execute("DELETE FROM services WHERE id=?", (service_id,))
     conn.commit()
     conn.close()
     flash("خدمت حذف شد.", "success")
@@ -738,18 +662,14 @@ def create_user():
     role = request.form.get("role", "expert")
     allowed_services = request.form.getlist("allowed_services")
 
-    if role not in ("admin", "expert"):
-        role = "expert"
-
     if not username or len(password) < 6:
         flash("نام کاربری و رمز عبور معتبر وارد کنید.", "error")
         return redirect(url_for("admin"))
 
     conn = get_db()
-    exists = conn.execute("SELECT id FROM users WHERE username = ?", (username,)).fetchone()
-    if exists:
+    if conn.execute("SELECT id FROM users WHERE username=?", (username,)).fetchone():
         conn.close()
-        flash("این نام کاربری قبلاً ثبت شده است.", "error")
+        flash("این نام کاربری قبلاً ثبت شده.", "error")
         return redirect(url_for("admin"))
 
     conn.execute(
@@ -758,7 +678,7 @@ def create_user():
     )
     conn.commit()
     conn.close()
-    flash("کاربر جدید ایجاد شد.", "success")
+    flash("کاربر ایجاد شد.", "success")
     return redirect(url_for("admin"))
 
 
@@ -769,7 +689,7 @@ def toggle_user(user_id):
         flash("نمی‌توانید حساب خودتان را غیرفعال کنید.", "error")
         return redirect(url_for("admin"))
     conn = get_db()
-    conn.execute("UPDATE users SET active = CASE WHEN active = 1 THEN 0 ELSE 1 END WHERE id = ?", (user_id,))
+    conn.execute("UPDATE users SET active = CASE WHEN active=1 THEN 0 ELSE 1 END WHERE id=?", (user_id,))
     conn.commit()
     conn.close()
     return redirect(url_for("admin"))
@@ -780,16 +700,13 @@ def toggle_user(user_id):
 def admin_password():
     password = request.form.get("password", "")
     if len(password) < 6:
-        flash("رمز عبور باید حداقل ۶ کاراکتر باشد.", "error")
+        flash("رمز باید حداقل ۶ کاراکتر باشد.", "error")
         return redirect(url_for("admin"))
     conn = get_db()
-    conn.execute(
-        "UPDATE users SET password = ? WHERE id = ?",
-        (generate_password_hash(password), session["user_id"])
-    )
+    conn.execute("UPDATE users SET password=? WHERE id=?", (generate_password_hash(password), session["user_id"]))
     conn.commit()
     conn.close()
-    flash("رمز عبور با موفقیت تغییر کرد.", "success")
+    flash("رمز تغییر کرد.", "success")
     return redirect(url_for("admin"))
 
 
@@ -803,29 +720,18 @@ def create_discount():
     start_date = request.form.get("start_date", "").strip()
     end_date = request.form.get("end_date", "").strip()
 
-    if kind not in ("percent", "fixed"):
-        kind = "percent"
-
     if not code or value < 0:
         flash("اطلاعات کد تخفیف صحیح نیست.", "error")
         return redirect(url_for("admin"))
 
-    if kind == "percent" and value > 100:
-        flash("درصد تخفیف نمی‌تواند بیشتر از ۱۰۰ باشد.", "error")
-        return redirect(url_for("admin"))
-
     conn = get_db()
-    exists = conn.execute("SELECT id FROM discounts WHERE code = ?", (code,)).fetchone()
-    if exists:
+    if conn.execute("SELECT id FROM discounts WHERE code=?", (code,)).fetchone():
         conn.close()
-        flash("این کد تخفیف قبلاً وجود دارد.", "error")
+        flash("این کد قبلاً وجود دارد.", "error")
         return redirect(url_for("admin"))
 
     conn.execute(
-        """
-        INSERT INTO discounts (code, kind, value, max_uses, start_date, end_date, active)
-        VALUES (?, ?, ?, ?, ?, ?, 1)
-        """,
+        "INSERT INTO discounts (code, kind, value, max_uses, start_date, end_date, active) VALUES (?, ?, ?, ?, ?, ?, 1)",
         (code, kind, value, max_uses, start_date, end_date)
     )
     conn.commit()
@@ -838,7 +744,7 @@ def create_discount():
 @login_required
 def toggle_discount(discount_id):
     conn = get_db()
-    conn.execute("UPDATE discounts SET active = CASE WHEN active = 1 THEN 0 ELSE 1 END WHERE id = ?", (discount_id,))
+    conn.execute("UPDATE discounts SET active = CASE WHEN active=1 THEN 0 ELSE 1 END WHERE id=?", (discount_id,))
     conn.commit()
     conn.close()
     return redirect(url_for("admin"))
@@ -848,7 +754,7 @@ def toggle_discount(discount_id):
 @login_required
 def delete_discount(discount_id):
     conn = get_db()
-    conn.execute("DELETE FROM discounts WHERE id = ?", (discount_id,))
+    conn.execute("DELETE FROM discounts WHERE id=?", (discount_id,))
     conn.commit()
     conn.close()
     return redirect(url_for("admin"))
@@ -860,7 +766,7 @@ def create_backup():
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     backup_path = os.path.join(BACKUP_FOLDER, f"novin_backup_{timestamp}.db")
     shutil.copy2(DATABASE, backup_path)
-    flash(f"پشتیبان‌گیری با موفقیت انجام شد: {os.path.basename(backup_path)}", "success")
+    flash(f"پشتیبان‌گیری انجام شد: {os.path.basename(backup_path)}", "success")
     return redirect(url_for("admin"))
 
 
@@ -869,32 +775,25 @@ def create_backup():
 def restore_backup():
     file = request.files.get("backup_file")
     if not file or not file.filename.endswith(".db"):
-        flash("فایل پشتیبان معتبر نیست.", "error")
+        flash("فایل معتبر نیست.", "error")
         return redirect(url_for("admin"))
-
-    temp_path = os.path.join(BACKUP_FOLDER, "temp_restore.db")
-    file.save(temp_path)
-    shutil.copy2(temp_path, DATABASE)
-    os.remove(temp_path)
-    flash("بازیابی اطلاعات با موفقیت انجام شد.", "success")
+    temp = os.path.join(BACKUP_FOLDER, "temp_restore.db")
+    file.save(temp)
+    shutil.copy2(temp, DATABASE)
+    os.remove(temp)
+    flash("بازیابی انجام شد.", "success")
     return redirect(url_for("admin"))
 
 
 @app.errorhandler(404)
-def not_found(error):
-    return render_template("base.html", content="صفحه مورد نظر پیدا نشد."), 404
-
-
-@app.errorhandler(413)
-def too_large(error):
-    flash("حجم فایل بیش از حد مجاز است.", "error")
-    return redirect(request.referrer or url_for("index"))
+def not_found(e):
+    return render_template("base.html", content="صفحه پیدا نشد."), 404
 
 
 @app.errorhandler(500)
-def internal_error(error):
-    app.logger.exception("Internal server error")
-    return "خطای داخلی سرور. لطفاً لاگ را بررسی کنید.", 500
+def internal_error(e):
+    app.logger.exception("Server Error")
+    return "خطای سرور", 500
 
 
 create_tables()
