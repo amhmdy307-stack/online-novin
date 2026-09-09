@@ -1,28 +1,33 @@
 {% extends "base.html" %}
-{% block title %}پشتیبانی{% endblock %}
+
+{% block title %}ارتباط با پشتیبانی{% endblock %}
+
 {% block content %}
 <div class="card">
-    <h1>ارتباط با پشتیبانی</h1>
-    <p>زمان پاسخگویی امروز: <strong>{{ work_hours_text }}</strong></p>
-</div>
-{% if within_hours %}
-<div class="card">
-    <form method="POST" enctype="multipart/form-data">
-        <select name="expert_id">
-            <option value="">انتخاب کارشناس/مدیر</option>
-            {% for e in experts %}
-            <option value="{{ e['id'] }}">{{ e["username"] }}{% if e["role"]=="admin" %} (مدیر){% endif %}</option>
+    <h2>ارتباط با پشتیبانی</h2>
+    <p style="margin-bottom:15px;">کارشناس یا مدیر مورد نظر خود را انتخاب کنید:</p>
+
+    <form method="POST">
+        <label>انتخاب کارشناس / مدیر</label>
+        <select name="expert_id" required>
+            <option value="">انتخاب کنید...</option>
+            {% for exp in experts %}
+            <option value="{{ exp.id }}">
+                {{ exp.username }} {% if exp.role == 'admin' %}(مدیر){% else %}(کارشناس){% endif %}
+            </option>
             {% endfor %}
         </select>
-        <input type="text" name="name" required placeholder="نام">
-        <input type="tel" name="phone" required placeholder="09...">
-        <textarea name="message" required placeholder="پیام"></textarea>
-        <input type="file" name="file" accept=".jpg,.jpeg,.png,.webp,.pdf">
-        <button class="btn" type="submit" style="width:100%;">ارسال</button>
+
+        <label>نام و نام خانوادگی</label>
+        <input type="text" name="name" required placeholder="نام کامل">
+
+        <label>شماره موبایل</label>
+        <input type="tel" name="phone" required placeholder="09xxxxxxxxx">
+
+        <label>پیام شما</label>
+        <textarea name="message" required rows="4" placeholder="پیام خود را بنویسید..."></textarea>
+
+        <button type="submit" class="btn" style="width:100%;">ارسال پیام</button>
     </form>
 </div>
-{% else %}
-<div class="card"><div class="alert alert-error">ساعت کاری به اتمام رسیده. امروز: {{ work_hours_text }}</div></div>
-{% endif %}
-<a class="btn btn-secondary" href="{{ url_for('home') }}">بازگشت</a>
 {% endblock %}
