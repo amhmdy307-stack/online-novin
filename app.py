@@ -2,6 +2,7 @@ import os
 import json
 import sqlite3
 import secrets
+import shutil
 from datetime import datetime
 from functools import wraps
 
@@ -24,8 +25,10 @@ from werkzeug.utils import secure_filename
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 DATABASE = os.path.join(BASE_DIR, "novin.db")
 UPLOAD_FOLDER = os.path.join(BASE_DIR, "uploads")
+BACKUP_FOLDER = os.path.join(BASE_DIR, "backups")
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+os.makedirs(BACKUP_FOLDER, exist_ok=True)
 
 app = Flask(__name__)
 
@@ -371,7 +374,6 @@ def service(service_id):
         final_price = max(0, base_price - discount_amount)
         tracking_code = generate_tracking_code()
 
-        # اگر تخفیف ۱۰۰٪ باشد یا حالت درگاه نباشد، مستقیم به بررسی می‌رود
         if final_price == 0 or payment_mode != "gateway":
             status = "در انتظار بررسی"
         else:
@@ -588,7 +590,6 @@ def admin_request(rid):
 
     current = get_current_user()
 
-    # قفل پرونده بعد از پذیرش اولین کارشناس
     if current["role"] != "admin" and row["expert_id"] and row["expert_id"] != current["id"]:
         flash("این پرونده توسط کارشناس دیگری پذیرش شده است.", "error")
         conn.close()
@@ -617,7 +618,6 @@ def admin_request(rid):
         )
         conn.commit()
 
-        # پیام وضعیت برای مشتری (برای ارسال دستی در حالت کارت به کارت و لینک پرداخت)
         msg = f"وضعیت پرونده شما: {status}\nکد پیگیری: {row['tracking_code']}"
         if estimated_time:
             msg += f"\nمدت زمان تقریبی: {estimated_time}"
@@ -851,6 +851,34 @@ def delete_discount(discount_id):
     conn.execute("DELETE FROM discounts WHERE id = ?", (discount_id,))
     conn.commit()
     conn.close()
+    return redirect(url_for("admin"))
+
+
+# ==================== پشتیبان‌گیری ====================
+
+@app.route("/admin/backup", methods=["POST"])
+@admin_required
+def create_backup():
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    backup_path = os.path.join(BACKUP_FOLDER, f"novin_backup_{timestamp}.db")
+    shutil.copy2(DATABASE, backup_path)
+    flash(f"پشتیبان‌گیری با موفقیت انجام شد: {os.path.basename(backup_path)}", "success")
+    return redirect(url_for("admin"))
+
+
+@app.route("/admin/restore", methods=["POST"])
+@admin_required
+def restore_backup():
+    file = request.files.get("backup_file")
+    if not file or not file.filename.endswith(".db"):
+        flash("فایل پشتیبان معتبر نیست.", "error")
+        return redirect(url_for("admin"))
+
+    temp_path = os.path.join(BACKUP_FOLDER, "temp_restore.db")
+    file.save(temp_path)
+    shutil.copy2(temp_path, DATABASE)
+    os.remove(temp_path)
+    flash("بازیابی اطلاعات با موفقیت انجام شد.", "success")
     return redirect(url_for("admin"))
 
 
