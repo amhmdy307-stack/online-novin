@@ -1,14 +1,23 @@
 {% extends "base.html" %}
 {% block title %}ورود به پنل مدیریت{% endblock %}
+
 {% block content %}
 <div class="card" style="max-width:420px;margin:40px auto;">
     <h1>ورود به پنل مدیریت</h1>
+
     <form method="POST">
         <label>نام کاربری</label>
         <input type="text" name="username" required>
+
         <label>رمز عبور</label>
         <input type="password" name="password" required>
+
         <button type="submit" class="btn">ورود</button>
     </form>
+
+    <div style="margin-top:20px;text-align:center;">
+        <a href="#" style="color:#166534;margin-left:15px;">فراموشی رمز عبور</a>
+        <a href="#" style="color:#166534;">فراموشی نام کاربری</a>
+    </div>
 </div>
 {% endblock %}
