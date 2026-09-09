@@ -14,7 +14,6 @@
         }
         a { text-decoration: none; color: inherit; }
 
-        /* فقط برای صفحات مشتری */
         .customer-header {
             max-width: 480px;
             margin: 20px auto 0;
@@ -41,7 +40,6 @@
             opacity: 0.95;
         }
 
-        /* دو آیکون زیر کادر سبز */
         .quick-links {
             max-width: 480px;
             margin: 18px auto;
@@ -71,7 +69,6 @@
             border: 2px solid #166534;
         }
 
-        /* کادر زرد هشدار */
         .warning-box {
             max-width: 480px;
             margin: 0 auto 25px;
@@ -172,7 +169,7 @@
             padding: 12px;
         }
 
-        /* مخفی کردن هدر مشتری در پنل مدیر */
+        /* مخفی کردن در پنل مدیر */
         body.admin-page .customer-header,
         body.admin-page .quick-links,
         body.admin-page .warning-box,
@@ -193,8 +190,7 @@
 </head>
 <body class="{% block body_class %}{% endblock %}">
 
-{% if not current_user %}
-<!-- فقط در صفحات مشتری نمایش داده می‌شود -->
+<!-- هدر مشتری (همیشه نمایش داده می‌شود مگر در پنل مدیر) -->
 <div class="customer-header">
     {% if site_settings.get('logo') %}
         <img src="{{ url_for('uploaded_logo', filename=site_settings.get('logo')) }}" alt="لوگو">
@@ -219,7 +215,6 @@
 <div class="warning-box">
     ⚠️ پرداخت فقط از درگاه رسمی همین سایت انجام می‌شود
 </div>
-{% endif %}
 
 <main class="container">
     {% with messages = get_flashed_messages(with_categories=true) %}
@@ -235,11 +230,9 @@
     {% block content %}{% endblock %}
 </main>
 
-{% if not current_user %}
 <footer class="customer-footer">
     تمامی حقوق محفوظ است
 </footer>
-{% endif %}
 
 {% block scripts %}{% endblock %}
 </body>
