@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% block body_class %}admin-page{% endblock %}
 {% block title %}ورود به پنل مدیریت{% endblock %}
 
 {% block content %}
@@ -12,13 +13,12 @@
         <label>رمز عبور</label>
         <input type="password" name="password" required>
 
-        <button type="submit" class="btn">ورود</button>
+        <button type="submit" class="btn" style="width:100%;">ورود</button>
     </form>
 
     <div style="margin-top:20px;text-align:center;">
-        <a href="#" style="color:#166534;margin-left:15px;">فراموشی رمز عبور</a>
-        <a href="#" style="color:#166534;">فراموشی نام کاربری</a>
+        <a href="#" onclick="alert('برای بازیابی رمز با مدیر اصلی تماس بگیرید'); return false;" style="color:#166534;margin-left:15px;">فراموشی رمز عبور</a>
+        <a href="#" onclick="alert('برای بازیابی نام کاربری با مدیر اصلی تماس بگیرید'); return false;" style="color:#166534;">فراموشی نام کاربری</a>
     </div>
 </div>
 {% endblock %}
-{% block body_class %}admin-page{% endblock %}
