@@ -10,73 +10,61 @@
     <a href="{{ url_for('admin_logout') }}" class="btn btn-secondary">خروج</a>
 </div>
 
-<!-- آمار -->
 <div class="grid">
     <div class="card">
-        <h3>📋 تعداد درخواست‌ها</h3>
+        <h3>تعداد درخواست‌ها</h3>
         <strong style="font-size:28px;">{{ requests|length }}</strong>
     </div>
     <div class="card">
-        <h3>👥 تعداد مشتریان</h3>
+        <h3>تعداد مشتریان</h3>
         <strong style="font-size:28px;">{{ customers|length }}</strong>
     </div>
     <div class="card">
-        <h3>💰 درآمد</h3>
+        <h3>درآمد</h3>
         <strong style="font-size:22px;">{{ "{:,}".format(total_income or 0) }} تومان</strong>
     </div>
     <div class="card">
-        <h3>📉 بدهی</h3>
+        <h3>بدهی</h3>
         <strong style="font-size:22px;">{{ "{:,}".format(total_debt or 0) }} تومان</strong>
     </div>
 </div>
 
-<!-- تنظیمات سایت -->
 <div class="card">
-    <h2>⚙️ تنظیمات سایت</h2>
+    <h2>تنظیمات سایت</h2>
     <form method="POST" action="{{ url_for('admin_settings_save') }}" enctype="multipart/form-data">
         <label>نام سایت</label>
         <input type="text" name="site_name" value="{{ settings.get('site_name', '') }}">
-
         <label>مدیر</label>
         <input type="text" name="manager" value="{{ settings.get('manager', '') }}">
-
         <label>تلفن</label>
         <input type="text" name="phone" value="{{ settings.get('phone', '') }}">
-
         <label>لوگو</label>
         <input type="file" name="logo" accept="image/*">
-
         <button type="submit" class="btn">ذخیره تنظیمات</button>
     </form>
 </div>
 
-<!-- درگاه پرداخت و پیامک -->
 <div class="card">
-    <h2>💳 تنظیمات درگاه پرداخت و پیامک (سراسری)</h2>
+    <h2>تنظیمات درگاه پرداخت و پیامک</h2>
     <form method="POST" action="{{ url_for('gateway_settings') }}">
-        <label>حالت پرداخت سراسری سایت</label>
+        <label>حالت پرداخت سراسری</label>
         <select name="default_payment_mode">
             <option value="gateway" {% if settings.get('default_payment_mode') == 'gateway' %}selected{% endif %}>درگاه پرداخت</option>
             <option value="card_to_card" {% if settings.get('default_payment_mode') == 'card_to_card' %}selected{% endif %}>کارت به کارت</option>
             <option value="payment_link" {% if settings.get('default_payment_mode') == 'payment_link' %}selected{% endif %}>لینک پرداخت</option>
         </select>
-
-        <label>کد مرچنت درگاه پرداخت</label>
-        <input type="text" name="payment_merchant_code" value="{{ settings.get('payment_merchant_code', '') }}" placeholder="Merchant Code">
-
-        <label>کد API سامانه پیامک</label>
+        <label>کد مرچنت درگاه</label>
+        <input type="text" name="payment_merchant_code" value="{{ settings.get('payment_merchant_code', '') }}">
+        <label>کد API پیامک</label>
         <input type="text" name="sms_api_key" value="{{ settings.get('sms_api_key', '') }}">
-
         <label>شماره خط پیامک</label>
         <input type="text" name="sms_phone" value="{{ settings.get('sms_phone', '') }}">
-
-        <button type="submit" class="btn">ذخیره تنظیمات درگاه و پیامک</button>
+        <button type="submit" class="btn">ذخیره</button>
     </form>
 </div>
 
-<!-- مدیریت خدمات -->
 <div class="card">
-    <h2>🛠️ مدیریت خدمات</h2>
+    <h2>مدیریت خدمات</h2>
     <div class="table-wrapper">
         <table>
             <thead>
@@ -111,44 +99,34 @@
     </div>
 </div>
 
-<!-- افزودن خدمت -->
 <div class="card">
-    <h2>➕ افزودن خدمت جدید</h2>
+    <h2>افزودن خدمت جدید</h2>
     <form method="POST" action="{{ url_for('admin_service_save') }}">
         <label>نام خدمت *</label>
         <input type="text" name="name" required>
-
         <label>دسته‌بندی</label>
         <input type="text" name="category">
-
         <label>توضیحات</label>
         <textarea name="description"></textarea>
-
         <label>قیمت (تومان)</label>
         <input type="number" name="price" value="0" min="0">
-
-        <label>ترتیب نمایش</label>
+        <label>ترتیب</label>
         <input type="number" name="sort_order" value="0">
-
         <label>وضعیت</label>
         <select name="active">
             <option value="1">فعال</option>
             <option value="0">غیرفعال</option>
         </select>
-
         <label>فیلدهای فرم (JSON)</label>
         <textarea name="fields_json">[]</textarea>
-
-        <label>مدارک مورد نیاز (JSON)</label>
+        <label>مدارک (JSON)</label>
         <textarea name="documents_json">[]</textarea>
-
         <button type="submit" class="btn">افزودن خدمت</button>
     </form>
 </div>
 
-<!-- لیست درخواست‌ها -->
 <div class="card">
-    <h2>📋 لیست درخواست‌ها</h2>
+    <h2>لیست درخواست‌ها</h2>
     <div class="table-wrapper">
         <table>
             <thead>
@@ -179,9 +157,8 @@
     </div>
 </div>
 
-<!-- پیام‌های پشتیبانی -->
 <div class="card">
-    <h2>💬 پیام‌های پشتیبانی</h2>
+    <h2>پیام‌های پشتیبانی</h2>
     {% if support_messages %}
         {% for msg in support_messages %}
         <div style="border-bottom:1px solid #eee; padding:12px 0;">
@@ -197,35 +174,28 @@
     {% endif %}
 </div>
 
-<!-- مدیریت کاربران -->
 {% if current_user.role == 'admin' %}
 <div class="card">
-    <h2>👤 مدیریت کاربران</h2>
+    <h2>مدیریت کاربران</h2>
     <form method="POST" action="{{ url_for('create_user') }}">
         <label>نام کاربری</label>
         <input type="text" name="username" required>
-
         <label>رمز عبور</label>
         <input type="password" name="password" required minlength="6">
-
         <label>نقش</label>
         <select name="role">
             <option value="expert">کارشناس</option>
             <option value="admin">مدیر</option>
         </select>
-
-        <label>دسترسی به خدمات (برای کارشناس)</label>
+        <label>دسترسی به خدمات</label>
         <select name="allowed_services" multiple style="height:100px;">
             {% for s in services %}
             <option value="{{ s.id }}">{{ s.name }}</option>
             {% endfor %}
         </select>
-        <small>Ctrl را نگه دارید تا چند مورد انتخاب کنید</small>
-
         <br><br>
         <button type="submit" class="btn">ایجاد کاربر</button>
     </form>
-
     <hr>
     <div class="table-wrapper">
         <table>
@@ -256,54 +226,45 @@
 </div>
 {% endif %}
 
-<!-- کد تخفیف -->
 <div class="card">
-    <h2>🎟 مدیریت کدهای تخفیف</h2>
+    <h2>کدهای تخفیف</h2>
     <form method="POST" action="{{ url_for('create_discount') }}">
         <label>کد تخفیف</label>
         <input type="text" name="code" required>
-
         <label>نوع</label>
         <select name="kind">
             <option value="percent">درصدی</option>
             <option value="fixed">مبلغ ثابت</option>
         </select>
-
         <label>مقدار</label>
         <input type="number" name="value" min="0" required>
-
         <label>حداکثر استفاده</label>
         <input type="number" name="max_uses" value="1" min="0">
-
         <label>تاریخ شروع</label>
         <input type="date" name="start_date">
-
         <label>تاریخ پایان</label>
         <input type="date" name="end_date">
-
-        <button type="submit" class="btn">ایجاد کد تخفیف</button>
+        <button type="submit" class="btn">ایجاد کد</button>
     </form>
 </div>
 
-<!-- تغییر رمز -->
 <div class="card">
-    <h2>🔐 تغییر رمز عبور</h2>
+    <h2>تغییر رمز عبور</h2>
     <form method="POST" action="{{ url_for('admin_password') }}">
-        <label>رمز عبور جدید</label>
+        <label>رمز جدید</label>
         <input type="password" name="password" minlength="6" required>
         <button type="submit" class="btn">تغییر رمز</button>
     </form>
 </div>
 
-<!-- پشتیبان‌گیری -->
 {% if current_user.role == 'admin' %}
 <div class="card">
-    <h2>💾 پشتیبان‌گیری و بازیابی</h2>
+    <h2>پشتیبان‌گیری</h2>
     <form method="POST" action="{{ url_for('create_backup') }}" style="display:inline;">
         <button type="submit" class="btn">تهیه پشتیبان</button>
     </form>
     <form method="POST" action="{{ url_for('restore_backup') }}" enctype="multipart/form-data" style="margin-top:15px;">
-        <label>بازیابی از فایل</label>
+        <label>بازیابی</label>
         <input type="file" name="backup_file" accept=".db" required>
         <button type="submit" class="btn btn-warning">بازیابی</button>
     </form>
