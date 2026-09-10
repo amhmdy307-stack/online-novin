@@ -189,4 +189,125 @@
             ({{ msg.customer_phone or '-' }})
             <br>
             <small>{{ msg.created_at }}</small>
-            <p
+            <p style="margin:6px 0;">{{ msg.message }}</p>
+        </div>
+        {% endfor %}
+    {% else %}
+        <p>هنوز پیامی ارسال نشده است.</p>
+    {% endif %}
+</div>
+
+<!-- مدیریت کاربران -->
+{% if current_user.role == 'admin' %}
+<div class="card">
+    <h2>👤 مدیریت کاربران</h2>
+    <form method="POST" action="{{ url_for('create_user') }}">
+        <label>نام کاربری</label>
+        <input type="text" name="username" required>
+
+        <label>رمز عبور</label>
+        <input type="password" name="password" required minlength="6">
+
+        <label>نقش</label>
+        <select name="role">
+            <option value="expert">کارشناس</option>
+            <option value="admin">مدیر</option>
+        </select>
+
+        <label>دسترسی به خدمات (برای کارشناس)</label>
+        <select name="allowed_services" multiple style="height:100px;">
+            {% for s in services %}
+            <option value="{{ s.id }}">{{ s.name }}</option>
+            {% endfor %}
+        </select>
+        <small>Ctrl را نگه دارید تا چند مورد انتخاب کنید</small>
+
+        <br><br>
+        <button type="submit" class="btn">ایجاد کاربر</button>
+    </form>
+
+    <hr>
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th>نام کاربری</th>
+                    <th>نقش</th>
+                    <th>وضعیت</th>
+                    <th>عملیات</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in users %}
+                <tr>
+                    <td>{{ u.username }}</td>
+                    <td>{{ u.role }}</td>
+                    <td>{% if u.active %}فعال{% else %}غیرفعال{% endif %}</td>
+                    <td>
+                        <form method="POST" action="{{ url_for('toggle_user', user_id=u.id) }}" style="display:inline;">
+                            <button type="submit" class="btn btn-warning" style="padding:6px 10px;font-size:13px;">تغییر وضعیت</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+<!-- کد تخفیف -->
+<div class="card">
+    <h2>🎟 مدیریت کدهای تخفیف</h2>
+    <form method="POST" action="{{ url_for('create_discount') }}">
+        <label>کد تخفیف</label>
+        <input type="text" name="code" required>
+
+        <label>نوع</label>
+        <select name="kind">
+            <option value="percent">درصدی</option>
+            <option value="fixed">مبلغ ثابت</option>
+        </select>
+
+        <label>مقدار</label>
+        <input type="number" name="value" min="0" required>
+
+        <label>حداکثر استفاده</label>
+        <input type="number" name="max_uses" value="1" min="0">
+
+        <label>تاریخ شروع</label>
+        <input type="date" name="start_date">
+
+        <label>تاریخ پایان</label>
+        <input type="date" name="end_date">
+
+        <button type="submit" class="btn">ایجاد کد تخفیف</button>
+    </form>
+</div>
+
+<!-- تغییر رمز -->
+<div class="card">
+    <h2>🔐 تغییر رمز عبور</h2>
+    <form method="POST" action="{{ url_for('admin_password') }}">
+        <label>رمز عبور جدید</label>
+        <input type="password" name="password" minlength="6" required>
+        <button type="submit" class="btn">تغییر رمز</button>
+    </form>
+</div>
+
+<!-- پشتیبان‌گیری -->
+{% if current_user.role == 'admin' %}
+<div class="card">
+    <h2>💾 پشتیبان‌گیری و بازیابی</h2>
+    <form method="POST" action="{{ url_for('create_backup') }}" style="display:inline;">
+        <button type="submit" class="btn">تهیه پشتیبان</button>
+    </form>
+    <form method="POST" action="{{ url_for('restore_backup') }}" enctype="multipart/form-data" style="margin-top:15px;">
+        <label>بازیابی از فایل</label>
+        <input type="file" name="backup_file" accept=".db" required>
+        <button type="submit" class="btn btn-warning">بازیابی</button>
+    </form>
+</div>
+{% endif %}
+
+{% endblock %}
