@@ -191,3 +191,19 @@
     <option value="payment_link" {% if settings.get('default_payment_mode') == 'payment_link' %}selected{% endif %}>لینک پرداخت</option>
 </select>
 {% block body_class %}admin-page{% endblock %}
+<div class="card">
+    <h2>پیام‌های پشتیبانی</h2>
+    {% if support_messages %}
+        {% for msg in support_messages %}
+            <div style="border-bottom:1px solid #eee; padding:10px 0;">
+                <strong>{{ msg.customer_name or 'بدون نام' }}</strong>
+                ({{ msg.customer_phone or '-' }})
+                <br>
+                <small>{{ msg.created_at }}</small>
+                <p style="margin:5px 0;">{{ msg.message }}</p>
+            </div>
+        {% endfor %}
+    {% else %}
+        <p>هنوز پیامی ارسال نشده است.</p>
+    {% endif %}
+</div>
