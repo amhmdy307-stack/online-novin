@@ -208,7 +208,7 @@
 {% if current_user.role == 'admin' %}
 <div class="card">
     <h2>پشتیبان‌گیری</h2>
-    <form method="POST" action="{{ url_for('create_backup') }}" style="display:inline;">
+    <form method="POST" action="{{ url_for('create_backup') }}">
         <button type="submit" class="btn">تهیه پشتیبان</button>
     </form>
 </div>
