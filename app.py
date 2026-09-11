@@ -169,6 +169,9 @@ def create_tables():
         "footer_text": "تمامی حقوق محفوظ است",
         "logo": "",
         "default_payment_mode": "gateway",
+        "payment_merchant_code": "",
+        "sms_api_key": "",
+        "sms_phone": "",
     }
 
     for key, value in defaults.items():
@@ -545,7 +548,7 @@ def admin():
 @app.route("/admin/settings/save", methods=["POST"])
 @login_required
 def admin_settings_save():
-    for key in ["site_name", "manager", "phone", "manager_text", "default_payment_mode"]:
+    for key in ["site_name", "manager", "phone", "manager_text"]:
         set_setting(key, request.form.get(key, "").strip())
 
     logo = request.files.get("logo")
@@ -557,6 +560,17 @@ def admin_settings_save():
             set_setting("logo", filename)
 
     flash("تنظیمات ذخیره شد.", "success")
+    return redirect(url_for("admin"))
+
+
+@app.route("/admin/gateway-settings", methods=["POST"])
+@admin_required
+def gateway_settings():
+    set_setting("default_payment_mode", request.form.get("default_payment_mode", "gateway").strip())
+    set_setting("payment_merchant_code", request.form.get("payment_merchant_code", "").strip())
+    set_setting("sms_api_key", request.form.get("sms_api_key", "").strip())
+    set_setting("sms_phone", request.form.get("sms_phone", "").strip())
+    flash("تنظیمات درگاه و پیامک ذخیره شد.", "success")
     return redirect(url_for("admin"))
 
 
@@ -681,6 +695,58 @@ def admin_service_save():
     conn.close()
     flash("خدمت جدید اضافه شد.", "success")
     return redirect(url_for("admin"))
+
+
+@app.route("/admin/service/<int:service_id>/edit", methods=["GET", "POST"])
+@login_required
+def edit_service(service_id):
+    conn = get_db()
+    service = conn.execute("SELECT * FROM services WHERE id = ?", (service_id,)).fetchone()
+    if not service:
+        conn.close()
+        abort(404)
+
+    if request.method == "POST":
+        name = request.form.get("name", "").strip()
+        category = request.form.get("category", "").strip()
+        description = request.form.get("description", "").strip()
+        price = to_int(request.form.get("price"))
+        sort_order = to_int(request.form.get("sort_order"))
+        active = 1 if request.form.get("active") == "1" else 0
+        fields_json = request.form.get("fields_json", "[]")
+        documents_json = request.form.get("documents_json", "[]")
+
+        try:
+            if not isinstance(json.loads(fields_json), list):
+                fields_json = "[]"
+        except Exception:
+            fields_json = "[]"
+        try:
+            if not isinstance(json.loads(documents_json), list):
+                documents_json = "[]"
+        except Exception:
+            documents_json = "[]"
+
+        if not name:
+            flash("نام خدمت الزامی است.", "error")
+            return redirect(url_for("edit_service", service_id=service_id))
+
+        conn.execute(
+            """
+            UPDATE services SET
+                name=?, category=?, description=?, price=?, sort_order=?, active=?,
+                fields_json=?, documents_json=?
+            WHERE id=?
+            """,
+            (name, category, description, price, sort_order, active, fields_json, documents_json, service_id)
+        )
+        conn.commit()
+        conn.close()
+        flash("خدمت با موفقیت ویرایش شد.", "success")
+        return redirect(url_for("admin"))
+
+    conn.close()
+    return render_template("edit_service.html", service=service, settings=get_settings())
 
 
 @app.route("/admin/service/<int:service_id>/toggle", methods=["POST"])
