@@ -22,10 +22,7 @@
             {% else %}
                 قیمت پس از بررسی
             {% endif %}
-        </div>
-        <a href="{{ url_for('service', service_id=service.id) }}" class="btn" style="width:100%; text-align:center; padding:10px; display:block;">
-            ثبت درخواست
-        </a>
+        </div><a href="{{ url_for('service', service_id=s.id) }}" class="btn">ثبت درخواست</a>
     </div>
     {% else %}
     <div class="card" style="grid-column: 1 / -1; text-align:center;">
