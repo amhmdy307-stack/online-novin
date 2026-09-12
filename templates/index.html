@@ -6,20 +6,6 @@
 
 {% block content %}
 
-<div class="card" style="text-align:center;">
-    {% if settings.get('logo') %}
-        <img src="{{ url_for('uploaded_logo', filename=settings.get('logo')) }}" alt="لوگو" style="max-height:80px; margin-bottom:10px;">
-    {% endif %}
-    <h1>{{ site_name|default("کافی نت آنلاین نوین") }}</h1>
-    <p>{{ phone|default("") }}</p>
-    <p>با مدیریت {{ manager|default("احمد محمدی مهر") }}</p>
-    <p>ارائه کلیه خدمات اینترنتی و کافی نتی</p>
-</div>
-
-<div class="card" style="background:#fff8e1; border:1px solid #ffecb3; text-align:center;">
-    پرداخت فقط از درگاه رسمی همین سایت انجام می‌شود
-</div>
-
 <div class="grid" style="grid-template-columns: repeat(2, 1fr); gap: 15px;">
     {% for s in services %}
     <div class="card">
@@ -36,8 +22,8 @@
         <a href="{{ url_for('service', service_id=s.id) }}" class="btn">ثبت درخواست</a>
     </div>
     {% else %}
-    <div class="card">
-        <p>خدمتی ثبت نشده است.</p>
+    <div class="card" style="grid-column: 1 / -1; text-align:center;">
+        <p>هنوز خدمتی ثبت نشده است.</p>
     </div>
     {% endfor %}
 </div>
