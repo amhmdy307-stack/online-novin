@@ -917,3 +917,21 @@ create_tables()
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=False)
+@app.route("/admin/forgot-password", methods=["GET", "POST"])
+def forgot_password():
+    if request.method == "POST":
+        username = request.form.get("username", "").strip()
+        # بعداً اینجا کد ارسال پیامک قرار می‌گیرد
+        flash("درخواست بازیابی رمز ثبت شد. پس از اتصال سامانه پیامک، رمز موقت ارسال خواهد شد.", "success")
+        return redirect(url_for("admin_login"))
+    return render_template("forgot.html", title="فراموشی رمز عبور", field_name="username", field_label="نام کاربری")
+
+
+@app.route("/admin/forgot-username", methods=["GET", "POST"])
+def forgot_username():
+    if request.method == "POST":
+        phone = request.form.get("phone", "").strip()
+        # بعداً اینجا کد ارسال پیامک قرار می‌گیرد
+        flash("درخواست بازیابی نام کاربری ثبت شد. پس از اتصال سامانه پیامک، نام کاربری ارسال خواهد شد.", "success")
+        return redirect(url_for("admin_login"))
+    return render_template("forgot.html", title="فراموشی نام کاربری", field_name="phone", field_label="شماره موبایل")
