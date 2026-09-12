@@ -10,6 +10,7 @@
     <a href="{{ url_for('admin_logout') }}" class="btn btn-secondary">خروج</a>
 </div>
 
+<!-- آمار -->
 <div class="grid">
     <div class="card">
         <h3>تعداد درخواست‌ها</h3>
@@ -29,6 +30,7 @@
     </div>
 </div>
 
+<!-- تنظیمات سایت -->
 <div class="card">
     <h2>تنظیمات سایت</h2>
     <form method="POST" action="{{ url_for('admin_settings_save') }}" enctype="multipart/form-data">
@@ -44,6 +46,7 @@
     </form>
 </div>
 
+<!-- تنظیمات درگاه و پیامک -->
 <div class="card">
     <h2>تنظیمات درگاه پرداخت و پیامک</h2>
     <form method="POST" action="{{ url_for('gateway_settings') }}">
@@ -63,6 +66,7 @@
     </form>
 </div>
 
+<!-- مدیریت خدمات -->
 <div class="card">
     <h2>مدیریت خدمات</h2>
     <table>
@@ -91,6 +95,7 @@
     </table>
 </div>
 
+<!-- افزودن خدمت -->
 <div class="card">
     <h2>افزودن خدمت جدید</h2>
     <form method="POST" action="{{ url_for('admin_service_save') }}">
@@ -117,6 +122,7 @@
     </form>
 </div>
 
+<!-- لیست درخواست‌ها -->
 <div class="card">
     <h2>لیست درخواست‌ها</h2>
     <table>
@@ -147,6 +153,7 @@
     </table>
 </div>
 
+<!-- پیام‌های پشتیبانی -->
 <div class="card">
     <h2>پیام‌های پشتیبانی</h2>
     {% for msg in support_messages %}
@@ -162,9 +169,10 @@
     {% endfor %}
 </div>
 
+<!-- مدیریت کاربران -->
 {% if current_user.role == 'admin' %}
 <div class="card">
-    <h2>مدیریت کاربران</h2>
+    <h2>مدیریت کاربران و کارشناسان</h2>
     <form method="POST" action="{{ url_for('create_user') }}">
         <label>نام کاربری</label>
         <input type="text" name="username" required>
@@ -175,11 +183,20 @@
             <option value="expert">کارشناس</option>
             <option value="admin">مدیر</option>
         </select>
+        <label>دسترسی به خدمات (برای کارشناس)</label>
+        <select name="allowed_services" multiple style="height:120px;">
+            {% for s in services %}
+            <option value="{{ s.id }}">{{ s.name }}</option>
+            {% endfor %}
+        </select>
+        <small>Ctrl را نگه دارید تا چند خدمت انتخاب کنید</small>
+        <br><br>
         <button type="submit" class="btn">ایجاد کاربر</button>
     </form>
 </div>
 {% endif %}
 
+<!-- کدهای تخفیف -->
 <div class="card">
     <h2>کدهای تخفیف</h2>
     <form method="POST" action="{{ url_for('create_discount') }}">
@@ -196,6 +213,7 @@
     </form>
 </div>
 
+<!-- تغییر رمز -->
 <div class="card">
     <h2>تغییر رمز عبور</h2>
     <form method="POST" action="{{ url_for('admin_password') }}">
@@ -205,6 +223,7 @@
     </form>
 </div>
 
+<!-- پشتیبان‌گیری -->
 {% if current_user.role == 'admin' %}
 <div class="card">
     <h2>پشتیبان‌گیری</h2>
