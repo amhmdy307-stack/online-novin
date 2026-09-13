@@ -1,56 +1,108 @@
 {% extends "base.html" %}
+{% block body_class %}admin-page{% endblock %}
 {% block title %}مدیریت پرونده{% endblock %}
+
 {% block content %}
+
 <div class="card">
+    <a href="{{ url_for('admin') }}" class="btn btn-secondary">بازگشت به پنل</a>
     <h1>مدیریت پرونده</h1>
     <p>کد پیگیری: <strong>{{ req.tracking_code }}</strong></p>
-    <p>مشتری: <strong>{{ req.customer_name }}</strong> - {{ req.customer_phone }}</p>
-    <p>خدمت: <strong>{{ req.service_name }}</strong></p>
-    <p>وضعیت فعلی: <span class="badge">{{ req.status }}</span></p>
+    <p>مشتری: <strong>{{ req.customer_name or '-' }}</strong></p>
+    <p>تلفن: <strong>{{ req.customer_phone or '-' }}</strong></p>
+    <p>کد ملی: <strong>{{ req.customer_national_id or '-' }}</strong></p>
+    <p>خدمت: <strong>{{ req.service_name or '-' }}</strong></p>
+    <p>وضعیت: <strong>{{ req.status }}</strong></p>
 </div>
+
+<div class="card">
+    <h2>اطلاعات فرم مشتری</h2>
+    {% if form_data %}
+        {% for key, value in form_data.items() %}
+            <p><strong>{{ key }}:</strong> {{ value }}</p>
+        {% endfor %}
+    {% else %}
+        <p>اطلاعات فرم ثبت نشده است.</p>
+    {% endif %}
+    {% if req.customer_note %}
+        <hr>
+        <p><strong>توضیحات مشتری:</strong> {{ req.customer_note }}</p>
+    {% endif %}
+</div>
+
+<div class="card">
+    <h2>مدارک ارسال‌شده</h2>
+    {% if docs %}
+        {% for doc in docs %}
+            <div style="border-bottom:1px solid #eee; padding:10px 0;">
+                <strong>{{ doc }}</strong>
+                <br>
+                <a href="{{ url_for('uploaded_file', filename=doc) }}" target="_blank" class="btn" style="padding:5px 10px;font-size:12px;margin-top:5px;">مشاهده</a>
+                <a href="{{ url_for('uploaded_file', filename=doc) }}" download class="btn btn-secondary" style="padding:5px 10px;font-size:12px;margin-top:5px;">دانلود</a>
+            </div>
+        {% endfor %}
+    {% else %}
+        <p>مدرکی ارسال نشده است.</p>
+    {% endif %}
+</div>
+
 <div class="card">
     <h2>تغییر وضعیت پرونده</h2>
     <form method="POST">
-        <input type="hidden" name="action" value="status">
+        <input type="hidden" name="action" value="update">
         <label>وضعیت</label>
         <select name="status">
-            <option value="پذیرش شد" {% if req.status == "پذیرش شد" %}selected{% endif %}>پذیرش شد</option>
-            <option value="در حال بررسی" {% if req.status == "در حال بررسی" %}selected{% endif %}>در حال بررسی</option>
-            <option value="نقص مدارک" {% if req.status == "نقص مدارک" %}selected{% endif %}>نقص مدارک</option>
-            <option value="قطعی سامانه" {% if req.status == "قطعی سامانه" %}selected{% endif %}>قطعی سامانه</option>
-            <option value="رد شد" {% if req.status == "رد شد" %}selected{% endif %}>رد شد</option>
-            <option value="انصراف مشتری" {% if req.status == "انصراف مشتری" %}selected{% endif %}>انصراف مشتری</option>
-            <option value="انجام شد" {% if req.status == "انجام شد" %}selected{% endif %}>انجام شد</option>
+            <option value="پذیرش شد" {% if req.status == 'پذیرش شد' %}selected{% endif %}>پذیرش شد</option>
+            <option value="در حال بررسی" {% if req.status == 'در حال بررسی' %}selected{% endif %}>در حال بررسی</option>
+            <option value="نقص مدارک" {% if req.status == 'نقص مدارک' %}selected{% endif %}>نقص مدارک</option>
+            <option value="قطعی سامانه" {% if req.status == 'قطعی سامانه' %}selected{% endif %}>قطعی سامانه</option>
+            <option value="رد شد" {% if req.status == 'رد شد' %}selected{% endif %}>رد شد</option>
+            <option value="انصراف مشتری" {% if req.status == 'انصراف مشتری' %}selected{% endif %}>انصراف مشتری</option>
+            <option value="انجام شد" {% if req.status == 'انجام شد' %}selected{% endif %}>انجام شد</option>
+            <option value="در انتظار پرداخت" {% if req.status == 'در انتظار پرداخت' %}selected{% endif %}>در انتظار پرداخت</option>
+            <option value="در انتظار بررسی" {% if req.status == 'در انتظار بررسی' %}selected{% endif %}>در انتظار بررسی</option>
         </select>
-        <label>مدت زمان تقریبی انجام</label>
-        <input type="text" name="estimated_time" value="{{ req.estimated_time or '' }}" placeholder="مثلاً ۲ روز کاری">
-        <label>توضیحات برای مشتری</label>
+
+        <label>مدت زمان تقریبی</label>
+        <input type="text" name="estimated_time" value="{{ req.estimated_time or '' }}" placeholder="مثلاً ۲ ساعت">
+
+        <label>توضیحات مدیر/کارشناس</label>
         <textarea name="admin_note">{{ req.admin_note or '' }}</textarea>
-        <button type="submit" class="btn">ثبت وضعیت</button>
+
+        <label>مبلغ کل (تومان)</label>
+        <input type="number" name="total_price" value="{{ req.total_price or 0 }}" min="0">
+
+        <label>مبلغ پرداخت‌شده (تومان)</label>
+        <input type="number" name="paid_price" value="{{ req.paid_price or 0 }}" min="0">
+
+        <button type="submit" class="btn">ذخیره وضعیت</button>
     </form>
 </div>
+
 <div class="card">
-    <h2>ارسال پیام دستی به مشتری</h2>
+    <h2>گفتگو با مشتری</h2>
+    {% for message in messages %}
+        <div class="alert" style="margin-bottom:8px;">
+            <strong>
+                {% if message.sender == 'customer' %}مشتری:
+                {% elif message.sender == 'admin' %}مدیر/کارشناس:
+                {% else %}سیستم:
+                {% endif %}
+            </strong>
+            {{ message.message }}
+            <br>
+            <small>{{ message.created_at }}</small>
+        </div>
+    {% else %}
+        <p>هنوز پیامی وجود ندارد.</p>
+    {% endfor %}
+
     <form method="POST">
         <input type="hidden" name="action" value="message">
-        <textarea name="message" required placeholder="پیام خود را بنویسید..."></textarea>
+        <label>پیام دستی به مشتری</label>
+        <textarea name="message" required placeholder="متن پیام خود را بنویسید..."></textarea>
         <button type="submit" class="btn">ارسال پیام</button>
     </form>
 </div>
-<div class="card">
-    <h2>گفتگو</h2>
-    {% for message in messages %}
-    <div class="alert">
-        <strong>{% if message.sender == 'customer' %}مشتری:{% elif message.sender == 'admin' %}مدیر/کارشناس:{% else %}سیستم:{% endif %}</strong>
-        {{ message.message }}
-        <br><small>{{ message.created_at }}</small>
-    </div>
-    {% else %}
-    <p>هنوز پیامی وجود ندارد.</p>
-    {% endfor %}
-</div>
-<div class="card">
-    <a href="{{ url_for('admin') }}" class="btn btn-secondary">بازگشت به پنل مدیریت</a>
-</div>
+
 {% endblock %}
-{% block body_class %}admin-page{% endblock %}
