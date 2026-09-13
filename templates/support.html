@@ -1,33 +1,25 @@
 {% extends "base.html" %}
-
 {% block title %}ارتباط با پشتیبانی{% endblock %}
 
 {% block content %}
 <div class="card">
-    <h2>ارتباط با پشتیبانی</h2>
-    <p style="margin-bottom:15px;">کارشناس یا مدیر مورد نظر خود را انتخاب کنید:</p>
-
+    <a href="{{ url_for('index') }}" class="btn btn-secondary">بازگشت</a>
+    <h1>ارتباط با پشتیبانی</h1>
     <form method="POST">
         <label>انتخاب کارشناس / مدیر</label>
         <select name="expert_id" required>
-            <option value="">انتخاب کنید...</option>
-            {% for exp in experts %}
-            <option value="{{ exp.id }}">
-                {{ exp.username }} {% if exp.role == 'admin' %}(مدیر){% else %}(کارشناس){% endif %}
-            </option>
+            <option value="">انتخاب کنید</option>
+            {% for e in experts %}
+            <option value="{{ e.id }}">{{ e.full_name or e.username }} ({{ e.role }})</option>
             {% endfor %}
         </select>
-
-        <label>نام و نام خانوادگی</label>
-        <input type="text" name="name" required placeholder="نام کامل">
-
+        <label>نام شما</label>
+        <input type="text" name="name" required>
         <label>شماره موبایل</label>
-        <input type="tel" name="phone" required placeholder="09xxxxxxxxx">
-
-        <label>پیام شما</label>
-        <textarea name="message" required rows="4" placeholder="پیام خود را بنویسید..."></textarea>
-
-        <button type="submit" class="btn" style="width:100%;">ارسال پیام</button>
+        <input type="text" name="phone" required>
+        <label>پیام</label>
+        <textarea name="message" required></textarea>
+        <button type="submit" class="btn">ارسال پیام</button>
     </form>
 </div>
 {% endblock %}
