@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}ارسال مجدد مدارک{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1>ارسال مجدد مدارک</h1>
+    <p>کد پیگیری: <strong>{{ req.tracking_code }}</strong></p>
+    <p>خدمت: {{ req.service_name or '-' }}</p>
+    <p>وضعیت: نقص مدارک</p>
+    {% if req.admin_note %}
+    <div class="alert"><strong>ایرادات اعلام‌شده:</strong><br>{{ req.admin_note }}</div>
+    {% endif %}
+</div>
+<div class="card">
+    <h2>ارسال مدارک اصلاحی (بدون پرداخت)</h2>
+    <form method="POST" enctype="multipart/form-data">
+        <label>توضیحات</label>
+        <textarea name="customer_note" placeholder="توضیح اصلاحات..."></textarea>
+        <label>مدارک</label>
+        <input type="file" name="documents" multiple accept=".jpg,.jpeg,.png,.webp,.pdf">
+        <br><br>
+        <button type="submit" class="btn btn-success">ارسال رایگان</button>
+    </form>
+</div>
+{% endblock %}
