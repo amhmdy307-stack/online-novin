@@ -3,9 +3,8 @@
 {% block title %}مدیریت پرونده{% endblock %}
 
 {% block content %}
-
 <div class="card">
-    <a href="{{ url_for('admin') }}" class="btn btn-secondary">بازگشت به پنل</a>
+    <a href="{{ url_for('admin') }}" class="btn btn-secondary">بازگشت</a>
     <h1>مدیریت پرونده</h1>
     <p>کد پیگیری: <strong>{{ req.tracking_code }}</strong></p>
     <p>مشتری: <strong>{{ req.customer_name or '-' }}</strong></p>
@@ -25,29 +24,27 @@
         <p>اطلاعات فرم ثبت نشده است.</p>
     {% endif %}
     {% if req.customer_note %}
-        <hr>
-        <p><strong>توضیحات مشتری:</strong> {{ req.customer_note }}</p>
+        <hr><p><strong>توضیحات مشتری:</strong> {{ req.customer_note }}</p>
     {% endif %}
 </div>
 
 <div class="card">
-    <h2>مدارک ارسال‌شده</h2>
+    <h2>مدارک</h2>
     {% if docs %}
         {% for doc in docs %}
-            <div style="border-bottom:1px solid #eee; padding:10px 0;">
-                <strong>{{ doc }}</strong>
-                <br>
-                <a href="{{ url_for('uploaded_file', filename=doc) }}" target="_blank" class="btn" style="padding:5px 10px;font-size:12px;margin-top:5px;">مشاهده</a>
-                <a href="{{ url_for('uploaded_file', filename=doc) }}" download class="btn btn-secondary" style="padding:5px 10px;font-size:12px;margin-top:5px;">دانلود</a>
-            </div>
+        <div style="border-bottom:1px solid #eee; padding:10px 0;">
+            <strong>{{ doc }}</strong><br>
+            <a href="{{ url_for('uploaded_file', filename=doc) }}" target="_blank" class="btn" style="padding:5px 10px;font-size:12px;margin-top:5px;">مشاهده</a>
+            <a href="{{ url_for('uploaded_file', filename=doc) }}" download class="btn btn-secondary" style="padding:5px 10px;font-size:12px;margin-top:5px;">دانلود</a>
+        </div>
         {% endfor %}
     {% else %}
-        <p>مدرکی ارسال نشده است.</p>
+        <p>مدرکی نیست.</p>
     {% endif %}
 </div>
 
 <div class="card">
-    <h2>تغییر وضعیت پرونده</h2>
+    <h2>تغییر وضعیت</h2>
     <form method="POST">
         <input type="hidden" name="action" value="update">
         <label>وضعیت</label>
@@ -62,19 +59,14 @@
             <option value="در انتظار پرداخت" {% if req.status == 'در انتظار پرداخت' %}selected{% endif %}>در انتظار پرداخت</option>
             <option value="در انتظار بررسی" {% if req.status == 'در انتظار بررسی' %}selected{% endif %}>در انتظار بررسی</option>
         </select>
-
-        <label>مدت زمان تقریبی</label>
-        <input type="text" name="estimated_time" value="{{ req.estimated_time or '' }}" placeholder="مثلاً ۲ ساعت">
-
-        <label>توضیحات مدیر/کارشناس</label>
+        <label>مدت تقریبی</label>
+        <input type="text" name="estimated_time" value="{{ req.estimated_time or '' }}">
+        <label>توضیحات (برای نقص مدارک، ایرادات را اینجا بنویس)</label>
         <textarea name="admin_note">{{ req.admin_note or '' }}</textarea>
-
-        <label>مبلغ کل (تومان)</label>
+        <label>مبلغ کل</label>
         <input type="number" name="total_price" value="{{ req.total_price or 0 }}" min="0">
-
-        <label>مبلغ پرداخت‌شده (تومان)</label>
+        <label>پرداخت‌شده</label>
         <input type="number" name="paid_price" value="{{ req.paid_price or 0 }}" min="0">
-
         <button type="submit" class="btn">ذخیره وضعیت</button>
     </form>
 </div>
@@ -82,27 +74,23 @@
 <div class="card">
     <h2>گفتگو با مشتری</h2>
     {% for message in messages %}
-        <div class="alert" style="margin-bottom:8px;">
-            <strong>
-                {% if message.sender == 'customer' %}مشتری:
-                {% elif message.sender == 'admin' %}مدیر/کارشناس:
-                {% else %}سیستم:
-                {% endif %}
-            </strong>
-            {{ message.message }}
-            <br>
-            <small>{{ message.created_at }}</small>
-        </div>
+    <div class="alert" style="margin-bottom:8px;">
+        <strong>
+            {% if message.sender == 'customer' %}مشتری:
+            {% elif message.sender == 'admin' %}کارشناس:
+            {% else %}سیستم:{% endif %}
+        </strong>
+        {{ message.message }}
+        <br><small>{{ message.created_at }}</small>
+    </div>
     {% else %}
-        <p>هنوز پیامی وجود ندارد.</p>
+    <p>پیامی نیست.</p>
     {% endfor %}
-
     <form method="POST">
         <input type="hidden" name="action" value="message">
-        <label>پیام دستی به مشتری</label>
-        <textarea name="message" required placeholder="متن پیام خود را بنویسید..."></textarea>
+        <label>پیام دستی</label>
+        <textarea name="message" required placeholder="متن پیام..."></textarea>
         <button type="submit" class="btn">ارسال پیام</button>
     </form>
 </div>
-
 {% endblock %}
