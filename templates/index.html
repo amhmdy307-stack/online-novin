@@ -6,23 +6,29 @@
   {% if settings.get('logo') %}
   <img src="{{ url_for('uploaded_logo', filename=settings.get('logo')) }}" alt="لوگو">
   {% endif %}
-  <div style="font-size:22px;font-weight:bold;">{{ site_name|default("کافی نت آنلاین نوین") }}</div>
-  <div style="margin-top:6px;">{{ phone|default("۰۹۹۲۰۳۴۵۱۳۹") }}</div>
-  <div style="margin-top:4px;">با مدیریت {{ manager|default("احمد محمدی مهر") }}</div>
-  <div style="margin-top:8px;">ارائه کلیه خدمات اینترنتی و کافی‌نتی</div>
+  <div class="title">{{ site_name|default("کافی نت آنلاین نوین") }}</div>
+  <div class="line">{{ phone|default("۰۹۹۲۰۳۴۵۱۳۹") }}</div>
+  <div class="line">با مدیریت {{ manager|default("احمد محمدی مهر") }}</div>
+  <div class="line">ارائه کلیه خدمات اینترنتی و کافی نتی</div>
 </div>
 
-<div class="pay-warn">پرداخت فقط از درگاه رسمی همین سایت انجام می‌شود</div>
-
-<div class="top-actions">
-  <a href="{{ url_for('tracking') }}">پیگیری درخواست</a>
-  <a href="{{ url_for('support') }}">ارتباط با پشتیبانی</a>
+<div class="icon-actions">
+  <a href="{{ url_for('tracking') }}">
+    <div class="icon-circle">🔍</div>
+    پیگیری درخواست
+  </a>
+  <a href="{{ url_for('support') }}">
+    <div class="icon-circle">💬</div>
+    ارتباط با پشتیبانی
+  </a>
 </div>
+
+<div class="pay-warn">⚠️ پرداخت فقط از درگاه رسمی همین سایت انجام می‌شود</div>
 
 <div class="services-grid">
   {% for s in services %}
   <div class="card">
-    <h3>{{ s.name }}</h3>
+    <h3 style="margin-top:0;">{{ s.name }}</h3>
     {% if s.category %}<div class="badge">{{ s.category }}</div>{% endif %}
     {% if s.description %}<p>{{ s.description }}</p>{% endif %}
     {% if s.price and s.price > 0 %}
