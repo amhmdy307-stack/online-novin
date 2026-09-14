@@ -3,6 +3,8 @@ import json
 import sqlite3
 import secrets
 import shutil
+import urllib.parse
+import urllib.request
 from datetime import datetime
 from functools import wraps
 
@@ -53,28 +55,40 @@ def add_column_if_missing(conn, table, column, definition):
             pass
 
 
+def to_latin_digits(s):
+    if s is None:
+        return ""
+    s = str(s)
+    p = "۰۱۲۳۴۵۶۷۸۹"
+    a = "٠١٢٣٤٥٦٧٨٩"
+    out = []
+    for c in s:
+        if c in p:
+            out.append(str(p.index(c)))
+        elif c in a:
+            out.append(str(a.index(c)))
+        else:
+            out.append(c)
+    return "".join(out)
+
+
 def create_tables():
     conn = get_db()
-
     conn.execute("""CREATE TABLE IF NOT EXISTS settings (
         id INTEGER PRIMARY KEY AUTOINCREMENT, key TEXT UNIQUE NOT NULL, value TEXT DEFAULT '')""")
-
     conn.execute("""CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT UNIQUE NOT NULL, password TEXT NOT NULL,
         full_name TEXT DEFAULT '', role TEXT NOT NULL DEFAULT 'expert', active INTEGER NOT NULL DEFAULT 1,
         phone TEXT DEFAULT '', allowed_services TEXT DEFAULT '[]', allowed_sections TEXT DEFAULT '[]',
         expires_at TEXT DEFAULT '', created_at TEXT DEFAULT CURRENT_TIMESTAMP)""")
-
     conn.execute("""CREATE TABLE IF NOT EXISTS customers (
         id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, phone TEXT DEFAULT '',
         national_id TEXT DEFAULT '', created_at TEXT DEFAULT CURRENT_TIMESTAMP)""")
-
     conn.execute("""CREATE TABLE IF NOT EXISTS services (
         id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, category TEXT DEFAULT '',
         description TEXT DEFAULT '', price INTEGER DEFAULT 0, sort_order INTEGER DEFAULT 0,
         active INTEGER DEFAULT 1, fields_json TEXT DEFAULT '[]', documents_json TEXT DEFAULT '[]',
         created_at TEXT DEFAULT CURRENT_TIMESTAMP)""")
-
     conn.execute("""CREATE TABLE IF NOT EXISTS requests (
         id INTEGER PRIMARY KEY AUTOINCREMENT, customer_id INTEGER, service_id INTEGER, expert_id INTEGER,
         tracking_code TEXT UNIQUE NOT NULL, status TEXT DEFAULT 'در انتظار بررسی',
@@ -85,47 +99,47 @@ def create_tables():
         rejected_fields TEXT DEFAULT '[]', personal_note TEXT DEFAULT '', receipt_file TEXT DEFAULT '',
         invoice_code TEXT DEFAULT '', created_at TEXT DEFAULT CURRENT_TIMESTAMP,
         updated_at TEXT DEFAULT CURRENT_TIMESTAMP)""")
-
     conn.execute("""CREATE TABLE IF NOT EXISTS messages (
         id INTEGER PRIMARY KEY AUTOINCREMENT, customer_id INTEGER, request_id INTEGER,
         sender TEXT NOT NULL, sender_name TEXT DEFAULT '', message TEXT NOT NULL,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP)""")
-
     conn.execute("""CREATE TABLE IF NOT EXISTS discounts (
         id INTEGER PRIMARY KEY AUTOINCREMENT, code TEXT UNIQUE NOT NULL, kind TEXT NOT NULL DEFAULT 'percent',
         value INTEGER NOT NULL DEFAULT 0, max_uses INTEGER DEFAULT 0, used_count INTEGER DEFAULT 0,
         start_date TEXT DEFAULT '', end_date TEXT DEFAULT '', is_credit INTEGER DEFAULT 0,
         active INTEGER DEFAULT 1, created_at TEXT DEFAULT CURRENT_TIMESTAMP)""")
-
     conn.execute("""CREATE TABLE IF NOT EXISTS notifications (
         id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, customer_phone TEXT DEFAULT '',
         title TEXT DEFAULT '', body TEXT DEFAULT '', is_read INTEGER DEFAULT 0,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP)""")
-
     conn.execute("""CREATE TABLE IF NOT EXISTS sms_log (
         id INTEGER PRIMARY KEY AUTOINCREMENT, phone TEXT, body TEXT, status TEXT DEFAULT 'pending',
         created_at TEXT DEFAULT CURRENT_TIMESTAMP)""")
 
-    add_column_if_missing(conn, "users", "full_name", "TEXT DEFAULT ''")
-    add_column_if_missing(conn, "users", "phone", "TEXT DEFAULT ''")
-    add_column_if_missing(conn, "users", "allowed_services", "TEXT DEFAULT '[]'")
-    add_column_if_missing(conn, "users", "allowed_sections", "TEXT DEFAULT '[]'")
-    add_column_if_missing(conn, "users", "expires_at", "TEXT DEFAULT ''")
-    add_column_if_missing(conn, "customers", "national_id", "TEXT DEFAULT ''")
-    add_column_if_missing(conn, "requests", "admin_note", "TEXT DEFAULT ''")
-    add_column_if_missing(conn, "requests", "estimated_time", "TEXT DEFAULT ''")
-    add_column_if_missing(conn, "requests", "discount_code", "TEXT DEFAULT ''")
-    add_column_if_missing(conn, "requests", "discount_amount", "INTEGER DEFAULT 0")
-    add_column_if_missing(conn, "requests", "expert_id", "INTEGER")
-    add_column_if_missing(conn, "requests", "payment_mode", "TEXT DEFAULT 'gateway'")
-    add_column_if_missing(conn, "requests", "is_credit", "INTEGER DEFAULT 0")
-    add_column_if_missing(conn, "requests", "payment_confirmed", "INTEGER DEFAULT 0")
-    add_column_if_missing(conn, "requests", "rejected_fields", "TEXT DEFAULT '[]'")
-    add_column_if_missing(conn, "requests", "personal_note", "TEXT DEFAULT ''")
-    add_column_if_missing(conn, "requests", "receipt_file", "TEXT DEFAULT ''")
-    add_column_if_missing(conn, "requests", "invoice_code", "TEXT DEFAULT ''")
-    add_column_if_missing(conn, "messages", "sender_name", "TEXT DEFAULT ''")
-    add_column_if_missing(conn, "discounts", "is_credit", "INTEGER DEFAULT 0")
+    cols = [
+        ("users", "full_name", "TEXT DEFAULT ''"),
+        ("users", "phone", "TEXT DEFAULT ''"),
+        ("users", "allowed_services", "TEXT DEFAULT '[]'"),
+        ("users", "allowed_sections", "TEXT DEFAULT '[]'"),
+        ("users", "expires_at", "TEXT DEFAULT ''"),
+        ("customers", "national_id", "TEXT DEFAULT ''"),
+        ("requests", "admin_note", "TEXT DEFAULT ''"),
+        ("requests", "estimated_time", "TEXT DEFAULT ''"),
+        ("requests", "discount_code", "TEXT DEFAULT ''"),
+        ("requests", "discount_amount", "INTEGER DEFAULT 0"),
+        ("requests", "expert_id", "INTEGER"),
+        ("requests", "payment_mode", "TEXT DEFAULT 'gateway'"),
+        ("requests", "is_credit", "INTEGER DEFAULT 0"),
+        ("requests", "payment_confirmed", "INTEGER DEFAULT 0"),
+        ("requests", "rejected_fields", "TEXT DEFAULT '[]'"),
+        ("requests", "personal_note", "TEXT DEFAULT ''"),
+        ("requests", "receipt_file", "TEXT DEFAULT ''"),
+        ("requests", "invoice_code", "TEXT DEFAULT ''"),
+        ("messages", "sender_name", "TEXT DEFAULT ''"),
+        ("discounts", "is_credit", "INTEGER DEFAULT 0"),
+    ]
+    for table, column, definition in cols:
+        add_column_if_missing(conn, table, column, definition)
 
     defaults = {
         "site_name": SITE_NAME, "manager": MANAGER, "phone": PHONE, "logo": "",
@@ -230,7 +244,7 @@ def generate_tracking_code():
 
 def to_int(v, d=0):
     try:
-        return int(str(v).replace(",", "").strip())
+        return int(to_latin_digits(str(v)).replace(",", "").strip())
     except Exception:
         return d
 
@@ -271,39 +285,62 @@ def save_uploaded_files(files):
 
 
 def send_sms(phone, text):
-    phone = (phone or "").strip()
+    phone = to_latin_digits((phone or "").strip().replace(" ", ""))
     text = (text or "").strip()
     if not phone or not text:
         return False
     s = get_settings()
     api_key = (s.get("sms_api_key") or "").strip()
     line = (s.get("sms_phone") or "").strip()
-    status = "queued" if (api_key and line) else "logged"
+    status = "logged"
+    ok = False
+    if api_key:
+        try:
+            url = (
+                f"https://api.kavenegar.com/v1/{urllib.parse.quote(api_key)}/sms/send.json"
+                f"?receptor={urllib.parse.quote(phone)}"
+                f"&message={urllib.parse.quote(text)}"
+            )
+            if line:
+                url += f"&sender={urllib.parse.quote(line)}"
+            req = urllib.request.Request(url, method="GET")
+            with urllib.request.urlopen(req, timeout=15) as resp:
+                body = resp.read().decode("utf-8", errors="ignore")
+                status = "sent" if resp.status == 200 else f"http_{resp.status}"
+                ok = resp.status == 200
+                app.logger.info("SMS: %s", body[:400])
+        except Exception as e:
+            status = f"error:{e}"
+            app.logger.exception("SMS failed")
     try:
         conn = get_db()
         conn.execute("INSERT INTO sms_log (phone, body, status) VALUES (?,?,?)", (phone, text, status))
         conn.commit()
         conn.close()
-        return True
     except Exception:
-        return False
+        pass
+    return ok
 
 
 def add_notification(user_id=None, customer_phone="", title="", body=""):
     conn = get_db()
     conn.execute(
         "INSERT INTO notifications (user_id, customer_phone, title, body) VALUES (?,?,?,?)",
-        (user_id, customer_phone or "", title, body)
+        (user_id, to_latin_digits(customer_phone or ""), title, body)
     )
     conn.commit()
     conn.close()
 
 
-def notify_staff(title, body, service_id=None):
+def notify_staff(title, body, service_id=None, only_accountant=False):
     conn = get_db()
     users = conn.execute("SELECT id, role, allowed_services FROM users WHERE active=1").fetchall()
     conn.close()
     for u in users:
+        if only_accountant:
+            if u["role"] in ("admin", "accountant"):
+                add_notification(user_id=u["id"], title=title, body=body)
+            continue
         if u["role"] in ("admin", "accountant"):
             add_notification(user_id=u["id"], title=title, body=body)
         elif u["role"] == "expert":
@@ -323,9 +360,8 @@ def maybe_auto_backup():
                 return
     except Exception:
         pass
-    ts = now.strftime("%Y%m%d_%H%M%S")
-    path = os.path.join(BACKUP_FOLDER, f"auto_{ts}.db")
     try:
+        path = os.path.join(BACKUP_FOLDER, f"auto_{now.strftime('%Y%m%d_%H%M%S')}.db")
         shutil.copy2(DATABASE, path)
         set_setting("last_auto_backup", now.strftime("%Y-%m-%d %H:%M:%S"))
     except Exception:
@@ -333,6 +369,10 @@ def maybe_auto_backup():
 
 
 def create_request_core(service_id, name, phone, national_id, customer_note, discount_code, form_data, uploaded):
+    phone = to_latin_digits(phone)
+    national_id = to_latin_digits(national_id)
+    discount_code = to_latin_digits(discount_code).upper() if discount_code else ""
+
     conn = get_db()
     service_row = conn.execute("SELECT * FROM services WHERE id=?", (service_id,)).fetchone()
     if not service_row:
@@ -377,7 +417,6 @@ def create_request_core(service_id, name, phone, national_id, customer_note, dis
     final_price = max(0, base_price - discount_amount)
     tracking_code = generate_tracking_code()
     payment_confirmed = 0
-
     if is_credit or final_price == 0:
         status = "در انتظار بررسی"
         payment_confirmed = 1
@@ -409,13 +448,14 @@ def create_request_core(service_id, name, phone, national_id, customer_note, dis
     if payment_confirmed:
         notify_staff("درخواست جدید", f"کد {tracking_code} — {name}", service_id)
     else:
-        notify_staff("درخواست در انتظار پرداخت", f"کد {tracking_code} — {name}", service_id)
+        # اول حسابدار و مدیر
+        notify_staff("در انتظار تأیید پرداخت", f"کد {tracking_code} — {name}", service_id, only_accountant=True)
 
     return {
         "id": rid, "tracking_code": tracking_code, "status": status,
         "total_price": final_price, "payment_mode": payment_mode,
         "payment_confirmed": payment_confirmed, "customer_name": name,
-        "service_name": service_row["name"], "phone": phone
+        "service_name": service_row["name"], "phone": phone, "customer_phone": phone
     }
 
 
@@ -448,29 +488,26 @@ def service(service_id):
 
     if request.method == "POST":
         name = request.form.get("name", "").strip()
-        phone = request.form.get("phone", "").strip()
-        national_id = request.form.get("national_id", "").strip()
+        phone = to_latin_digits(request.form.get("phone", "").strip())
+        national_id = to_latin_digits(request.form.get("national_id", "").strip())
         customer_note = request.form.get("customer_note", "").strip()
-        discount_code = request.form.get("discount_code", "").strip().upper()
+        discount_code = to_latin_digits(request.form.get("discount_code", "").strip()).upper()
         if not name:
             flash("نام را وارد کنید.", "error")
             return redirect(url_for("service", service_id=service_id))
-
         form_data = {}
         for i, field in enumerate(fields, start=1):
             key = f"field_{i}"
             label = field.get("label") or field.get("name") or key
-            form_data[label] = request.form.get(key, "")
+            form_data[label] = to_latin_digits(request.form.get(key, ""))
         uploaded = save_uploaded_files(request.files.getlist("documents"))
         result = create_request_core(service_id, name, phone, national_id, customer_note, discount_code, form_data, uploaded)
         if not result:
             flash("خطا در ثبت.", "error")
             return redirect(url_for("index"))
-
         if result["payment_mode"] == "gateway" and result["total_price"] > 0 and not result["payment_confirmed"]:
             return redirect(url_for("payment_page", tracking_code=result["tracking_code"]))
-
-        return render_template("tracking.html", result=result, created=True, settings=get_settings())
+        return render_template("tracking.html", result=result, history=[], tickets=[], created=True, settings=get_settings())
 
     return render_template("service.html", service=service_row, fields=fields, documents=documents, settings=get_settings())
 
@@ -487,7 +524,6 @@ def payment_page(tracking_code):
     conn.close()
     if not row:
         abort(404)
-
     if request.method == "POST":
         conn = get_db()
         conn.execute(
@@ -496,15 +532,14 @@ def payment_page(tracking_code):
         )
         conn.execute(
             "INSERT INTO messages (customer_id, request_id, sender, sender_name, message) VALUES (?,?,?,?,?)",
-            (row["customer_id"], row["id"], "system", "سامانه", "پرداخت تأیید شد. درخواست برای کارشناسان ارسال شد.")
+            (row["customer_id"], row["id"], "system", "سامانه", "پرداخت تأیید شد.")
         )
         conn.commit()
         conn.close()
         notify_staff("پرداخت تأیید شد", f"کد {tracking_code}", row["service_id"])
         send_sms(row["customer_phone"], f"پرداخت کد {tracking_code} تأیید شد.")
-        flash("پرداخت با موفقیت ثبت شد.", "success")
+        flash("پرداخت ثبت شد.", "success")
         return redirect(url_for("tracking"))
-
     return render_template("payment.html", req=row, settings=get_settings())
 
 
@@ -512,14 +547,14 @@ def payment_page(tracking_code):
 def tracking():
     result = None
     history = []
+    tickets = []
     if request.method == "POST":
-        tracking_code = request.form.get("tracking_code", "").strip()
-        national_id = request.form.get("national_id", "").strip()
+        tracking_code = to_latin_digits(request.form.get("tracking_code", "").strip())
         conn = get_db()
         if tracking_code:
             result = conn.execute(
                 """SELECT r.*, c.name AS customer_name, c.phone AS customer_phone, c.national_id AS customer_national_id,
-                          s.name AS service_name, u.full_name AS expert_name
+                          c.id AS cid, s.name AS service_name, u.full_name AS expert_name
                    FROM requests r
                    LEFT JOIN customers c ON c.id=r.customer_id
                    LEFT JOIN services s ON s.id=r.service_id
@@ -527,28 +562,39 @@ def tracking():
                    WHERE r.tracking_code=?""",
                 (tracking_code,)
             ).fetchone()
-            if result and result["customer_national_id"]:
-                history = conn.execute(
-                    """SELECT r.tracking_code, r.status, r.created_at, s.name AS service_name
-                       FROM requests r LEFT JOIN services s ON s.id=r.service_id
-                       JOIN customers c ON c.id=r.customer_id
-                       WHERE c.national_id=? ORDER BY r.id DESC LIMIT 20""",
-                    (result["customer_national_id"],)
-                ).fetchall()
-            if not result:
+            if result:
+                nid = result["customer_national_id"] or ""
+                if nid:
+                    history = conn.execute(
+                        """SELECT r.tracking_code, r.status, r.created_at, s.name AS service_name
+                           FROM requests r LEFT JOIN services s ON s.id=r.service_id
+                           JOIN customers c ON c.id=r.customer_id
+                           WHERE c.national_id=? ORDER BY r.id DESC LIMIT 30""",
+                        (nid,)
+                    ).fetchall()
+                if result["customer_id"]:
+                    tickets = conn.execute(
+                        """SELECT * FROM messages WHERE customer_id=? AND request_id IS NULL
+                           ORDER BY id DESC LIMIT 40""",
+                        (result["customer_id"],)
+                    ).fetchall()
+            else:
                 flash("کد پیدا نشد.", "error")
-        elif national_id:
-            history = conn.execute(
-                """SELECT r.tracking_code, r.status, r.created_at, s.name AS service_name
-                   FROM requests r LEFT JOIN services s ON s.id=r.service_id
-                   JOIN customers c ON c.id=r.customer_id
-                   WHERE c.national_id=? ORDER BY r.id DESC LIMIT 20""",
-                (national_id,)
-            ).fetchall()
-            if not history:
-                flash("سابقه‌ای یافت نشد.", "error")
         conn.close()
-    return render_template("tracking.html", result=result, history=history, settings=get_settings())
+    return render_template("tracking.html", result=result, history=history, tickets=tickets, settings=get_settings())
+
+
+@app.route("/api/request-status/<tracking_code>")
+def api_request_status(tracking_code):
+    conn = get_db()
+    row = conn.execute(
+        "SELECT status, estimated_time, admin_note FROM requests WHERE tracking_code=?",
+        (to_latin_digits(tracking_code),)
+    ).fetchone()
+    conn.close()
+    if not row:
+        return jsonify({}), 404
+    return jsonify(dict(row))
 
 
 @app.route("/resubmit/<tracking_code>", methods=["GET", "POST"])
@@ -558,7 +604,7 @@ def resubmit_docs(tracking_code):
         """SELECT r.*, c.name AS customer_name, c.phone AS customer_phone, s.name AS service_name
            FROM requests r LEFT JOIN customers c ON c.id=r.customer_id
            LEFT JOIN services s ON s.id=r.service_id WHERE r.tracking_code=?""",
-        (tracking_code,)
+        (to_latin_digits(tracking_code),)
     ).fetchone()
     if not row:
         conn.close()
@@ -567,16 +613,14 @@ def resubmit_docs(tracking_code):
         conn.close()
         flash("فقط در نقص مدارک.", "error")
         return redirect(url_for("tracking"))
-
     form_data = parse_json_dict(row["form_data"])
     rejected = parse_json_list(row["rejected_fields"])
-
     if request.method == "POST":
         new_data = dict(form_data)
         for k in list(form_data.keys()):
             val = request.form.get("fix_" + k)
             if val is not None:
-                new_data[k] = val
+                new_data[k] = to_latin_digits(val)
         note = request.form.get("customer_note", "").strip()
         uploaded = save_uploaded_files(request.files.getlist("documents"))
         old_docs = parse_json_list(row["documents"])
@@ -595,7 +639,6 @@ def resubmit_docs(tracking_code):
         notify_staff("اصلاح پرونده", f"کد {tracking_code}", row["service_id"])
         flash("ارسال شد.", "success")
         return redirect(url_for("tracking"))
-
     conn.close()
     return render_template("resubmit.html", req=row, form_data=form_data, rejected=rejected)
 
@@ -610,7 +653,7 @@ def support():
     if request.method == "POST":
         expert_id = request.form.get("expert_id")
         name = request.form.get("name", "").strip()
-        phone = request.form.get("phone", "").strip()
+        phone = to_latin_digits(request.form.get("phone", "").strip())
         message = request.form.get("message", "").strip()
         if not all([expert_id, name, phone, message]):
             flash("همه فیلدها لازم است.", "error")
@@ -639,7 +682,7 @@ def support():
 
 @app.route("/customer/notifications")
 def customer_notifications():
-    phone = request.args.get("phone", "").strip()
+    phone = to_latin_digits(request.args.get("phone", "").strip())
     if not phone:
         return jsonify({"items": []})
     conn = get_db()
@@ -701,7 +744,19 @@ def admin():
     status_filter = request.args.get("status", "").strip()
     conn = get_db()
 
-    if user["role"] in ("admin", "accountant"):
+    if user["role"] == "accountant":
+        q = """SELECT r.*, c.name AS customer_name, c.phone AS customer_phone, s.name AS service_name
+               FROM requests r LEFT JOIN customers c ON c.id=r.customer_id
+               LEFT JOIN services s ON s.id=r.service_id
+               WHERE r.payment_confirmed=0 AND r.status='در انتظار پرداخت'"""
+        params = []
+        if status_filter:
+            q += " AND r.status=?"
+            params.append(status_filter)
+        q += " ORDER BY r.id DESC"
+        requests_rows = conn.execute(q, params).fetchall()
+        allowed_sections = ["accounting", "requests", "password"]
+    elif user["role"] == "admin":
         q = """SELECT r.*, c.name AS customer_name, c.phone AS customer_phone, s.name AS service_name
                FROM requests r LEFT JOIN customers c ON c.id=r.customer_id
                LEFT JOIN services s ON s.id=r.service_id WHERE 1=1"""
@@ -717,11 +772,11 @@ def admin():
         allowed_sections = parse_json_list(user["allowed_sections"] or "[]")
         if allowed:
             ph = ",".join("?" * len(allowed))
+            params = [int(x) for x in allowed]
             q = f"""SELECT r.*, c.name AS customer_name, c.phone AS customer_phone, s.name AS service_name
                     FROM requests r LEFT JOIN customers c ON c.id=r.customer_id
                     LEFT JOIN services s ON s.id=r.service_id
                     WHERE r.service_id IN ({ph}) AND r.payment_confirmed=1"""
-            params = [int(x) for x in allowed]
             if status_filter:
                 q += " AND r.status=?"
                 params.append(status_filter)
@@ -753,7 +808,6 @@ def admin():
         LEFT JOIN customers c ON c.id=m.customer_id WHERE m.request_id IS NULL ORDER BY m.id DESC LIMIT 100
     """).fetchall()
     conn.close()
-
     return render_template(
         "admin.html", requests=requests_rows, customers=customers, services=services, users=users,
         discounts=discounts, debts=debts, total_income=total_income, total_debt=total_debt,
@@ -762,21 +816,38 @@ def admin():
     )
 
 
-@app.route("/admin/notifications")
+@app.route("/admin/api/live")
 @login_required
-def admin_notifications():
+def admin_live():
     user = get_current_user()
     conn = get_db()
-    rows = conn.execute(
-        "SELECT * FROM notifications WHERE user_id=? AND is_read=0 ORDER BY id DESC LIMIT 20", (user["id"],)
+    if user["role"] in ("admin", "accountant"):
+        cnt = conn.execute("SELECT COUNT(*) FROM requests").fetchone()[0]
+    else:
+        allowed = parse_json_list(user["allowed_services"] or "[]")
+        if allowed:
+            ph = ",".join("?" * len(allowed))
+            cnt = conn.execute(
+                f"SELECT COUNT(*) FROM requests WHERE service_id IN ({ph}) AND payment_confirmed=1",
+                [int(x) for x in allowed]
+            ).fetchone()[0]
+        else:
+            cnt = 0
+    notif = conn.execute(
+        "SELECT id, title, body FROM notifications WHERE user_id=? AND is_read=0 ORDER BY id DESC LIMIT 10",
+        (user["id"],)
     ).fetchall()
-    data = [dict(r) for r in rows]
-    if rows:
+    if notif:
         conn.execute("UPDATE notifications SET is_read=1 WHERE user_id=? AND is_read=0", (user["id"],))
         conn.commit()
     conn.close()
-    return jsonify({"items": data})
+    return jsonify({"count": cnt, "notifications": [dict(x) for x in notif]})
 
+
+@app.route("/admin/notifications")
+@login_required
+def admin_notifications():
+    return admin_live()
 
 @app.route("/admin/settings/save", methods=["POST"])
 @login_required
@@ -814,10 +885,10 @@ def gateway_settings():
 @app.route("/admin/sms-test", methods=["POST"])
 @login_required
 def sms_test():
-    phone = request.form.get("test_phone", "").strip()
+    phone = to_latin_digits(request.form.get("test_phone", "").strip())
     text = request.form.get("test_text", "تست پیامک کافی‌نت نوین").strip()
     ok = send_sms(phone, text)
-    flash("تست پیامک ثبت شد." if ok else "خطا در تست.", "success" if ok else "error")
+    flash("تست پیامک انجام شد." if ok else "خطا در ارسال — لاگ را بررسی کنید.", "success" if ok else "error")
     return redirect(url_for("admin") + "#gateway")
 
 
@@ -954,9 +1025,9 @@ def admin_request(rid):
                     (row["customer_id"], rid, "system", "سامانه", "پرداخت توسط حسابداری تأیید شد.")
                 )
                 conn.commit()
-                notify_staff("پرداخت تأیید شد", f"کد {row['tracking_code']}", row["service_id"])
+                notify_staff("پرداخت تأیید شد — ارسال برای کارشناسان", f"کد {row['tracking_code']}", row["service_id"])
                 send_sms(row["customer_phone"], f"پرداخت کد {row['tracking_code']} تأیید شد.")
-                flash("پرداخت تأیید شد.", "success")
+                flash("پرداخت تأیید و برای کارشناسان ارسال شد.", "success")
             return redirect(url_for("admin_request", rid=rid))
 
         if action == "receipt":
@@ -1028,7 +1099,7 @@ def invoice_view(tracking_code):
            FROM requests r LEFT JOIN customers c ON c.id=r.customer_id
            LEFT JOIN services s ON s.id=r.service_id LEFT JOIN users u ON u.id=r.expert_id
            WHERE r.tracking_code=?""",
-        (tracking_code,)
+        (to_latin_digits(tracking_code),)
     ).fetchone()
     conn.close()
     if not row:
@@ -1065,7 +1136,7 @@ def create_user():
     username = request.form.get("username", "").strip()
     password = request.form.get("password", "")
     full_name = request.form.get("full_name", "").strip()
-    phone = request.form.get("phone", "").strip()
+    phone = to_latin_digits(request.form.get("phone", "").strip())
     role = request.form.get("role", "expert")
     expires_at = request.form.get("expires_at", "").strip()
     allowed_services = request.form.getlist("allowed_services")
@@ -1122,7 +1193,7 @@ def sms_experts():
 @app.route("/admin/discount/create", methods=["POST"])
 @login_required
 def create_discount():
-    code = request.form.get("code", "").strip().upper()
+    code = to_latin_digits(request.form.get("code", "").strip()).upper()
     if not code:
         flash("کد لازم است.", "error")
         return redirect(url_for("admin") + "#discounts")
@@ -1230,7 +1301,7 @@ def restore_backup():
 @app.route("/admin/debt-sms", methods=["POST"])
 @login_required
 def debt_sms():
-    phone = request.form.get("phone", "").strip()
+    phone = to_latin_digits(request.form.get("phone", "").strip())
     message = request.form.get("message", "").strip()
     if phone and message:
         send_sms(phone, message)
