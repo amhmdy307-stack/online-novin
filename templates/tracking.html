@@ -1,14 +1,14 @@
 {% extends "base.html" %}
-{% block title %}پیگیری درخواست{% endblock %}
-
+{% block title %}پیگیری{% endblock %}
 {% block content %}
 <div class="card">
     <h1>پیگیری درخواست</h1>
-    <p>کد پیگیری ۴ رقمی را وارد کنید.</p>
     <form method="POST">
-        <label>کد پیگیری</label>
-        <input type="text" name="tracking_code" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" minlength="4" required placeholder="مثلاً 4827" style="direction:ltr;text-align:center;font-size:24px;">
-        <button type="submit" class="btn">مشاهده وضعیت</button>
+        <label>کد پیگیری ۴ رقمی</label>
+        <input type="text" name="tracking_code" maxlength="4" minlength="4" placeholder="مثلا 4827" style="direction:ltr;text-align:center;font-size:22px;">
+        <label>یا کد ملی برای سوابق</label>
+        <input type="text" name="national_id" maxlength="10" placeholder="کد ملی">
+        <button type="submit" class="btn">مشاهده</button>
     </form>
 </div>
 
@@ -18,15 +18,46 @@
     <p><strong>کد:</strong> {{ result.tracking_code }}</p>
     <p><strong>مشتری:</strong> {{ result.customer_name }}</p>
     <p><strong>خدمت:</strong> {{ result.service_name }}</p>
-    <p><strong>وضعیت:</strong> <span class="badge">{{ result.status }}</span></p>
-    <p><strong>مدت تقریبی:</strong> {{ result.estimated_time or 'توسط کارشناس اعلام می‌شود' }}</p>
-    {% if result.admin_note %}
-    <hr><h3>توضیحات</h3><div class="alert">{{ result.admin_note }}</div>
-    {% endif %}
+    <p><strong>وضعیت:</strong> {{ result.status }}</p>
+    <p><strong>مدت تقریبی:</strong> {{ result.estimated_time or 'اعلام می‌شود' }}</p>
+    {% if result.expert_name %}<p><strong>کارشناس:</strong> {{ result.expert_name }}</p>{% endif %}
+    {% if result.admin_note %}<div class="alert">{{ result.admin_note }}</div>{% endif %}
     {% if result.status == 'نقص مدارک' %}
-    <br>
-    <a href="{{ url_for('resubmit_docs', tracking_code=result.tracking_code) }}" class="btn btn-success">ارسال مجدد مدارک (رایگان)</a>
+    <a class="btn btn-success" href="{{ url_for('resubmit_docs', tracking_code=result.tracking_code) }}">اصلاح فیلدها / مدارک (رایگان)</a>
+    {% endif %}
+    {% if result.invoice_code %}
+    <a class="btn" href="{{ url_for('invoice_view', tracking_code=result.tracking_code) }}" target="_blank">مشاهده فاکتور</a>
+    {% endif %}
+    {% if result.receipt_file %}
+    <a class="btn btn-secondary" href="{{ url_for('uploaded_file', filename=result.receipt_file) }}" target="_blank">رسید سامانه</a>
     {% endif %}
 </div>
 {% endif %}
+
+{% if history %}
+<div class="card">
+    <h2>سوابق</h2>
+    <table>
+        <thead><tr><th>کد</th><th>خدمت</th><th>وضعیت</th><th>تاریخ</th></tr></thead>
+        <tbody>
+        {% for h in history %}
+        <tr><td>{{ h.tracking_code }}</td><td>{{ h.service_name or '-' }}</td><td>{{ h.status }}</td><td>{{ h.created_at }}</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+<audio id="dingSound" preload="auto"><source src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg" type="audio/ogg"></audio>
+<script>
+function playDing(){var a=document.getElementById('dingSound'); if(a){a.currentTime=0;a.play().catch(function(){});}}
+var phone = localStorage.getItem('customer_phone') || '';
+function checkCustomerNotif(){
+  if(!phone) return;
+  fetch('/customer/notifications?phone='+encodeURIComponent(phone)).then(r=>r.json()).then(function(d){
+    if(d.items&&d.items.length){ playDing(); }
+  }).catch(function(){});
+}
+setInterval(checkCustomerNotif, 10000);
+</script>
 {% endblock %}
