@@ -1,63 +1,121 @@
 {% extends "base.html" %}
-{% block title %}پیگیری{% endblock %}
+{% block title %}پیگیری درخواست{% endblock %}
 {% block content %}
 <div class="card">
-    <h1>پیگیری درخواست</h1>
-    <form method="POST">
-        <label>کد پیگیری ۴ رقمی</label>
-        <input type="text" name="tracking_code" maxlength="4" minlength="4" placeholder="مثلا 4827" style="direction:ltr;text-align:center;font-size:22px;">
-        <label>یا کد ملی برای سوابق</label>
-        <input type="text" name="national_id" maxlength="10" placeholder="کد ملی">
-        <button type="submit" class="btn">مشاهده</button>
-    </form>
+  <h1>پیگیری درخواست</h1>
+  <p>فقط کد پیگیری ۴ رقمی را وارد کنید.</p>
+  <form method="POST">
+    <label>کد پیگیری</label>
+    <input type="text" name="tracking_code" id="trackingCode" maxlength="4" minlength="4" required
+           inputmode="numeric" placeholder="4827"
+           style="direction:ltr;text-align:center;font-size:24px;" class="latin-digits">
+    <button type="submit" class="btn">مشاهده وضعیت</button>
+  </form>
 </div>
 
 {% if result %}
 <div class="card">
-    <h2>وضعیت پرونده</h2>
-    <p><strong>کد:</strong> {{ result.tracking_code }}</p>
-    <p><strong>مشتری:</strong> {{ result.customer_name }}</p>
-    <p><strong>خدمت:</strong> {{ result.service_name }}</p>
-    <p><strong>وضعیت:</strong> {{ result.status }}</p>
-    <p><strong>مدت تقریبی:</strong> {{ result.estimated_time or 'اعلام می‌شود' }}</p>
-    {% if result.expert_name %}<p><strong>کارشناس:</strong> {{ result.expert_name }}</p>{% endif %}
-    {% if result.admin_note %}<div class="alert">{{ result.admin_note }}</div>{% endif %}
-    {% if result.status == 'نقص مدارک' %}
-    <a class="btn btn-success" href="{{ url_for('resubmit_docs', tracking_code=result.tracking_code) }}">اصلاح فیلدها / مدارک (رایگان)</a>
-    {% endif %}
-    {% if result.invoice_code %}
-    <a class="btn" href="{{ url_for('invoice_view', tracking_code=result.tracking_code) }}" target="_blank">مشاهده فاکتور</a>
-    {% endif %}
-    {% if result.receipt_file %}
-    <a class="btn btn-secondary" href="{{ url_for('uploaded_file', filename=result.receipt_file) }}" target="_blank">رسید سامانه</a>
-    {% endif %}
+  <h2>وضعیت پرونده</h2>
+  <p><strong>کد:</strong> {{ result.tracking_code }}</p>
+  <p><strong>مشتری:</strong> {{ result.customer_name }}</p>
+  <p><strong>خدمت:</strong> {{ result.service_name }}</p>
+  <p><strong>وضعیت:</strong> <span id="liveStatus">{{ result.status }}</span></p>
+  <p><strong>مدت تقریبی:</strong> <span id="liveEta">{{ result.estimated_time or 'اعلام می‌شود' }}</span></p>
+  {% if result.expert_name %}<p><strong>کارشناس:</strong> {{ result.expert_name }}</p>{% endif %}
+  {% if result.admin_note %}<div class="alert">{{ result.admin_note }}</div>{% endif %}
+  {% if result.status == 'نقص مدارک' %}
+  <a class="btn btn-success" href="{{ url_for('resubmit_docs', tracking_code=result.tracking_code) }}">اصلاح رایگان</a>
+  {% endif %}
+  {% if result.invoice_code %}
+  <a class="btn" href="{{ url_for('invoice_view', tracking_code=result.tracking_code) }}" target="_blank">فاکتور</a>
+  {% endif %}
+  {% if result.receipt_file %}
+  <a class="btn btn-secondary" href="{{ url_for('uploaded_file', filename=result.receipt_file) }}" target="_blank">رسید</a>
+  {% endif %}
 </div>
 {% endif %}
 
 {% if history %}
 <div class="card">
-    <h2>سوابق</h2>
-    <table>
-        <thead><tr><th>کد</th><th>خدمت</th><th>وضعیت</th><th>تاریخ</th></tr></thead>
-        <tbody>
-        {% for h in history %}
-        <tr><td>{{ h.tracking_code }}</td><td>{{ h.service_name or '-' }}</td><td>{{ h.status }}</td><td>{{ h.created_at }}</td></tr>
-        {% endfor %}
-        </tbody>
-    </table>
+  <h2>سوابق پرونده‌های قبلی</h2>
+  <table>
+    <thead><tr><th>کد</th><th>خدمت</th><th>وضعیت</th><th>تاریخ</th></tr></thead>
+    <tbody>
+    {% for h in history %}
+    <tr>
+      <td>{{ h.tracking_code }}</td>
+      <td>{{ h.service_name or '-' }}</td>
+      <td>{{ h.status }}</td>
+      <td>{{ h.created_at }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
 </div>
 {% endif %}
 
-<audio id="dingSound" preload="auto"><source src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg" type="audio/ogg"></audio>
+{% if tickets %}
+<div class="card">
+  <h2>سوابق تیکت‌های پشتیبانی</h2>
+  {% for t in tickets %}
+  <div class="alert">
+    <strong>{{ t.sender_name or t.sender }}:</strong> {{ t.message }}
+    <br><small>{{ t.created_at }}</small>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<audio id="dingSound" preload="auto">
+  <source src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg" type="audio/ogg">
+</audio>
 <script>
-function playDing(){var a=document.getElementById('dingSound'); if(a){a.currentTime=0;a.play().catch(function(){});}}
-var phone = localStorage.getItem('customer_phone') || '';
-function checkCustomerNotif(){
-  if(!phone) return;
-  fetch('/customer/notifications?phone='+encodeURIComponent(phone)).then(r=>r.json()).then(function(d){
-    if(d.items&&d.items.length){ playDing(); }
-  }).catch(function(){});
+function toLatinDigits(str){
+  var p='۰۱۲۳۴۵۶۷۸۹', a='٠١٢٣٤٥٦٧٨٩';
+  return String(str||'').replace(/[۰-۹٠-٩]/g,function(c){
+    var i=p.indexOf(c); if(i>=0) return ''+i;
+    i=a.indexOf(c); return i>=0?''+i:c;
+  });
 }
-setInterval(checkCustomerNotif, 10000);
+var tc=document.getElementById('trackingCode');
+if(tc){ tc.addEventListener('input', function(){ this.value=toLatinDigits(this.value).replace(/\D/g,'').slice(0,4); }); }
+
+function playDing(){ var a=document.getElementById('dingSound'); if(a){ a.currentTime=0; a.play().catch(function(){}); } }
+{% if result and result.customer_phone %}
+localStorage.setItem('customer_phone', '{{ result.customer_phone }}');
+{% endif %}
+var phone = localStorage.getItem('customer_phone') || '';
+var lastStatus = '{{ result.status if result else "" }}';
+
+function checkCustomer(){
+  if(!phone) return;
+  fetch('/customer/notifications?phone='+encodeURIComponent(phone))
+    .then(function(r){return r.json();})
+    .then(function(d){
+      if(d.items && d.items.length){
+        playDing();
+        if(window.Notification && Notification.permission==='granted'){
+          d.items.forEach(function(n){ new Notification(n.title||'اعلان',{body:n.body||''}); });
+        } else if(window.Notification && Notification.permission!=='denied'){
+          Notification.requestPermission();
+        }
+        {% if result %}
+        fetch('/api/request-status/{{ result.tracking_code }}')
+          .then(function(r){return r.json();})
+          .then(function(s){
+            if(s.status && s.status !== lastStatus){
+              lastStatus = s.status;
+              var el=document.getElementById('liveStatus'); if(el) el.textContent=s.status;
+              var et=document.getElementById('liveEta'); if(et) et.textContent=s.estimated_time||'اعلام می‌شود';
+              playDing();
+            }
+          }).catch(function(){});
+        {% endif %}
+      }
+    }).catch(function(){});
+}
+if(window.Notification && Notification.permission==='default'){ Notification.requestPermission(); }
+setInterval(checkCustomer, 7000);
+checkCustomer();
 </script>
 {% endblock %}
