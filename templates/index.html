@@ -2,30 +2,26 @@
 {% block title %}{{ site_name|default("کافی نت آنلاین نوین") }}{% endblock %}
 {% block content %}
 
-<div class="hero-card">
+<div class="hero-box">
   {% if settings.get('logo') %}
-  <div style="text-align:center;margin-bottom:10px;">
-    <img src="{{ url_for('uploaded_logo', filename=settings.get('logo')) }}" alt="لوگو" style="max-height:70px;">
-  </div>
+  <img src="{{ url_for('uploaded_logo', filename=settings.get('logo')) }}" alt="لوگو">
   {% endif %}
-  <div style="text-align:center;">
-    <div style="font-size:22px;font-weight:bold;">{{ site_name|default("کافی نت آنلاین نوین") }}</div>
-    <div style="margin-top:6px;">{{ phone|default("۰۹۹۲۰۳۴۵۱۳۹") }}</div>
-    <div style="margin-top:4px;">با مدیریت {{ manager|default("احمد محمدی مهر") }}</div>
-    <div style="margin-top:8px;">ارائه کلیه خدمات اینترنتی و کافی‌نتی</div>
-  </div>
+  <div style="font-size:22px;font-weight:bold;">{{ site_name|default("کافی نت آنلاین نوین") }}</div>
+  <div style="margin-top:6px;">{{ phone|default("۰۹۹۲۰۳۴۵۱۳۹") }}</div>
+  <div style="margin-top:4px;">با مدیریت {{ manager|default("احمد محمدی مهر") }}</div>
+  <div style="margin-top:8px;">ارائه کلیه خدمات اینترنتی و کافی‌نتی</div>
 </div>
 
 <div class="pay-warn">پرداخت فقط از درگاه رسمی همین سایت انجام می‌شود</div>
 
-<div class="action-row">
-  <a href="{{ url_for('tracking') }}" class="action-btn">پیگیری درخواست</a>
-  <a href="{{ url_for('support') }}" class="action-btn">ارتباط با پشتیبانی</a>
+<div class="top-actions">
+  <a href="{{ url_for('tracking') }}">پیگیری درخواست</a>
+  <a href="{{ url_for('support') }}">ارتباط با پشتیبانی</a>
 </div>
 
 <div class="services-grid">
   {% for s in services %}
-  <div class="card service-item">
+  <div class="card">
     <h3>{{ s.name }}</h3>
     {% if s.category %}<div class="badge">{{ s.category }}</div>{% endif %}
     {% if s.description %}<p>{{ s.description }}</p>{% endif %}
