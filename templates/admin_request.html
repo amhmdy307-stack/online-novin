@@ -1,121 +1,118 @@
 {% extends "base.html" %}
 {% block body_class %}admin-page{% endblock %}
 {% block title %}پرونده{% endblock %}
-
 {% block content %}
 <div class="card">
-    <a href="{{ url_for('admin') }}" class="btn btn-secondary">بازگشت</a>
-    <h1>پرونده {{ req.tracking_code }}</h1>
-    <p>مشتری: {{ req.customer_name or '-' }} | تلفن: {{ req.customer_phone or '-' }} | کدملی: {{ req.customer_national_id or '-' }}</p>
-    <p>خدمت: {{ req.service_name or '-' }} | وضعیت: <strong>{{ req.status }}</strong></p>
-    <p>پرداخت تأییدشده: {% if req.payment_confirmed %}بله{% else %}خیر{% endif %}</p>
-    {% if req.expert_name %}<p>کارشناس: {{ req.expert_name }}</p>{% endif %}
+  <a href="{{ url_for('admin') }}" class="btn btn-secondary">بازگشت</a>
+  <h1>پرونده {{ req.tracking_code }}</h1>
+  <p>مشتری: {{ req.customer_name or '-' }} | تلفن: {{ req.customer_phone or '-' }} | کدملی: {{ req.customer_national_id or '-' }}</p>
+  <p>خدمت: {{ req.service_name or '-' }} | وضعیت: <strong>{{ req.status }}</strong></p>
+  <p>پرداخت تأییدشده: {% if req.payment_confirmed %}بله{% else %}خیر{% endif %}</p>
+  {% if req.expert_name %}<p>کارشناس: {{ req.expert_name }}</p>{% endif %}
 </div>
 
-{% if not req.payment_confirmed and current_user.role in ['admin','accountant'] %}
+{% if not req.payment_confirmed and current_user and current_user.role in ['admin','accountant'] %}
 <div class="card">
-    <h2>تأیید پرداخت (کارت‌به‌کارت / لینک)</h2>
-    <form method="POST">
-        <input type="hidden" name="action" value="confirm_payment">
-        <button type="submit" class="btn btn-success">تأیید پرداخت و ارسال برای کارشناسان</button>
-    </form>
+  <h2>تأیید پرداخت (حسابداری)</h2>
+  <form method="POST">
+    <input type="hidden" name="action" value="confirm_payment">
+    <button type="submit" class="btn btn-success">تأیید پرداخت و ارسال برای کارشناسان</button>
+  </form>
 </div>
 {% endif %}
 
 <div class="card">
-    <h2>اطلاعات فرم</h2>
-    {% if form_data %}
-        {% for key, value in form_data.items() %}
-        <div style="padding:8px 0;border-bottom:1px solid #eee;">
-            <strong>{{ key }}:</strong> {{ value }}
-            {% if key in rejected %}<span style="color:red;"> (رد شده)</span>{% endif %}
-        </div>
-        {% endfor %}
-    {% else %}<p>خالی</p>{% endif %}
-    {% if req.customer_note %}<p><strong>توضیح مشتری:</strong> {{ req.customer_note }}</p>{% endif %}
-</div>
-
-<div class="card">
-    <h2>مدارک</h2>
-    {% for doc in docs %}
-    <div style="padding:8px 0;">
-        {{ doc }}
-        <a class="btn" style="padding:4px 8px;font-size:12px;" href="{{ url_for('uploaded_file', filename=doc) }}" target="_blank">مشاهده</a>
-        <a class="btn btn-secondary" style="padding:4px 8px;font-size:12px;" href="{{ url_for('uploaded_file', filename=doc) }}" download>دانلود</a>
+  <h2>اطلاعات فرم</h2>
+  {% if form_data %}
+    {% for key, value in form_data.items() %}
+    <div style="padding:8px 0;border-bottom:1px solid #eee;">
+      <strong>{{ key }}:</strong> {{ value }}
+      {% if key in rejected %}<span style="color:red;"> (رد شده)</span>{% endif %}
     </div>
-    {% else %}<p>مدرکی نیست</p>{% endfor %}
+    {% endfor %}
+  {% else %}<p>خالی</p>{% endif %}
+  {% if req.customer_note %}<p><strong>توضیح مشتری:</strong> {{ req.customer_note }}</p>{% endif %}
 </div>
 
 <div class="card">
-    <h2>تغییر وضعیت</h2>
-    <form method="POST">
-        <input type="hidden" name="action" value="update">
-        <label>وضعیت</label>
-        <select name="status">
-            {% for st in ['پذیرش شد','در حال بررسی','نقص مدارک','قطعی سامانه','رد شد','انصراف مشتری','انجام شد','در انتظار پرداخت','در انتظار بررسی'] %}
-            <option value="{{ st }}" {% if req.status==st %}selected{% endif %}>{{ st }}</option>
-            {% endfor %}
-        </select>
-        <label>مدت تقریبی</label>
-        <input type="text" name="estimated_time" value="{{ req.estimated_time or '' }}">
-        <label>توضیحات</label>
-        <textarea name="admin_note">{{ req.admin_note or '' }}</textarea>
-        <label>مبلغ کل</label>
-        <input type="number" name="total_price" value="{{ req.total_price or 0 }}">
-        <label>پرداخت‌شده</label>
-        <input type="number" name="paid_price" value="{{ req.paid_price or 0 }}">
-
-        <h3>رد فیلدها (فقط برای نقص مدارک)</h3>
-        {% for key, value in form_data.items() %}
-        <label style="display:block;">
-            <input type="checkbox" name="rejected_field" value="{{ key }}" {% if key in rejected %}checked{% endif %}>
-            رد کردن: {{ key }}
-        </label>
-        {% endfor %}
-
-        <button type="submit" class="btn">ذخیره + پیامک به مشتری</button>
-    </form>
+  <h2>مدارک</h2>
+  {% for doc in docs %}
+  <div style="padding:8px 0;">
+    {{ doc }}
+    <a class="btn" style="padding:4px 8px;font-size:12px;" href="{{ url_for('uploaded_file', filename=doc) }}" target="_blank">مشاهده</a>
+    <a class="btn btn-secondary" style="padding:4px 8px;font-size:12px;" href="{{ url_for('uploaded_file', filename=doc) }}" download>دانلود</a>
+  </div>
+  {% else %}<p>مدرکی نیست</p>{% endfor %}
 </div>
 
 <div class="card">
-    <h2>بارگذاری رسید سامانه</h2>
-    <form method="POST" enctype="multipart/form-data">
-        <input type="hidden" name="action" value="receipt">
-        <input type="file" name="receipt" accept=".jpg,.jpeg,.png,.webp,.pdf" required>
-        <button type="submit" class="btn">آپلود رسید</button>
-    </form>
-    {% if req.receipt_file %}
-    <p>رسید فعلی: <a href="{{ url_for('uploaded_file', filename=req.receipt_file) }}" target="_blank">مشاهده</a></p>
-    {% endif %}
-    {% if req.invoice_code %}
-    <p>فاکتور: <a href="{{ url_for('invoice_view', tracking_code=req.tracking_code) }}" target="_blank">{{ req.invoice_code }}</a></p>
-    {% endif %}
+  <h2>تغییر وضعیت</h2>
+  <form method="POST">
+    <input type="hidden" name="action" value="update">
+    <label>وضعیت</label>
+    <select name="status">
+      {% for st in ['پذیرش شد','در حال بررسی','نقص مدارک','قطعی سامانه','رد شد','انصراف مشتری','انجام شد','در انتظار پرداخت','در انتظار بررسی'] %}
+      <option value="{{ st }}" {% if req.status==st %}selected{% endif %}>{{ st }}</option>
+      {% endfor %}
+    </select>
+    <label>مدت تقریبی</label>
+    <input type="text" name="estimated_time" value="{{ req.estimated_time or '' }}">
+    <label>توضیحات</label>
+    <textarea name="admin_note">{{ req.admin_note or '' }}</textarea>
+    <label>مبلغ کل</label>
+    <input type="number" name="total_price" value="{{ req.total_price or 0 }}">
+    <label>پرداخت‌شده</label>
+    <input type="number" name="paid_price" value="{{ req.paid_price or 0 }}">
+    <h3>رد فیلدها (برای نقص مدارک)</h3>
+    {% for key, value in form_data.items() %}
+    <label style="display:block;">
+      <input type="checkbox" name="rejected_field" value="{{ key }}" {% if key in rejected %}checked{% endif %}>
+      رد کردن: {{ key }}
+    </label>
+    {% endfor %}
+    <button type="submit" class="btn">ذخیره + پیامک</button>
+  </form>
 </div>
 
 <div class="card">
-    <h2>یادداشت شخصی (فقط پرسنل)</h2>
-    <form method="POST">
-        <input type="hidden" name="action" value="note">
-        <textarea name="personal_note">{{ req.personal_note or '' }}</textarea>
-        <button type="submit" class="btn">ذخیره یادداشت</button>
-    </form>
+  <h2>بارگذاری رسید سامانه</h2>
+  <form method="POST" enctype="multipart/form-data">
+    <input type="hidden" name="action" value="receipt">
+    <input type="file" name="receipt" accept=".jpg,.jpeg,.png,.webp,.pdf" required>
+    <button type="submit" class="btn">آپلود رسید</button>
+  </form>
+  {% if req.receipt_file %}
+  <p>رسید: <a href="{{ url_for('uploaded_file', filename=req.receipt_file) }}" target="_blank">مشاهده</a></p>
+  {% endif %}
+  {% if req.invoice_code %}
+  <p>فاکتور: <a href="{{ url_for('invoice_view', tracking_code=req.tracking_code) }}" target="_blank">{{ req.invoice_code }}</a></p>
+  {% endif %}
 </div>
 
 <div class="card">
-    <h2>گفتگو</h2>
-    {% for m in messages %}
-    <div class="alert">
-        <strong>
-            {% if m.sender=='customer' %}مشتری{% elif m.sender=='admin' %}{{ m.sender_name or 'کارشناس' }}{% else %}سیستم{% endif %}:
-        </strong>
-        {{ m.message }}
-        <br><small>{{ m.created_at }}</small>
-    </div>
-    {% else %}<p>پیامی نیست</p>{% endfor %}
-    <form method="POST">
-        <input type="hidden" name="action" value="message">
-        <textarea name="message" required placeholder="پیام دستی..."></textarea>
-        <button type="submit" class="btn">ارسال + پیامک</button>
-    </form>
+  <h2>یادداشت شخصی</h2>
+  <form method="POST">
+    <input type="hidden" name="action" value="note">
+    <textarea name="personal_note">{{ req.personal_note or '' }}</textarea>
+    <button type="submit" class="btn">ذخیره</button>
+  </form>
+</div>
+
+<div class="card">
+  <h2>گفتگو</h2>
+  {% for m in messages %}
+  <div class="alert">
+    <strong>
+      {% if m.sender=='customer' %}مشتری{% elif m.sender=='admin' %}{{ m.sender_name or 'کارشناس' }}{% else %}سیستم{% endif %}:
+    </strong>
+    {{ m.message }}
+    <br><small>{{ m.created_at }}</small>
+  </div>
+  {% else %}<p>پیامی نیست</p>{% endfor %}
+  <form method="POST">
+    <input type="hidden" name="action" value="message">
+    <textarea name="message" required></textarea>
+    <button type="submit" class="btn">ارسال + پیامک</button>
+  </form>
 </div>
 {% endblock %}
