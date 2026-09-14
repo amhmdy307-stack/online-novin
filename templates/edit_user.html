@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block body_class %}admin-page{% endblock %}
+{% block title %}ویرایش کاربر{% endblock %}
+{% block content %}
+<div class="card">
+  <a href="{{ url_for('admin') }}#users" class="btn btn-secondary">بازگشت</a>
+  <h1>ویرایش: {{ user.username }}</h1>
+  <form method="POST">
+    <label>نام کامل</label>
+    <input type="text" name="full_name" value="{{ user.full_name or '' }}" required>
+    <label>تلفن</label>
+    <input type="text" name="phone" value="{{ user.phone or '' }}">
+    <label>نقش</label>
+    <select name="role">
+      <option value="expert" {% if user.role=='expert' %}selected{% endif %}>کارشناس</option>
+      <option value="accountant" {% if user.role=='accountant' %}selected{% endif %}>حسابدار</option>
+      <option value="admin" {% if user.role=='admin' %}selected{% endif %}>مدیر</option>
+    </select>
+    <label>انقضا</label>
+    <input type="date" name="expires_at" value="{{ user.expires_at or '' }}">
+    <label>رمز جدید (خالی = بدون تغییر)</label>
+    <input type="password" name="password" minlength="6">
+    <label>دسترسی خدمات</label>
+    <select name="allowed_services" multiple style="height:100px;">
+      {% for s in services %}
+      <option value="{{ s.id }}" {% if s.id in allowed_services or (s.id|string) in allowed_services %}selected{% endif %}>{{ s.name }}</option>
+      {% endfor %}
+    </select>
+    <label>دسترسی بخش‌ها</label>
+    <select name="allowed_sections" multiple style="height:180px;">
+      {% set secs = [
+        ('requests','درخواست‌ها'),('accounting','حسابداری'),('services','خدمات'),
+        ('add-service','افزودن خدمت'),('settings','تنظیمات'),('gateway','درگاه و پیامک'),
+        ('support','پشتیبانی'),('discounts','تخفیف'),('debts','بدهی‌ها'),('password','رمز عبور')
+      ] %}
+      {% for val, label in secs %}
+      <option value="{{ val }}" {% if val in allowed_sections %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+    <button type="submit" class="btn">ذخیره</button>
+  </form>
+</div>
+{% endblock %}
