@@ -3,10 +3,12 @@
 {% block title %}پنل مدیریت{% endblock %}
 
 {% block content %}
-
 <div class="card">
     <h1>پنل مدیریت</h1>
-    <p>خوش آمدید {% if current_user %}{{ current_user.full_name or current_user.username }}{% endif %}</p>
+    <p>خوش آمدید {{ current_user.full_name or current_user.username }}</p>
+    {% if pending_warn and pending_warn > 0 %}
+    <div class="alert" style="background:#fff3cd;">⚠️ {{ pending_warn }} پرونده هنوز به «انجام شد» نرسیده — وضعیت‌ها را بررسی کنید.</div>
+    {% endif %}
     <a href="{{ url_for('admin_logout') }}" class="btn btn-secondary">خروج</a>
 </div>
 
@@ -14,84 +16,69 @@
 
 <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 15px; margin: 25px 0;">
     {% if can is none or 'requests' in can %}
-    <div class="card" style="text-align:center; padding:18px 10px; cursor:pointer;" onclick="showSection('requests')">
-        <div style="font-size:28px;">📋</div><strong>درخواست‌ها</strong>
-    </div>
+    <div class="card" style="text-align:center;padding:18px 10px;cursor:pointer;" onclick="showSection('requests')"><div style="font-size:28px;">📋</div><strong>درخواست‌ها</strong></div>
     {% endif %}
     {% if can is none or 'services' in can %}
-    <div class="card" style="text-align:center; padding:18px 10px; cursor:pointer;" onclick="showSection('services')">
-        <div style="font-size:28px;">🛠️</div><strong>خدمات</strong>
-    </div>
+    <div class="card" style="text-align:center;padding:18px 10px;cursor:pointer;" onclick="showSection('services')"><div style="font-size:28px;">🛠️</div><strong>خدمات</strong></div>
     {% endif %}
     {% if can is none or 'add-service' in can %}
-    <div class="card" style="text-align:center; padding:18px 10px; cursor:pointer;" onclick="showSection('add-service')">
-        <div style="font-size:28px;">➕</div><strong>افزودن خدمت</strong>
-    </div>
+    <div class="card" style="text-align:center;padding:18px 10px;cursor:pointer;" onclick="showSection('add-service')"><div style="font-size:28px;">➕</div><strong>افزودن خدمت</strong></div>
     {% endif %}
     {% if can is none or 'settings' in can %}
-    <div class="card" style="text-align:center; padding:18px 10px; cursor:pointer;" onclick="showSection('settings')">
-        <div style="font-size:28px;">⚙️</div><strong>تنظیمات</strong>
-    </div>
+    <div class="card" style="text-align:center;padding:18px 10px;cursor:pointer;" onclick="showSection('settings')"><div style="font-size:28px;">⚙️</div><strong>تنظیمات</strong></div>
     {% endif %}
     {% if can is none or 'gateway' in can %}
-    <div class="card" style="text-align:center; padding:18px 10px; cursor:pointer;" onclick="showSection('gateway')">
-        <div style="font-size:28px;">💳</div><strong>درگاه و پیامک</strong>
-    </div>
+    <div class="card" style="text-align:center;padding:18px 10px;cursor:pointer;" onclick="showSection('gateway')"><div style="font-size:28px;">💳</div><strong>درگاه و پیامک</strong></div>
     {% endif %}
     {% if can is none or 'support' in can %}
-    <div class="card" style="text-align:center; padding:18px 10px; cursor:pointer;" onclick="showSection('support')">
-        <div style="font-size:28px;">💬</div><strong>پشتیبانی</strong>
-    </div>
+    <div class="card" style="text-align:center;padding:18px 10px;cursor:pointer;" onclick="showSection('support')"><div style="font-size:28px;">💬</div><strong>پشتیبانی</strong></div>
     {% endif %}
     {% if current_user.role == 'admin' %}
-    <div class="card" style="text-align:center; padding:18px 10px; cursor:pointer;" onclick="showSection('users')">
-        <div style="font-size:28px;">👤</div><strong>کاربران</strong>
-    </div>
+    <div class="card" style="text-align:center;padding:18px 10px;cursor:pointer;" onclick="showSection('users')"><div style="font-size:28px;">👤</div><strong>کاربران</strong></div>
     {% endif %}
     {% if can is none or 'discounts' in can %}
-    <div class="card" style="text-align:center; padding:18px 10px; cursor:pointer;" onclick="showSection('discounts')">
-        <div style="font-size:28px;">🎟</div><strong>تخفیف</strong>
-    </div>
+    <div class="card" style="text-align:center;padding:18px 10px;cursor:pointer;" onclick="showSection('discounts')"><div style="font-size:28px;">🎟</div><strong>تخفیف</strong></div>
     {% endif %}
     {% if can is none or 'debts' in can %}
-    <div class="card" style="text-align:center; padding:18px 10px; cursor:pointer;" onclick="showSection('debts')">
-        <div style="font-size:28px;">💰</div><strong>بدهی‌ها</strong>
-    </div>
+    <div class="card" style="text-align:center;padding:18px 10px;cursor:pointer;" onclick="showSection('debts')"><div style="font-size:28px;">💰</div><strong>بدهی‌ها</strong></div>
     {% endif %}
-    <div class="card" style="text-align:center; padding:18px 10px; cursor:pointer;" onclick="showSection('password')">
-        <div style="font-size:28px;">🔐</div><strong>رمز عبور</strong>
-    </div>
+    <div class="card" style="text-align:center;padding:18px 10px;cursor:pointer;" onclick="showSection('password')"><div style="font-size:28px;">🔐</div><strong>رمز / کاربری</strong></div>
     {% if current_user.role == 'admin' %}
-    <div class="card" style="text-align:center; padding:18px 10px; cursor:pointer;" onclick="showSection('backup')">
-        <div style="font-size:28px;">💾</div><strong>پشتیبان</strong>
-    </div>
+    <div class="card" style="text-align:center;padding:18px 10px;cursor:pointer;" onclick="showSection('backup')"><div style="font-size:28px;">💾</div><strong>پشتیبان</strong></div>
     {% endif %}
 </div>
 
 <div class="grid">
-    <div class="card"><h3>📋 درخواست‌ها</h3><strong style="font-size:26px;">{{ requests|length }}</strong></div>
-    <div class="card"><h3>👥 مشتریان</h3><strong style="font-size:26px;">{{ customers|length }}</strong></div>
-    <div class="card"><h3>💰 درآمد</h3><strong style="font-size:20px;">{{ "{:,}".format(total_income or 0) }} تومان</strong></div>
-    <div class="card"><h3>📉 بدهی</h3><strong style="font-size:20px;">{{ "{:,}".format(total_debt or 0) }} تومان</strong></div>
+    <div class="card"><h3>درخواست‌ها</h3><strong style="font-size:26px;">{{ requests|length }}</strong></div>
+    <div class="card"><h3>مشتریان</h3><strong style="font-size:26px;">{{ customers|length }}</strong></div>
+    <div class="card"><h3>درآمد</h3><strong style="font-size:20px;">{{ "{:,}".format(total_income or 0) }}</strong></div>
+    <div class="card"><h3>بدهی</h3><strong style="font-size:20px;">{{ "{:,}".format(total_debt or 0) }}</strong></div>
 </div>
 
 <div id="section-requests" class="admin-section" style="display:none;">
 <div class="card">
-    <h2>📋 لیست درخواست‌ها</h2>
+    <h2>📋 درخواست‌ها</h2>
+    <div style="margin-bottom:12px;display:flex;flex-wrap:wrap;gap:6px;">
+        <a class="btn btn-secondary" href="{{ url_for('admin') }}">همه</a>
+        {% for st in ['در انتظار پرداخت','در انتظار بررسی','پذیرش شد','در حال بررسی','نقص مدارک','انجام شد','رد شد'] %}
+        <a class="btn {% if status_filter==st %}{% else %}btn-secondary{% endif %}" href="{{ url_for('admin', status=st) }}">{{ st }}</a>
+        {% endfor %}
+    </div>
     <table>
-        <thead><tr><th>کد</th><th>مشتری</th><th>خدمت</th><th>وضعیت</th><th></th></tr></thead>
+        <thead><tr><th>کد</th><th>مشتری</th><th>خدمت</th><th>وضعیت</th><th>پرداخت</th><th></th></tr></thead>
         <tbody>
-            {% for r in requests %}
-            <tr>
-                <td>{{ r.tracking_code }}</td>
-                <td>{{ r.customer_name or '-' }}</td>
-                <td>{{ r.service_name or '-' }}</td>
-                <td>{{ r.status }}</td>
-                <td><a href="{{ url_for('admin_request', rid=r.id) }}" class="btn" style="padding:5px 8px;font-size:12px;">مشاهده</a></td>
-            </tr>
-            {% else %}
-            <tr><td colspan="5">درخواستی وجود ندارد</td></tr>
-            {% endfor %}
+        {% for r in requests %}
+        <tr>
+            <td>{{ r.tracking_code }}</td>
+            <td>{{ r.customer_name or '-' }}</td>
+            <td>{{ r.service_name or '-' }}</td>
+            <td>{{ r.status }}</td>
+            <td>{% if r.payment_confirmed %}تأیید{% else %}در انتظار{% endif %}</td>
+            <td><a href="{{ url_for('admin_request', rid=r.id) }}" class="btn" style="padding:5px 8px;font-size:12px;">مشاهده</a></td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6">موردی نیست</td></tr>
+        {% endfor %}
         </tbody>
     </table>
 </div>
@@ -99,25 +86,23 @@
 
 <div id="section-services" class="admin-section" style="display:none;">
 <div class="card">
-    <h2>🛠️ مدیریت خدمات</h2>
+    <h2>🛠️ خدمات</h2>
     <table>
-        <thead><tr><th>نام</th><th>قیمت</th><th>وضعیت</th><th>عملیات</th></tr></thead>
+        <thead><tr><th>نام</th><th>قیمت</th><th>وضعیت</th><th></th></tr></thead>
         <tbody>
-            {% for s in services %}
-            <tr>
-                <td>{{ s.name }}</td>
-                <td>{{ "{:,}".format(s.price or 0) }} تومان</td>
-                <td>{% if s.active %}فعال{% else %}غیرفعال{% endif %}</td>
-                <td>
-                    <a href="{{ url_for('edit_service', service_id=s.id) }}" class="btn btn-secondary" style="padding:5px 8px;font-size:12px;">ویرایش</a>
-                    <form method="POST" action="{{ url_for('delete_service', service_id=s.id) }}" style="display:inline;" onsubmit="return confirm('حذف شود؟');">
-                        <button type="submit" class="btn" style="padding:5px 8px;font-size:12px;background:#b91c1c;">حذف</button>
-                    </form>
-                </td>
-            </tr>
-            {% else %}
-            <tr><td colspan="4">خدمتی ثبت نشده</td></tr>
-            {% endfor %}
+        {% for s in services %}
+        <tr>
+            <td>{{ s.name }}</td>
+            <td>{{ "{:,}".format(s.price or 0) }}</td>
+            <td>{% if s.active %}فعال{% else %}غیرفعال{% endif %}</td>
+            <td>
+                <a href="{{ url_for('edit_service', service_id=s.id) }}" class="btn btn-secondary" style="padding:5px 8px;font-size:12px;">ویرایش</a>
+                <form method="POST" action="{{ url_for('delete_service', service_id=s.id) }}" style="display:inline;" onsubmit="return confirm('حذف؟');">
+                    <button type="submit" class="btn" style="padding:5px 8px;font-size:12px;background:#b91c1c;">حذف</button>
+                </form>
+            </td>
+        </tr>
+        {% else %}<tr><td colspan="4">خالی</td></tr>{% endfor %}
         </tbody>
     </table>
 </div>
@@ -125,155 +110,146 @@
 
 <div id="section-add-service" class="admin-section" style="display:none;">
 <div class="card">
-    <h2>➕ افزودن خدمت جدید</h2>
+    <h2>➕ افزودن خدمت</h2>
     <form method="POST" action="{{ url_for('admin_service_save') }}">
-        <label>نام خدمت *</label>
-        <input type="text" name="name" required>
-        <label>دسته‌بندی</label>
-        <input type="text" name="category">
-        <label>توضیحات</label>
-        <textarea name="description"></textarea>
-        <label>قیمت (تومان)</label>
-        <input type="number" name="price" value="0" min="0">
-        <label>ترتیب</label>
-        <input type="number" name="sort_order" value="0">
-        <label>وضعیت</label>
-        <select name="active"><option value="1">فعال</option><option value="0">غیرفعال</option></select>
-        <label>فیلدهای فرم (JSON)</label>
-        <textarea name="fields_json">[]</textarea>
-        <label>مدارک (JSON)</label>
-        <textarea name="documents_json">[]</textarea>
-        <button type="submit" class="btn">افزودن خدمت</button>
+        <label>نام *</label><input type="text" name="name" required>
+        <label>دسته</label><input type="text" name="category">
+        <label>توضیحات</label><textarea name="description"></textarea>
+        <label>قیمت</label><input type="number" name="price" value="0" min="0">
+        <label>ترتیب</label><input type="number" name="sort_order" value="0">
+        <label>وضعیت</label><select name="active"><option value="1">فعال</option><option value="0">غیرفعال</option></select>
+        <label>فیلدها JSON</label><textarea name="fields_json">[]</textarea>
+        <label>مدارک JSON</label><textarea name="documents_json">[]</textarea>
+        <button type="submit" class="btn">افزودن</button>
     </form>
 </div>
 </div>
 
 <div id="section-settings" class="admin-section" style="display:none;">
 <div class="card">
-    <h2>⚙️ تنظیمات سایت</h2>
+    <h2>⚙️ تنظیمات</h2>
     <form method="POST" action="{{ url_for('admin_settings_save') }}" enctype="multipart/form-data">
-        <label>نام سایت</label>
-        <input type="text" name="site_name" value="{{ settings.get('site_name', '') }}">
-        <label>مدیر</label>
-        <input type="text" name="manager" value="{{ settings.get('manager', '') }}">
-        <label>تلفن</label>
-        <input type="text" name="phone" value="{{ settings.get('phone', '') }}">
-        <label>لوگو</label>
-        <input type="file" name="logo" accept="image/*">
-        <button type="submit" class="btn">ذخیره تنظیمات</button>
+        <label>نام سایت</label><input type="text" name="site_name" value="{{ settings.get('site_name','') }}">
+        <label>نام مدیر اصلی (نمایش به مشتری)</label><input type="text" name="manager" value="{{ settings.get('manager','') }}">
+        <label>تلفن</label><input type="text" name="phone" value="{{ settings.get('phone','') }}">
+        <label>رنگ اصلی پنل</label><input type="color" name="theme_primary" value="{{ settings.get('theme_primary','#0f5132') }}">
+        <label>فونت</label><input type="text" name="theme_font" value="{{ settings.get('theme_font','Tahoma') }}">
+        <label>لوگو</label><input type="file" name="logo" accept="image/*">
+        <label>مهر و امضا فاکتور</label><input type="file" name="seal_image" accept="image/*">
+        <button type="submit" class="btn">ذخیره</button>
     </form>
 </div>
 </div>
 
 <div id="section-gateway" class="admin-section" style="display:none;">
 <div class="card">
-    <h2>💳 تنظیمات درگاه و پیامک</h2>
+    <h2>💳 درگاه و پیامک</h2>
     <form method="POST" action="{{ url_for('gateway_settings') }}">
         <label>حالت پرداخت سراسری</label>
         <select name="default_payment_mode">
-            <option value="gateway" {% if settings.get('default_payment_mode') == 'gateway' %}selected{% endif %}>درگاه پرداخت</option>
-            <option value="card_to_card" {% if settings.get('default_payment_mode') == 'card_to_card' %}selected{% endif %}>کارت به کارت</option>
-            <option value="payment_link" {% if settings.get('default_payment_mode') == 'payment_link' %}selected{% endif %}>لینک پرداخت</option>
+            <option value="gateway" {% if settings.get('default_payment_mode')=='gateway' %}selected{% endif %}>درگاه</option>
+            <option value="card_to_card" {% if settings.get('default_payment_mode')=='card_to_card' %}selected{% endif %}>کارت به کارت</option>
+            <option value="payment_link" {% if settings.get('default_payment_mode')=='payment_link' %}selected{% endif %}>لینک پرداخت</option>
         </select>
-        <label>کد مرچنت</label>
-        <input type="text" name="payment_merchant_code" value="{{ settings.get('payment_merchant_code', '') }}">
-        <label>کد API پیامک</label>
-        <input type="text" name="sms_api_key" value="{{ settings.get('sms_api_key', '') }}">
-        <label>شماره خط پیامک</label>
-        <input type="text" name="sms_phone" value="{{ settings.get('sms_phone', '') }}">
+        <label>کد مرچنت</label><input type="text" name="payment_merchant_code" value="{{ settings.get('payment_merchant_code','') }}">
+        <label>API پیامک</label><input type="text" name="sms_api_key" value="{{ settings.get('sms_api_key','') }}">
+        <label>خط پیامک</label><input type="text" name="sms_phone" value="{{ settings.get('sms_phone','') }}">
         <button type="submit" class="btn">ذخیره</button>
+    </form>
+    <hr>
+    <h3>تست ارسال پیامک</h3>
+    <form method="POST" action="{{ url_for('sms_test') }}">
+        <label>شماره تست</label><input type="text" name="test_phone" placeholder="09xxxxxxxxx" required>
+        <label>متن</label><input type="text" name="test_text" value="تست پیامک کافی‌نت نوین">
+        <button type="submit" class="btn">ارسال تست</button>
     </form>
 </div>
 </div>
 
 <div id="section-support" class="admin-section" style="display:none;">
 <div class="card">
-    <h2>💬 پیام‌های پشتیبانی</h2>
+    <h2>💬 پشتیبانی</h2>
     {% for msg in support_messages %}
-    <div style="border-bottom:1px solid #eee; padding:12px 0;">
-        <strong>{{ msg.customer_name or 'بدون نام' }}</strong> ({{ msg.customer_phone or '-' }})
+    <div style="border-bottom:1px solid #eee;padding:12px 0;">
+        <strong>{{ msg.customer_name or '-' }}</strong> ({{ msg.customer_phone or '-' }})
+        {% if msg.sender_name %}<br><small>از طرف: {{ msg.sender_name }}</small>{% endif %}
         <br><small>{{ msg.created_at }}</small>
-        <p style="margin:6px 0;">{{ msg.message }}</p>
+        <p>{{ msg.message }}</p>
         {% if msg.sender == 'customer' and msg.customer_id %}
         <form method="POST" action="{{ url_for('support_reply') }}">
             <input type="hidden" name="customer_id" value="{{ msg.customer_id }}">
-            <textarea name="message" required placeholder="پاسخ..." style="min-height:60px;"></textarea>
-            <button type="submit" class="btn" style="margin-top:5px;">ارسال پاسخ</button>
+            <textarea name="message" required placeholder="پاسخ..."></textarea>
+            <button type="submit" class="btn">ارسال پاسخ + پیامک</button>
         </form>
         {% endif %}
     </div>
-    {% else %}
-    <p>هنوز پیامی نیست.</p>
-    {% endfor %}
+    {% else %}<p>پیامی نیست</p>{% endfor %}
 </div>
 </div>
 
 {% if current_user.role == 'admin' %}
 <div id="section-users" class="admin-section" style="display:none;">
 <div class="card">
-    <h2>👤 مدیریت کاربران</h2>
-    <h3>لیست کاربران</h3>
+    <h2>👤 کاربران</h2>
     <table>
-        <thead><tr><th>نام</th><th>نام کاربری</th><th>نقش</th><th>تلفن</th><th>انقضا</th><th>وضعیت</th><th></th></tr></thead>
+        <thead><tr><th>نام</th><th>کاربری</th><th>نقش</th><th>تلفن</th><th>انقضا</th><th>وضعیت</th><th></th></tr></thead>
         <tbody>
-            {% for u in users %}
-            <tr>
-                <td>{{ u.full_name or '-' }}</td>
-                <td>{{ u.username }}</td>
-                <td>{{ u.role }}</td>
-                <td>{{ u.phone or '-' }}</td>
-                <td>{{ u.expires_at or 'بدون محدودیت' }}</td>
-                <td>{% if u.active %}فعال{% else %}غیرفعال{% endif %}</td>
-                <td>
-                    {% if u.id != current_user.id %}
-                    <form method="POST" action="{{ url_for('toggle_user', user_id=u.id) }}" style="display:inline;">
-                        <button type="submit" class="btn btn-secondary" style="padding:4px 8px;font-size:12px;">{% if u.active %}غیرفعال{% else %}فعال{% endif %}</button>
-                    </form>
-                    {% endif %}
-                </td>
-            </tr>
-            {% endfor %}
+        {% for u in users %}
+        <tr>
+            <td>{{ u.full_name or '-' }}</td><td>{{ u.username }}</td><td>{{ u.role }}</td>
+            <td>{{ u.phone or '-' }}</td><td>{{ u.expires_at or '-' }}</td>
+            <td>{% if u.active %}فعال{% else %}غیرفعال{% endif %}</td>
+            <td>{% if u.id != current_user.id %}
+                <form method="POST" action="{{ url_for('toggle_user', user_id=u.id) }}" style="display:inline;">
+                    <button class="btn btn-secondary" style="padding:4px 8px;font-size:12px;">تغییر وضعیت</button>
+                </form>{% endif %}
+            </td>
+        </tr>
+        {% endfor %}
         </tbody>
     </table>
     <hr>
     <h3>افزودن کاربر</h3>
     <form method="POST" action="{{ url_for('create_user') }}">
-        <label>نام و نام خانوادگی</label>
-        <input type="text" name="full_name" required placeholder="مثلاً علی رضایی">
-        <label>نام کاربری</label>
-        <input type="text" name="username" required>
-        <label>رمز عبور</label>
-        <input type="password" name="password" required minlength="6">
-        <label>تلفن (پیامک)</label>
-        <input type="text" name="phone" placeholder="09xxxxxxxxx">
+        <label>نام کامل</label><input type="text" name="full_name" required>
+        <label>نام کاربری</label><input type="text" name="username" required>
+        <label>رمز</label><input type="password" name="password" required minlength="6">
+        <label>تلفن</label><input type="text" name="phone">
         <label>نقش</label>
-        <select name="role"><option value="expert">کارشناس</option><option value="admin">مدیر</option></select>
-        <label>تاریخ انقضا</label>
-        <input type="date" name="expires_at">
-        <label>دسترسی به خدمات</label>
-        <select name="allowed_services" multiple style="height:100px;">
+        <select name="role">
+            <option value="expert">کارشناس</option>
+            <option value="accountant">حسابدار</option>
+            <option value="admin">مدیر</option>
+        </select>
+        <label>انقضا</label><input type="date" name="expires_at">
+        <label>دسترسی خدمات</label>
+        <select name="allowed_services" multiple style="height:90px;">
             {% for s in services %}<option value="{{ s.id }}">{{ s.name }}</option>{% endfor %}
         </select>
-        <label>دسترسی به بخش‌های پنل</label>
-        <select name="allowed_sections" multiple style="height:120px;">
+        <label>دسترسی بخش‌ها</label>
+        <select name="allowed_sections" multiple style="height:100px;">
             <option value="requests">درخواست‌ها</option>
             <option value="services">خدمات</option>
             <option value="add-service">افزودن خدمت</option>
             <option value="settings">تنظیمات</option>
-            <option value="gateway">درگاه و پیامک</option>
+            <option value="gateway">درگاه</option>
             <option value="support">پشتیبانی</option>
             <option value="discounts">تخفیف</option>
-            <option value="debts">بدهی‌ها</option>
+            <option value="debts">بدهی</option>
         </select>
-        <small>Ctrl برای انتخاب چند مورد</small>
-        <br><br>
-        <button type="submit" class="btn">ایجاد کاربر</button>
+        <button type="submit" class="btn">ایجاد</button>
     </form>
     <hr>
-    <h3>پیام به کارشناسان</h3>
+    <h3>پیام به کارشناسان (انتخابی)</h3>
     <form method="POST" action="{{ url_for('sms_experts') }}">
-        <textarea name="message" required placeholder="متن پیام..."></textarea>
-        <button type="submit" class="btn">ثبت پیام</button>
+        <label>انتخاب کارشناسان</label>
+        <select name="expert_ids" multiple style="height:100px;">
+            {% for u in users if u.role in ['expert','accountant','admin'] and u.active %}
+            <option value="{{ u.id }}">{{ u.full_name or u.username }}</option>
+            {% endfor %}
+        </select>
+        <textarea name="message" required placeholder="متن پیام"></textarea>
+        <button type="submit" class="btn">ارسال</button>
     </form>
 </div>
 </div>
@@ -281,44 +257,37 @@
 
 <div id="section-discounts" class="admin-section" style="display:none;">
 <div class="card">
-    <h2>🎟 کدهای تخفیف</h2>
+    <h2>🎟 تخفیف</h2>
     <table>
         <thead><tr><th>کد</th><th>نوع</th><th>مقدار</th><th>استفاده</th><th>انقضا</th><th>نسیه</th><th></th></tr></thead>
         <tbody>
-            {% for d in discounts %}
-            <tr>
-                <td>{{ d.code }}</td>
-                <td>{% if d.kind == 'percent' %}درصدی{% else %}ثابت{% endif %}</td>
-                <td>{{ d.value }}</td>
-                <td>{{ d.used_count }}/{{ d.max_uses if d.max_uses else '∞' }}</td>
-                <td>{{ d.end_date or '-' }}</td>
-                <td>{% if d.is_credit %}بله{% else %}خیر{% endif %}</td>
-                <td>
-                    <form method="POST" action="{{ url_for('delete_discount', discount_id=d.id) }}" style="display:inline;" onsubmit="return confirm('حذف؟');">
-                        <button type="submit" class="btn" style="padding:4px 8px;font-size:12px;background:#b91c1c;">حذف</button>
-                    </form>
-                </td>
-            </tr>
-            {% else %}
-            <tr><td colspan="7">کدی نیست</td></tr>
-            {% endfor %}
+        {% for d in discounts %}
+        <tr>
+            <td>{{ d.code }}</td><td>{{ d.kind }}</td><td>{{ d.value }}</td>
+            <td>{{ d.used_count }}/{{ d.max_uses or '∞' }}</td><td>{{ d.end_date or '-' }}</td>
+            <td>{% if d.is_credit %}بله{% else %}خیر{% endif %}</td>
+            <td>
+                <form method="POST" action="{{ url_for('delete_discount', discount_id=d.id) }}" style="display:inline;" onsubmit="return confirm('حذف؟');">
+                    <button class="btn" style="padding:4px 8px;font-size:12px;background:#b91c1c;">حذف</button>
+                </form>
+            </td>
+        </tr>
+        {% else %}<tr><td colspan="7">خالی</td></tr>{% endfor %}
         </tbody>
     </table>
     <hr>
     <form method="POST" action="{{ url_for('create_discount') }}">
         <label>کد</label><input type="text" name="code" required>
-        <label>نوع</label>
-        <select name="kind"><option value="percent">درصدی</option><option value="fixed">ثابت</option></select>
-        <label>مقدار</label><input type="number" name="value" min="0" value="0">
-        <label>حداکثر استفاده (۰=نامحدود)</label><input type="number" name="max_uses" min="0" value="1">
+        <label>نوع</label><select name="kind"><option value="percent">درصد</option><option value="fixed">ثابت</option></select>
+        <label>مقدار</label><input type="number" name="value" value="0">
+        <label>سقف استفاده</label><input type="number" name="max_uses" value="1">
         <label>شروع</label><input type="date" name="start_date">
         <label>پایان</label><input type="date" name="end_date">
-        <label><input type="checkbox" name="is_credit" value="1"> کد نسیه</label>
-        <br><br><button type="submit" class="btn">ایجاد کد</button>
+        <label><input type="checkbox" name="is_credit" value="1"> نسیه</label>
+        <button type="submit" class="btn">ایجاد</button>
     </form>
-    <hr>
-    <form method="POST" action="{{ url_for('generate_credit_code') }}">
-        <button type="submit" class="btn">تولید خودکار کد نسیه</button>
+    <form method="POST" action="{{ url_for('generate_credit_code') }}" style="margin-top:10px;">
+        <button type="submit" class="btn">تولید کد نسیه</button>
     </form>
 </div>
 </div>
@@ -329,25 +298,20 @@
     <table>
         <thead><tr><th>کد</th><th>نام</th><th>تلفن</th><th>کدملی</th><th>خدمت</th><th>بدهی</th><th>پیامک</th></tr></thead>
         <tbody>
-            {% for d in debts %}
-            <tr>
-                <td>{{ d.tracking_code }}</td>
-                <td>{{ d.customer_name or '-' }}</td>
-                <td>{{ d.customer_phone or '-' }}</td>
-                <td>{{ d.customer_national_id or '-' }}</td>
-                <td>{{ d.service_name or '-' }}</td>
-                <td>{{ "{:,}".format(d.debt or 0) }}</td>
-                <td>
-                    <form method="POST" action="{{ url_for('debt_sms') }}">
-                        <input type="hidden" name="request_id" value="{{ d.id }}">
-                        <input type="text" name="message" placeholder="یادآوری" style="width:120px;display:inline-block;">
-                        <button type="submit" class="btn" style="padding:4px 8px;font-size:12px;">ارسال</button>
-                    </form>
-                </td>
-            </tr>
-            {% else %}
-            <tr><td colspan="7">بدهی نیست</td></tr>
-            {% endfor %}
+        {% for d in debts %}
+        <tr>
+            <td>{{ d.tracking_code }}</td><td>{{ d.customer_name or '-' }}</td>
+            <td>{{ d.customer_phone or '-' }}</td><td>{{ d.customer_national_id or '-' }}</td>
+            <td>{{ d.service_name or '-' }}</td><td>{{ "{:,}".format(d.debt or 0) }}</td>
+            <td>
+                <form method="POST" action="{{ url_for('debt_sms') }}">
+                    <input type="hidden" name="phone" value="{{ d.customer_phone or '' }}">
+                    <input type="text" name="message" value="یادآوری بدهی کد {{ d.tracking_code }}" style="width:140px;display:inline-block;">
+                    <button class="btn" style="padding:4px 8px;font-size:12px;">ارسال</button>
+                </form>
+            </td>
+        </tr>
+        {% else %}<tr><td colspan="7">خالی</td></tr>{% endfor %}
         </tbody>
     </table>
 </div>
@@ -355,11 +319,13 @@
 
 <div id="section-password" class="admin-section" style="display:none;">
 <div class="card">
-    <h2>🔐 تغییر رمز</h2>
+    <h2>🔐 تغییر نام کاربری و رمز</h2>
     <form method="POST" action="{{ url_for('admin_password') }}">
-        <label>رمز جدید</label>
-        <input type="password" name="password" minlength="6" required>
-        <button type="submit" class="btn">تغییر رمز</button>
+        <label>نام کاربری جدید</label>
+        <input type="text" name="new_username" value="{{ current_user.username }}">
+        <label>رمز جدید (اختیاری)</label>
+        <input type="password" name="password" minlength="6">
+        <button type="submit" class="btn">ذخیره</button>
     </form>
 </div>
 </div>
@@ -367,56 +333,47 @@
 {% if current_user.role == 'admin' %}
 <div id="section-backup" class="admin-section" style="display:none;">
 <div class="card">
-    <h2>💾 پشتیبان‌گیری</h2>
+    <h2>💾 پشتیبان</h2>
     <form method="POST" action="{{ url_for('backup_email_save') }}">
         <label>ایمیل پشتیبان</label>
-        <input type="email" name="backup_email" value="{{ settings.get('backup_email', '') }}">
+        <input type="email" name="backup_email" value="{{ settings.get('backup_email','') }}">
         <button type="submit" class="btn">ذخیره ایمیل</button>
     </form>
     <hr>
     <form method="POST" action="{{ url_for('create_backup') }}">
-        <button type="submit" class="btn">تهیه پشتیبان</button>
+        <button type="submit" class="btn">تهیه پشتیبان (و آماده ارسال ایمیل)</button>
     </form>
+    <p><small>بکاپ خودکار حدود هر ۳۰ دقیقه هنگام فعالیت سایت انجام می‌شود.</small></p>
     <hr>
-    <h3>بازیابی</h3>
     <form method="POST" action="{{ url_for('restore_backup') }}" enctype="multipart/form-data">
+        <label>بازیابی از فایل</label>
         <input type="file" name="backup_file" accept=".db" required>
-        <button type="submit" class="btn" onclick="return confirm('بازیابی شود؟');">بازیابی</button>
+        <button type="submit" class="btn" onclick="return confirm('بازیابی؟');">بازیابی</button>
     </form>
 </div>
 </div>
 {% endif %}
 
-<audio id="dingSound" preload="auto">
-    <source src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg" type="audio/ogg">
-</audio>
+<audio id="dingSound" preload="auto"><source src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg" type="audio/ogg"></audio>
 <script>
-function showSection(id) {
-    var sections = document.querySelectorAll('.admin-section');
-    for (var i = 0; i < sections.length; i++) sections[i].style.display = 'none';
-    var el = document.getElementById('section-' + id);
-    if (el) { el.style.display = 'block'; el.scrollIntoView({behavior:'smooth', block:'start'}); }
+function showSection(id){
+  document.querySelectorAll('.admin-section').forEach(function(s){s.style.display='none';});
+  var el=document.getElementById('section-'+id);
+  if(el){el.style.display='block'; el.scrollIntoView({behavior:'smooth'});}
 }
-(function(){ var h = window.location.hash.replace('#',''); if(h) showSection(h); })();
-
-function playDing() {
-    var a = document.getElementById('dingSound');
-    if (a) { a.currentTime = 0; a.play().catch(function(){}); }
+(function(){var h=location.hash.replace('#',''); if(h) showSection(h);})();
+function playDing(){var a=document.getElementById('dingSound'); if(a){a.currentTime=0;a.play().catch(function(){});}}
+function checkNotifications(){
+  fetch('/admin/notifications').then(r=>r.json()).then(function(data){
+    if(data.items&&data.items.length){
+      playDing();
+      if(window.Notification&&Notification.permission==='granted'){
+        data.items.forEach(function(n){new Notification(n.title||'اعلان',{body:n.body||''});});
+      }else if(window.Notification&&Notification.permission!=='denied'){Notification.requestPermission();}
+    }
+  }).catch(function(){});
 }
-function checkNotifications() {
-    fetch('/admin/notifications').then(function(r){ return r.json(); }).then(function(data){
-        if (data.items && data.items.length) {
-            playDing();
-            if (window.Notification && Notification.permission === 'granted') {
-                data.items.forEach(function(n){ new Notification(n.title || 'اعلان', { body: n.body || '' }); });
-            } else if (window.Notification && Notification.permission !== 'denied') {
-                Notification.requestPermission();
-            }
-        }
-    }).catch(function(){});
-}
-setInterval(checkNotifications, 15000);
+setInterval(checkNotifications, 8000);
 checkNotifications();
 </script>
-
 {% endblock %}
