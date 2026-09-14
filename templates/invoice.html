@@ -1,25 +1,152 @@
-{% extends "base.html" %}
-{% block title %}فاکتور {{ req.invoice_code or req.tracking_code }}{% endblock %}
-{% block content %}
-<div class="card" style="max-width:700px;margin:auto;">
-    <h1 style="text-align:center;">فاکتور / رسید</h1>
-    <p>شماره فاکتور: <strong>{{ req.invoice_code or '-' }}</strong></p>
-    <p>کد پیگیری: {{ req.tracking_code }}</p>
-    <p>مشتری: {{ req.customer_name }}</p>
-    <p>تلفن: {{ req.customer_phone }}</p>
-    <p>کد ملی: {{ req.customer_national_id or '-' }}</p>
-    <p>خدمت: {{ req.service_name }}</p>
-    <p>کارشناس: {{ req.expert_name or '-' }}</p>
-    <p>مبلغ کل: {{ "{:,}".format(req.total_price or 0) }} تومان</p>
-    <p>پرداخت‌شده: {{ "{:,}".format(req.paid_price or 0) }} تومان</p>
-    <p>تاریخ: {{ req.updated_at or req.created_at }}</p>
-    {% if settings.get('seal_image') %}
-    <div style="text-align:center;margin-top:20px;">
-        <img src="{{ url_for('uploaded_logo', filename=settings.get('seal_image')) }}" alt="مهر" style="max-height:120px;">
-        <p>مهر و امضای کافی‌نت</p>
-    </div>
-    {% endif %}
-    <p style="text-align:center;margin-top:15px;">{{ settings.get('site_name','کافی نت آنلاین نوین') }} — {{ settings.get('manager','') }}</p>
-    <button class="btn" onclick="window.print()">چاپ / ذخیره</button>
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>فاکتور فروش</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 20px;
+    font-family: Tahoma, Arial, sans-serif;
+    background: #f3f4f6;
+    color: #111;
+  }
+  .invoice {
+    max-width: 720px;
+    margin: 0 auto;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 12px;
+    padding: 28px;
+  }
+  .logo { text-align: center; margin-bottom: 10px; }
+  .logo img { max-height: 70px; }
+  h1 {
+    text-align: center;
+    margin: 0 0 8px;
+    font-size: 22px;
+  }
+  .header-info {
+    text-align: center;
+    margin-bottom: 18px;
+    line-height: 1.8;
+  }
+  table.info {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+  }
+  table.info th,
+  table.info td {
+    border: 1px solid #d1d5db;
+    padding: 10px 12px;
+    text-align: right;
+    vertical-align: middle;
+  }
+  table.info th {
+    background: #f9fafb;
+    width: 35%;
+    font-weight: bold;
+  }
+  .seal {
+    text-align: center;
+    margin-top: 28px;
+  }
+  .seal img { max-height: 110px; }
+  .no-print {
+    display: block;
+    margin: 18px auto 0;
+    padding: 10px 18px;
+    background: #0f5132;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: Tahoma, Arial, sans-serif;
+  }
+  @media print {
+    body { background: #fff; padding: 0; }
+    body * { visibility: hidden; }
+    .invoice, .invoice * { visibility: visible; }
+    .invoice {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      border: none;
+      border-radius: 0;
+      box-shadow: none;
+    }
+    .no-print { display: none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="invoice">
+  {% if settings.get('logo') %}
+  <div class="logo">
+    <img src="{{ url_for('uploaded_logo', filename=settings.get('logo')) }}" alt="لوگو">
+  </div>
+  {% endif %}
+
+  <h1>فاکتور فروش</h1>
+  <div class="header-info">
+    <div><strong>{{ settings.get('site_name', 'کافی نت آنلاین نوین') }}</strong></div>
+    <div>مدیریت : {{ settings.get('manager', 'احمد محمدی مهر') }}</div>
+  </div>
+
+  <table class="info">
+    <tr>
+      <th>شماره فاکتور</th>
+      <td>{{ req.invoice_code or '-' }}</td>
+    </tr>
+    <tr>
+      <th>کد پیگیری</th>
+      <td>{{ req.tracking_code }}</td>
+    </tr>
+    <tr>
+      <th>نام مشتری</th>
+      <td>{{ req.customer_name or '-' }}</td>
+    </tr>
+    <tr>
+      <th>شماره تماس</th>
+      <td style="direction:ltr; text-align:left;">{{ req.customer_phone or '-' }}</td>
+    </tr>
+    <tr>
+      <th>کد ملی</th>
+      <td style="direction:ltr; text-align:left;">{{ req.customer_national_id or '-' }}</td>
+    </tr>
+    <tr>
+      <th>خدمت</th>
+      <td>{{ req.service_name or '-' }}</td>
+    </tr>
+    <tr>
+      <th>کارشناس</th>
+      <td>{{ req.expert_name or '-' }}</td>
+    </tr>
+    <tr>
+      <th>مبلغ کل</th>
+      <td>{{ "{:,}".format(req.total_price or 0) }} تومان</td>
+    </tr>
+    <tr>
+      <th>مبلغ پرداخت‌شده</th>
+      <td>{{ "{:,}".format(req.paid_price or 0) }} تومان</td>
+    </tr>
+    <tr>
+      <th>تاریخ</th>
+      <td>{{ req.updated_at or req.created_at or '-' }}</td>
+    </tr>
+  </table>
+
+  {% if settings.get('seal_image') %}
+  <div class="seal">
+    <img src="{{ url_for('uploaded_logo', filename=settings.get('seal_image')) }}" alt="">
+  </div>
+  {% endif %}
 </div>
-{% endblock %}
+
+<button class="no-print" onclick="window.print()">چاپ فاکتور</button>
+</body>
+</html>
