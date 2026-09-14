@@ -13,7 +13,7 @@
 
 {% set can = allowed_sections %}
 
-<div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 15px; margin: 25px 0;">
+<div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:15px;margin:25px 0;">
   {% if can is none or 'requests' in can %}
   <div class="card" style="text-align:center;padding:18px 10px;cursor:pointer;" onclick="showSection('requests')"><div style="font-size:28px;">📋</div><strong>درخواست‌ها</strong></div>
   {% endif %}
@@ -168,7 +168,7 @@
 
 <div id="section-gateway" class="admin-section" style="display:none;">
 <div class="card">
-  <h2>💳 درگاه و پیامک</h2>
+  <h2>💳 درگاه و پیامک (sms.ir)</h2>
   <form method="POST" action="{{ url_for('gateway_settings') }}">
     <label>حالت پرداخت سراسری</label>
     <select name="default_payment_mode">
@@ -177,8 +177,8 @@
       <option value="payment_link" {% if settings.get('default_payment_mode')=='payment_link' %}selected{% endif %}>لینک پرداخت</option>
     </select>
     <label>کد مرچنت</label><input type="text" name="payment_merchant_code" value="{{ settings.get('payment_merchant_code','') }}">
-    <label>API پیامک</label><input type="text" name="sms_api_key" value="{{ settings.get('sms_api_key','') }}">
-    <label>خط پیامک</label><input type="text" name="sms_phone" value="{{ settings.get('sms_phone','') }}">
+    <label>API Key پیامک (sms.ir)</label><input type="text" name="sms_api_key" value="{{ settings.get('sms_api_key','') }}">
+    <label>شماره خط (فقط عدد)</label><input type="text" name="sms_phone" value="{{ settings.get('sms_phone','') }}" placeholder="3000...">
     <button type="submit" class="btn">ذخیره</button>
   </form>
   <hr>
@@ -221,13 +221,19 @@
     <tbody>
     {% for u in users %}
     <tr>
-      <td>{{ u.full_name or '-' }}</td><td>{{ u.username }}</td><td>{{ u.role }}</td>
-      <td>{{ u.phone or '-' }}</td><td>{{ u.expires_at or '-' }}</td>
+      <td>{{ u.full_name or '-' }}</td>
+      <td>{{ u.username }}</td>
+      <td>{{ u.role }}</td>
+      <td>{{ u.phone or '-' }}</td>
+      <td>{{ u.expires_at or '-' }}</td>
       <td>{% if u.active %}فعال{% else %}غیرفعال{% endif %}</td>
-      <td>{% if u.id != current_user.id %}
+      <td>
+        <a href="{{ url_for('edit_user', user_id=u.id) }}" class="btn btn-secondary" style="padding:4px 8px;font-size:12px;">ویرایش</a>
+        {% if u.id != current_user.id %}
         <form method="POST" action="{{ url_for('toggle_user', user_id=u.id) }}" style="display:inline;">
           <button class="btn btn-secondary" style="padding:4px 8px;font-size:12px;">تغییر وضعیت</button>
-        </form>{% endif %}
+        </form>
+        {% endif %}
       </td>
     </tr>
     {% endfor %}
@@ -267,7 +273,7 @@
     <button type="submit" class="btn">ایجاد</button>
   </form>
   <hr>
-  <h3>پیام به کارشناسان (انتخابی)</h3>
+  <h3>پیام به کارشناسان</h3>
   <form method="POST" action="{{ url_for('sms_experts') }}">
     <label>انتخاب</label>
     <select name="expert_ids" multiple style="height:100px;">
@@ -284,9 +290,9 @@
 
 <div id="section-discounts" class="admin-section" style="display:none;">
 <div class="card">
-  <h2>🎟 تخفیف</h2>
+  <h2>🎟 تخفیف / نسیه</h2>
   <table>
-    <thead><tr><th>کد</th><th>نوع</th><th>مقدار</th><th>استفاده</th><th>انقضا</th><th>نسیه</th><th></th></tr></thead>
+    <thead><tr><th>کد</th><th>نوع</th><th>مقدار/سقف</th><th>استفاده</th><th>انقضا</th><th>نسیه</th><th></th></tr></thead>
     <tbody>
     {% for d in discounts %}
     <tr>
@@ -306,14 +312,16 @@
   <form method="POST" action="{{ url_for('create_discount') }}">
     <label>کد</label><input type="text" name="code" required>
     <label>نوع</label><select name="kind"><option value="percent">درصد</option><option value="fixed">ثابت</option></select>
-    <label>مقدار</label><input type="number" name="value" value="0">
+    <label>مقدار / سقف نسیه (تومان)</label><input type="number" name="value" value="0">
     <label>سقف استفاده</label><input type="number" name="max_uses" value="1">
     <label>شروع</label><input type="date" name="start_date">
     <label>پایان</label><input type="date" name="end_date">
-    <label><input type="checkbox" name="is_credit" value="1"> نسیه</label>
+    <label><input type="checkbox" name="is_credit" value="1"> کد نسیه</label>
     <button type="submit" class="btn">ایجاد</button>
   </form>
   <form method="POST" action="{{ url_for('generate_credit_code') }}" style="margin-top:10px;">
+    <label>سقف مبلغ نسیه (۰ = بدون سقف)</label>
+    <input type="number" name="credit_amount" value="0" min="0">
     <button type="submit" class="btn">تولید کد نسیه</button>
   </form>
 </div>
@@ -321,15 +329,18 @@
 
 <div id="section-debts" class="admin-section" style="display:none;">
 <div class="card">
-  <h2>💰 بدهی‌ها</h2>
+  <h2>💰 بدهکاران</h2>
   <table>
     <thead><tr><th>کد</th><th>نام</th><th>تلفن</th><th>کدملی</th><th>خدمت</th><th>بدهی</th><th>پیامک</th></tr></thead>
     <tbody>
     {% for d in debts %}
     <tr>
-      <td>{{ d.tracking_code }}</td><td>{{ d.customer_name or '-' }}</td>
-      <td>{{ d.customer_phone or '-' }}</td><td>{{ d.customer_national_id or '-' }}</td>
-      <td>{{ d.service_name or '-' }}</td><td>{{ "{:,}".format(d.debt or 0) }}</td>
+      <td>{{ d.tracking_code }}</td>
+      <td>{{ d.customer_name or '-' }}</td>
+      <td>{{ d.customer_phone or '-' }}</td>
+      <td>{{ d.customer_national_id or '-' }}</td>
+      <td>{{ d.service_name or '-' }}</td>
+      <td>{{ "{:,}".format(d.debt or 0) }}</td>
       <td>
         <form method="POST" action="{{ url_for('debt_sms') }}">
           <input type="hidden" name="phone" value="{{ d.customer_phone or '' }}">
@@ -338,7 +349,7 @@
         </form>
       </td>
     </tr>
-    {% else %}<tr><td colspan="7">خالی</td></tr>{% endfor %}
+    {% else %}<tr><td colspan="7">بدهکاری نیست</td></tr>{% endfor %}
     </tbody>
   </table>
 </div>
@@ -392,29 +403,21 @@ function showSection(id){
 (function(){ var h=location.hash.replace('#',''); if(h) showSection(h); })();
 function playDing(){ var a=document.getElementById('dingSound'); if(a){ a.currentTime=0; a.play().catch(function(){}); } }
 if(window.Notification && Notification.permission==='default'){ Notification.requestPermission(); }
-var lastCount=null;
+var lastCount=null, lastMsg=null;
 function liveAdmin(){
   fetch('/admin/api/live').then(function(r){return r.json();}).then(function(d){
-    if(lastCount===null) lastCount=d.count;
-    if(d.count>lastCount){
+    if(lastCount===null){ lastCount=d.count; lastMsg=d.msg_count; }
+    var changed = (d.count>lastCount) || (d.msg_count>lastMsg);
+    if(changed){
       playDing();
-      lastCount=d.count;
+      lastCount=d.count; lastMsg=d.msg_count;
       if(window.Notification && Notification.permission==='granted'){
-        new Notification('درخواست جدید',{body:'یک درخواست جدید ثبت شد'});
+        new Notification('به‌روزرسانی پنل',{body:'درخواست یا پیام جدید'});
       }
-      var bar=document.getElementById('liveBar');
-      if(!bar){
-        bar=document.createElement('div');
-        bar.id='liveBar';
-        bar.className='alert';
-        bar.style.background='#d1fae5';
-        bar.style.cursor='pointer';
-        bar.onclick=function(){ location.href='/admin#requests'; location.reload(); };
-        var main=document.querySelector('main')||document.body;
-        main.insertBefore(bar, main.firstChild);
-      }
-      bar.textContent='🔔 درخواست جدید — برای مشاهده کلیک کنید';
-    } else { lastCount=d.count; }
+      setTimeout(function(){ location.reload(); }, 1200);
+    } else {
+      lastCount=d.count; lastMsg=d.msg_count;
+    }
     if(d.notifications && d.notifications.length){
       playDing();
       if(window.Notification && Notification.permission==='granted'){
@@ -423,7 +426,7 @@ function liveAdmin(){
     }
   }).catch(function(){});
 }
-setInterval(liveAdmin, 6000);
+setInterval(liveAdmin, 5000);
 liveAdmin();
 </script>
 {% endblock %}
