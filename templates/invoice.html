@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}فاکتور {{ req.invoice_code or req.tracking_code }}{% endblock %}
+{% block content %}
+<div class="card" style="max-width:700px;margin:auto;">
+    <h1 style="text-align:center;">فاکتور / رسید</h1>
+    <p>شماره فاکتور: <strong>{{ req.invoice_code or '-' }}</strong></p>
+    <p>کد پیگیری: {{ req.tracking_code }}</p>
+    <p>مشتری: {{ req.customer_name }}</p>
+    <p>تلفن: {{ req.customer_phone }}</p>
+    <p>کد ملی: {{ req.customer_national_id or '-' }}</p>
+    <p>خدمت: {{ req.service_name }}</p>
+    <p>کارشناس: {{ req.expert_name or '-' }}</p>
+    <p>مبلغ کل: {{ "{:,}".format(req.total_price or 0) }} تومان</p>
+    <p>پرداخت‌شده: {{ "{:,}".format(req.paid_price or 0) }} تومان</p>
+    <p>تاریخ: {{ req.updated_at or req.created_at }}</p>
+    {% if settings.get('seal_image') %}
+    <div style="text-align:center;margin-top:20px;">
+        <img src="{{ url_for('uploaded_logo', filename=settings.get('seal_image')) }}" alt="مهر" style="max-height:120px;">
+        <p>مهر و امضای کافی‌نت</p>
+    </div>
+    {% endif %}
+    <p style="text-align:center;margin-top:15px;">{{ settings.get('site_name','کافی نت آنلاین نوین') }} — {{ settings.get('manager','') }}</p>
+    <button class="btn" onclick="window.print()">چاپ / ذخیره</button>
+</div>
+{% endblock %}
