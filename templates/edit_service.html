@@ -6,25 +6,25 @@
   <a href="{{ url_for('admin') }}#services" class="btn btn-secondary">بازگشت</a>
   <h1>ویرایش خدمت</h1>
   <form method="POST">
-    <label>نام *</label>
+    <label>نام</label>
     <input type="text" name="name" value="{{ service.name }}" required>
-    <label>دسته</label>
+    <label>دسته‌بندی</label>
     <input type="text" name="category" value="{{ service.category or '' }}">
     <label>توضیحات</label>
     <textarea name="description">{{ service.description or '' }}</textarea>
     <label>قیمت</label>
-    <input type="number" name="price" value="{{ service.price or 0 }}" min="0">
+    <input type="number" name="price" value="{{ service.price or 0 }}">
     <label>ترتیب</label>
     <input type="number" name="sort_order" value="{{ service.sort_order or 0 }}">
-    <label>وضعیت</label>
+    <label>فعال</label>
     <select name="active">
-      <option value="1" {% if service.active %}selected{% endif %}>فعال</option>
-      <option value="0" {% if not service.active %}selected{% endif %}>غیرفعال</option>
+      <option value="1" {% if service.active %}selected{% endif %}>بله</option>
+      <option value="0" {% if not service.active %}selected{% endif %}>خیر</option>
     </select>
-    <label>فیلدها JSON</label>
-    <textarea name="fields_json">{{ service.fields_json or '[]' }}</textarea>
-    <label>مدارک JSON</label>
-    <textarea name="documents_json">{{ service.documents_json or '[]' }}</textarea>
+    <label>فیلدهای فرم (JSON)</label>
+    <textarea name="fields_json" rows="6">{{ service.fields_json or '[]' }}</textarea>
+    <label>مدارک موردنیاز (JSON)</label>
+    <textarea name="documents_json" rows="4">{{ service.documents_json or '[]' }}</textarea>
     <button type="submit" class="btn">ذخیره</button>
   </form>
 </div>
