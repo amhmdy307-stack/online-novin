@@ -23,10 +23,22 @@
 {% endif %}
 
 <div class="grid">
-  <div class="card"><h3>تعداد درخواست‌ها</h3><strong style="font-size:28px;">{{ requests|length }}</strong></div>
-  <div class="card"><h3>تعداد مشتریان</h3><strong style="font-size:28px;">{{ customers|length }}</strong></div>
-  <div class="card"><h3>درآمد</h3><strong style="font-size:22px;">{{ "{:,}".format(total_income or 0) }}</strong> تومان</div>
-  <div class="card"><h3>بدهی</h3><strong style="font-size:22px;">{{ "{:,}".format(total_debt or 0) }}</strong> تومان</div>
+  <div class="card">
+    <h3>تعداد درخواست‌ها</h3>
+    <strong style="font-size:28px;">{{ requests|length }}</strong>
+  </div>
+  <div class="card">
+    <h3>تعداد مشتریان</h3>
+    <strong style="font-size:28px;">{{ customers|length }}</strong>
+  </div>
+  <div class="card">
+    <h3>درآمد</h3>
+    <strong style="font-size:22px;">{{ "{:,}".format(total_income or 0) }}</strong> تومان
+  </div>
+  <div class="card">
+    <h3>بدهی</h3>
+    <strong style="font-size:22px;">{{ "{:,}".format(total_debt or 0) }}</strong> تومان
+  </div>
 </div>
 
 <div class="card">
@@ -47,7 +59,6 @@
   </div>
 </div>
 
-<!-- درخواست‌ها -->
 <div id="section-requests" class="admin-section">
 <div class="card">
   <h2>📋 درخواست‌ها</h2>
@@ -84,7 +95,6 @@
 </div>
 </div>
 
-<!-- حسابداری -->
 <div id="section-accounting" class="admin-section" style="display:none;">
 <div class="card">
   <h2>🧮 حسابداری — تأیید پرداخت</h2>
@@ -114,7 +124,6 @@
 </div>
 </div>
 
-<!-- خدمات -->
 <div id="section-services" class="admin-section" style="display:none;">
 <div class="card">
   <h2>🛠 لیست خدمات</h2>
@@ -142,7 +151,6 @@
 </div>
 </div>
 
-<!-- افزودن خدمت -->
 <div id="section-add-service" class="admin-section" style="display:none;">
 <div class="card">
   <h2>➕ افزودن خدمت</h2>
@@ -160,15 +168,14 @@
     <label>فعال</label>
     <select name="active"><option value="1">بله</option><option value="0">خیر</option></select>
     <label>فیلدهای فرم (JSON)</label>
-    <textarea name="fields_json" rows="5" placeholder='[{"label":"شماره شاسی","type":"text","required":true}]'>[]</textarea>
+    <textarea name="fields_json" rows="5">[]</textarea>
     <label>مدارک موردنیاز (JSON)</label>
-    <textarea name="documents_json" rows="3" placeholder='["کارت ملی","سند"]'>[]</textarea>
+    <textarea name="documents_json" rows="3">[]</textarea>
     <button type="submit" class="btn">ثبت خدمت</button>
   </form>
 </div>
 </div>
 
-<!-- کاربران -->
 <div id="section-users" class="admin-section" style="display:none;">
 <div class="card">
   <h2>👥 کاربران</h2>
@@ -255,7 +262,6 @@
 </div>
 </div>
 
-<!-- تخفیف -->
 <div id="section-discounts" class="admin-section" style="display:none;">
 <div class="card">
   <h2>🎟 کدهای تخفیف</h2>
@@ -305,7 +311,6 @@
 </div>
 </div>
 
-<!-- پشتیبانی -->
 <div id="section-support" class="admin-section" style="display:none;">
 <div class="card">
   <h2>💬 پیام‌های پشتیبانی</h2>
@@ -335,7 +340,6 @@
 </div>
 </div>
 
-<!-- بدهکاران -->
 <div id="section-debts" class="admin-section" style="display:none;">
 <div class="card">
   <h2>💰 بدهکاران</h2>
@@ -371,7 +375,6 @@
 </div>
 </div>
 
-<!-- درگاه و پیامک -->
 <div id="section-gateway" class="admin-section" style="display:none;">
 <div class="card">
   <h2>📱 درگاه پرداخت و پیامک</h2>
@@ -403,7 +406,6 @@
 </div>
 </div>
 
-<!-- تنظیمات -->
 <div id="section-settings" class="admin-section" style="display:none;">
 <div class="card">
   <h2>⚙️ تنظیمات سایت</h2>
@@ -418,7 +420,7 @@
     <input type="file" name="logo" accept=".jpg,.jpeg,.png,.webp">
     <label>مهر و امضا (فاکتور)</label>
     <input type="file" name="seal_image" accept=".jpg,.jpeg,.png,.webp">
-    <label>رنگ اصلی (اختیاری)</label>
+    <label>رنگ اصلی</label>
     <input type="text" name="theme_primary" value="{{ settings.get('theme_primary','#0f5132') }}">
     <label>فونت</label>
     <input type="text" name="theme_font" value="{{ settings.get('theme_font','Tahoma') }}">
@@ -427,7 +429,6 @@
 </div>
 </div>
 
-<!-- پشتیبان -->
 <div id="section-backup" class="admin-section" style="display:none;">
 <div class="card">
   <h2>💾 پشتیبان‌گیری</h2>
@@ -449,7 +450,6 @@
 </div>
 </div>
 
-<!-- رمز -->
 <div id="section-password" class="admin-section" style="display:none;">
 <div class="card">
   <h2>🔐 تغییر نام کاربری / رمز</h2>
