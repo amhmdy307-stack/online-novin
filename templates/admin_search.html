@@ -11,19 +11,12 @@
     <button type="submit" class="btn">جستجو</button>
   </form>
 </div>
-
 <div class="card">
   <table>
     <thead>
       <tr>
-        <th>کد</th>
-        <th>نام</th>
-        <th>کدملی</th>
-        <th>تلفن</th>
-        <th>خدمت</th>
-        <th>کارشناس</th>
-        <th>وضعیت</th>
-        <th></th>
+        <th>کد</th><th>نام</th><th>کدملی</th><th>تلفن</th>
+        <th>خدمت</th><th>کارشناس</th><th>وضعیت</th><th></th>
       </tr>
     </thead>
     <tbody>
@@ -36,9 +29,7 @@
         <td>{{ r.service_name or '-' }}</td>
         <td>{{ r.expert_name or '-' }}</td>
         <td>{{ r.status }}</td>
-        <td>
-          <a class="btn" style="padding:5px 8px;font-size:12px;" href="{{ url_for('admin_request', rid=r.id) }}">مشاهده</a>
-        </td>
+        <td><a class="btn" style="padding:5px 8px;font-size:12px;" href="{{ url_for('admin_request', rid=r.id) }}">مشاهده</a></td>
       </tr>
     {% else %}
       <tr><td colspan="8">موردی یافت نشد</td></tr>
