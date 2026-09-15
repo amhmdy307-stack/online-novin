@@ -1,40 +1,18 @@
 {% extends "base.html" %}
-{% block title %}اصلاح پرونده{% endblock %}
+{% block title %}رفع نقص{% endblock %}
 {% block content %}
 <div class="card">
-  <h1>اصلاح نقص مدارک</h1>
-  <p>کد: {{ req.tracking_code }} | {{ req.service_name }}</p>
-  {% if req.admin_note %}<div class="alert">{{ req.admin_note }}</div>{% endif %}
-</div>
-<div class="card">
+  <h1>رفع نقص مدارک — {{ req.tracking_code }}</h1>
   <form method="POST" enctype="multipart/form-data">
     {% for key, value in form_data.items() %}
-    <label style="{% if key in rejected %}color:red;font-weight:bold;{% endif %}">
-      {{ key }}{% if key in rejected %} (نیاز به اصلاح){% endif %}
-    </label>
-    <input type="text" name="fix_{{ key }}" value="{{ value }}" class="latin-input"
-           {% if key in rejected %}style="border-color:red;"{% endif %}>
+    <label>{{ key }}{% if key in rejected %} <span style="color:red;">(نیاز به اصلاح)</span>{% endif %}</label>
+    <input type="text" name="form_{{ key }}" value="{{ value }}">
     {% endfor %}
-    <label>توضیحات</label>
+    <label>توضیح</label>
     <textarea name="customer_note"></textarea>
     <label>مدارک جدید</label>
     <input type="file" name="documents" multiple accept=".jpg,.jpeg,.png,.webp,.pdf">
-    <button type="submit" class="btn btn-success">ارسال رایگان</button>
+    <button type="submit" class="btn btn-success">ارسال مجدد</button>
   </form>
 </div>
-<script>
-function toLatinDigits(str){
-  var p='۰۱۲۳۴۵۶۷۸۹', a='٠١٢٣٤٥٦٧٨٩';
-  return String(str||'').replace(/[۰-۹٠-٩]/g,function(c){
-    var i=p.indexOf(c); if(i>=0) return ''+i;
-    i=a.indexOf(c); return i>=0?''+i:c;
-  });
-}
-document.querySelectorAll('.latin-input').forEach(function(el){
-  el.addEventListener('input', function(){
-    var v=toLatinDigits(el.value);
-    if(el.value!==v) el.value=v;
-  });
-});
-</script>
 {% endblock %}
