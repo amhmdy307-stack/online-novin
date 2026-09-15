@@ -18,7 +18,7 @@
   <p>نام: {{ result.customer_name }}</p>
   <p>خدمت: {{ result.service_name }}</p>
   <p>وضعیت: <strong>{{ result.status }}</strong></p>
-  {% if result.expert_name %}<p>کارشناس: <strong>{{ result.expert_name }}</strong></p>{% endif %}
+  <p>کارشناس: <strong>{{ result.expert_name or 'هنوز تعیین نشده' }}</strong></p>
   <p>مدت تقریبی: {{ result.estimated_time or 'توسط کارشناس اعلام می‌شود' }}</p>
   {% if result.admin_note %}<div class="alert">{{ result.admin_note }}</div>{% endif %}
   {% if result.status == 'نقص مدارک' %}
@@ -31,7 +31,7 @@
 
 {% if history %}
 <div class="card">
-  <h2>سوابق پرونده‌ها</h2>
+  <h2>سوابق پرونده‌های این کدملی</h2>
   <table>
     <thead><tr><th>کد</th><th>خدمت</th><th>وضعیت</th><th>کارشناس</th><th>تاریخ</th></tr></thead>
     <tbody>
@@ -51,10 +51,16 @@
 
 {% if tickets %}
 <div class="card">
-  <h2>سوابق تیکت‌ها</h2>
+  <h2>سوابق تیکت و پیام‌ها</h2>
   {% for t in tickets %}
   <div class="alert">
-    <strong>{{ t.sender_name or t.sender }}:</strong> {{ t.message }}
+    <strong>
+      {% if t.sender == 'customer' %}شما
+      {% elif t.sender == 'admin' %}{{ t.sender_name or 'کارشناس' }}
+      {% else %}سامانه{% if t.sender_name %} ({{ t.sender_name }}){% endif %}
+      {% endif %}:
+    </strong>
+    {{ t.message }}
     <br><small>{{ t.created_at }}</small>
   </div>
   {% endfor %}
@@ -65,15 +71,27 @@
 (function(){
   var code = "{{ result.tracking_code }}";
   var last = "{{ result.status }}";
+  function beep(){
+    try{
+      var ctx = new (window.AudioContext||window.webkitAudioContext)();
+      var o = ctx.createOscillator();
+      var g = ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      o.frequency.value = 880;
+      g.gain.value = 0.35;
+      o.start();
+      setTimeout(function(){ o.stop(); ctx.close(); }, 350);
+    }catch(e){}
+  }
   setInterval(function(){
     fetch("/api/request-status/" + code).then(function(r){ return r.json(); }).then(function(d){
       if(d && d.status && d.status !== last){
         last = d.status;
-        try{ new Audio("data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=").play(); }catch(e){}
+        beep();
         location.reload();
       }
     }).catch(function(){});
-  }, 6000);
+  }, 5000);
 })();
 </script>
 {% endif %}
