@@ -7,8 +7,15 @@
   <h1>پنل مدیریت</h1>
   <p>خوش آمدید {% if current_user %}{{ current_user.full_name or current_user.username }} ({{ current_user.role }}){% endif %}</p>
   <a href="{{ url_for('admin_search') }}" class="btn btn-secondary">جستجوی پرونده</a>
+  <a href="{{ url_for('admin_earnings') }}" class="btn btn-secondary">حساب کارشناس</a>
   <a href="{{ url_for('admin_logout') }}" class="btn btn-secondary">خروج</a>
 </div>
+
+{% if payout_reminder and payout_reminder > 0 %}
+<div class="alert" style="background:#fff7ed;color:#9a3412;">
+  ⚠️ پایان روز: {{ payout_reminder }} کارشناس طلبکاری پرداخت‌نشده دارند. از «حساب کارشناس» واریز کنید.
+</div>
+{% endif %}
 
 {% if pending_warn and pending_warn > 0 %}
 <div class="alert" style="background:#fff7ed;color:#9a3412;" id="admin-warn">
@@ -28,6 +35,7 @@
       <div class="dash-icon-card" onclick="openSection('discounts')"><div class="ic">🎟</div><div class="lb">تخفیف</div></div>
       <div class="dash-icon-card" onclick="openSection('support')"><div class="ic">💬</div><div class="lb">پشتیبانی</div></div>
       <div class="dash-icon-card" onclick="openSection('debts')"><div class="ic">💰</div><div class="lb">بدهکاران</div></div>
+      <div class="dash-icon-card" onclick="location.href='{{ url_for('admin_earnings') }}'"><div class="ic">💵</div><div class="lb">حساب کارشناس</div></div>
       <div class="dash-icon-card" onclick="openSection('gateway')"><div class="ic">📱</div><div class="lb">درگاه و پیامک</div></div>
       <div class="dash-icon-card" onclick="openSection('settings')"><div class="ic">⚙️</div><div class="lb">تنظیمات</div></div>
       <div class="dash-icon-card" onclick="openSection('backup')"><div class="ic">💾</div><div class="lb">پشتیبان</div></div>
@@ -43,7 +51,7 @@
     <div class="card"><h3>درآمد ماهانه</h3><strong style="font-size:20px;">{{ "{:,}".format(income_monthly or 0) }}</strong> تومان</div>
     <div class="card"><h3>درآمد سالانه</h3><strong style="font-size:20px;">{{ "{:,}".format(income_yearly or 0) }}</strong> تومان</div>
     <div class="card"><h3>کل درآمد</h3><strong style="font-size:20px;">{{ "{:,}".format(total_income or 0) }}</strong> تومان</div>
-    <div class="card"><h3>بدهی</h3><strong style="font-size:20px;">{{ "{:,}".format(total_debt or 0) }}</strong> تومان</div>
+    <div class="card"><h3>بدهی مشتریان</h3><strong style="font-size:20px;">{{ "{:,}".format(total_debt or 0) }}</strong> تومان</div>
   </div>
 </div>
 
@@ -63,10 +71,9 @@
       {% endfor %}
     </select>
   </form>
-  <div id="requests-live-box">
   <table>
     <thead><tr><th>کد</th><th>مشتری</th><th>خدمت</th><th>وضعیت</th><th>پرداخت</th><th></th></tr></thead>
-    <tbody id="requests-tbody">
+    <tbody>
     {% for r in requests %}
       <tr>
         <td>{{ r.tracking_code }}</td>
@@ -81,7 +88,6 @@
     {% endfor %}
     </tbody>
   </table>
-  </div>
 </div>
 </div>
 
@@ -148,20 +154,51 @@
 </div>
 
 <div id="section-users" class="admin-section" style="display:none;">
+{% if memberships %}
+<div class="card">
+  <h2>درخواست‌های عضویت</h2>
+  {% for m in memberships %}
+  <div class="alert">
+    <strong>{{ m.full_name }}</strong> — {{ m.username }} — {{ m.phone or '-' }} — شبا: {{ m.sheba or '-' }}
+    <br><small>{{ m.created_at }}</small>
+    {% if m.note %}<p>{{ m.note }}</p>{% endif %}
+    <form method="POST" action="{{ url_for('membership_approve', mid=m.id) }}" style="margin-top:8px;">
+      <label>نقش</label>
+      <select name="role"><option value="expert">کارشناس</option><option value="accountant">حسابدار</option></select>
+      <label>درصد سهم</label>
+      <input type="number" name="commission_percent" value="0" min="0" max="100">
+      <button type="submit" class="btn">تأیید عضویت</button>
+    </form>
+    <form method="POST" action="{{ url_for('membership_reject', mid=m.id) }}" style="display:inline;margin-top:6px;">
+      <button type="submit" class="btn btn-secondary">رد</button>
+    </form>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
 <div class="card">
   <h2>👥 کاربران</h2>
   <table>
-    <thead><tr><th>نام کامل</th><th>کاربری</th><th>نقش</th><th>تلفن</th><th></th></tr></thead>
+    <thead><tr><th>نام کامل</th><th>کاربری</th><th>نقش</th><th>تلفن</th><th>درصد</th><th>شبا</th><th></th></tr></thead>
     <tbody>
     {% for u in users %}
       <tr>
-        <td>{{ u.full_name or '-' }}</td><td>{{ u.username }}</td><td>{{ u.role }}</td><td>{{ u.phone or '-' }}</td>
-        <td><a class="btn" style="padding:5px 8px;font-size:12px;" href="{{ url_for('edit_user', user_id=u.id) }}">ویرایش</a></td>
+        <td>{{ u.full_name or '-' }}</td>
+        <td>{{ u.username }}</td>
+        <td>{{ u.role }}</td>
+        <td>{{ u.phone or '-' }}</td>
+        <td>{{ u.commission_percent or 0 }}٪</td>
+        <td style="direction:ltr;font-size:12px;">{{ u.sheba or '-' }}</td>
+        <td>
+          <a class="btn" style="padding:5px 8px;font-size:12px;" href="{{ url_for('edit_user', user_id=u.id) }}">ویرایش</a>
+        </td>
       </tr>
     {% endfor %}
     </tbody>
   </table>
 </div>
+
 <div class="card">
   <h3>افزودن کاربر</h3>
   <form method="POST" action="{{ url_for('create_user') }}">
@@ -169,11 +206,15 @@
     <label>کاربری</label><input type="text" name="username" required>
     <label>رمز</label><input type="password" name="password" minlength="6" required>
     <label>تلفن</label><input type="text" name="phone">
+    <label>شماره شبا</label><input type="text" name="sheba" placeholder="IR...">
+    <label>درصد سهم از پرونده</label><input type="number" name="commission_percent" value="0" min="0" max="100">
     <label>نقش</label>
     <select name="role"><option value="expert">کارشناس</option><option value="accountant">حسابدار</option><option value="admin">مدیر</option></select>
     <label>انقضا</label><input type="date" name="expires_at">
     <h4>خدمات</h4>
-    {% for s in services %}<label style="display:block;font-weight:normal;"><input type="checkbox" name="allowed_services" value="{{ s.id }}"> {{ s.name }}</label>{% endfor %}
+    {% for s in services %}
+    <label style="display:block;font-weight:normal;"><input type="checkbox" name="allowed_services" value="{{ s.id }}"> {{ s.name }}</label>
+    {% endfor %}
     <h4>بخش‌ها</h4>
     {% for sec, title in [('requests','درخواست‌ها'),('services','خدمات'),('add-service','افزودن خدمت'),('users','کاربران'),('discounts','تخفیف'),('support','پشتیبانی'),('accounting','حسابداری'),('debts','بدهکاران'),('gateway','درگاه'),('settings','تنظیمات'),('backup','پشتیبان'),('password','رمز')] %}
     <label style="display:block;font-weight:normal;"><input type="checkbox" name="allowed_sections" value="{{ sec }}"> {{ title }}</label>
@@ -181,6 +222,7 @@
     <button type="submit" class="btn">ایجاد</button>
   </form>
 </div>
+
 <div class="card">
   <h3>پیام به کارشناسان</h3>
   <form method="POST" action="{{ url_for('sms_experts') }}">
@@ -292,7 +334,7 @@
       <option value="payment_link" {% if settings.get('default_payment_mode')=='payment_link' %}selected{% endif %}>لینک</option>
     </select>
     <label>مرچنت</label><input type="text" name="payment_merchant_code" value="{{ settings.get('payment_merchant_code','') }}">
-    <label>API Key</label><input type="text" name="sms_api_key" value="{{ settings.get('sms_api_key','') }}">
+    <label>API Key پیامک</label><input type="text" name="sms_api_key" value="{{ settings.get('sms_api_key','') }}">
     <label>خط</label><input type="text" name="sms_phone" value="{{ settings.get('sms_phone','') }}">
     <button type="submit" class="btn">ذخیره</button>
   </form>
@@ -372,40 +414,34 @@ function backToDashboard(){
   var h=(location.hash||'').replace('#','');
   if(h && document.getElementById('section-'+h)) openSection(h);
 })();
-
 function loudBeep(){
   try{
     var ctx=new (window.AudioContext||window.webkitAudioContext)();
-    function tone(freq, start, dur){
+    function tone(freq,start,dur){
       var o=ctx.createOscillator(), g=ctx.createGain();
       o.connect(g); g.connect(ctx.destination);
       o.frequency.value=freq;
-      g.gain.setValueAtTime(0.0001, start);
-      g.gain.exponentialRampToValueAtTime(0.5, start+0.02);
-      g.gain.exponentialRampToValueAtTime(0.0001, start+dur);
+      g.gain.setValueAtTime(0.0001,start);
+      g.gain.exponentialRampToValueAtTime(0.5,start+0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001,start+dur);
       o.start(start); o.stop(start+dur+0.02);
     }
     var t=ctx.currentTime;
     tone(880,t,0.2); tone(1175,t+0.22,0.25); tone(880,t+0.5,0.2);
   }catch(e){}
   try{
-    if(Notification && Notification.permission==='granted'){
-      new Notification('کافی‌نت نوین',{body:'درخواست یا پیام جدید',requireInteraction:true});
-    } else if(Notification && Notification.permission!=='denied'){
-      Notification.requestPermission();
-    }
+    if(Notification&&Notification.permission==='granted'){
+      new Notification('کافی‌نت نوین',{body:'رویداد جدید',requireInteraction:true});
+    }else if(Notification&&Notification.permission!=='denied'){ Notification.requestPermission(); }
   }catch(e){}
 }
-
 var lastCount=null, lastMsg=null;
 function liveAdmin(){
   fetch("{{ url_for('admin_live') }}").then(function(r){return r.json();}).then(function(d){
     if(lastCount===null){ lastCount=d.count; lastMsg=d.msg_count; return; }
     if(d.count>lastCount || d.msg_count>lastMsg || (d.notifications&&d.notifications.length)){
       loudBeep();
-      if(d.count>lastCount){
-        setTimeout(function(){ location.reload(); }, 600);
-      }
+      if(d.count>lastCount) setTimeout(function(){ location.reload(); }, 600);
     }
     lastCount=d.count; lastMsg=d.msg_count;
   }).catch(function(){});
