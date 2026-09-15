@@ -4,47 +4,38 @@
 {% block content %}
 <div class="card">
   <a href="{{ url_for('admin') }}#users" class="btn btn-secondary">بازگشت</a>
-  <h1>ویرایش کاربر: {{ user.username }}</h1>
+  <h1>ویرایش {{ user.username }}</h1>
   <form method="POST">
     <label>نام کامل</label>
-    <input type="text" name="full_name" value="{{ user.full_name or '' }}" required>
+    <input type="text" name="full_name" value="{{ user.full_name or '' }}">
     <label>تلفن</label>
     <input type="text" name="phone" value="{{ user.phone or '' }}">
+    <label>شبا</label>
+    <input type="text" name="sheba" value="{{ user.sheba or '' }}">
+    <label>درصد سهم</label>
+    <input type="number" name="commission_percent" min="0" max="100" value="{{ user.commission_percent or 0 }}">
     <label>نقش</label>
     <select name="role">
       <option value="expert" {% if user.role=='expert' %}selected{% endif %}>کارشناس</option>
       <option value="accountant" {% if user.role=='accountant' %}selected{% endif %}>حسابدار</option>
       <option value="admin" {% if user.role=='admin' %}selected{% endif %}>مدیر</option>
     </select>
-    <label>تاریخ انقضا</label>
+    <label>انقضا</label>
     <input type="date" name="expires_at" value="{{ user.expires_at or '' }}">
     <label>رمز جدید (اختیاری)</label>
-    <input type="password" name="password" minlength="6" placeholder="خالی = بدون تغییر">
-
-    <h3>دسترسی به خدمات</h3>
+    <input type="password" name="password" minlength="6">
+    <h4>خدمات</h4>
     {% for s in services %}
     <label style="display:block;font-weight:normal;">
-      <input type="checkbox" name="allowed_services" value="{{ s.id }}"
-        {% if s.id|string in allowed_services|map('string') or s.id in allowed_services %}checked{% endif %}>
-      {{ s.name }}
+      <input type="checkbox" name="allowed_services" value="{{ s.id }}" {% if s.id in allowed_services %}checked{% endif %}> {{ s.name }}
     </label>
     {% endfor %}
-
-    <h3>دسترسی به بخش‌های پنل</h3>
-    {% for sec, title in [
-      ('requests','درخواست‌ها'),('services','خدمات'),('add-service','افزودن خدمت'),
-      ('users','کاربران'),('discounts','تخفیف'),('support','پشتیبانی'),
-      ('accounting','حسابداری'),('debts','بدهکاران'),('gateway','درگاه و پیامک'),
-      ('settings','تنظیمات'),('backup','پشتیبان'),('password','رمز')
-    ] %}
+    <h4>بخش‌ها</h4>
+    {% for sec, title in [('requests','درخواست‌ها'),('services','خدمات'),('add-service','افزودن خدمت'),('users','کاربران'),('discounts','تخفیف'),('support','پشتیبانی'),('accounting','حسابداری'),('debts','بدهکاران'),('gateway','درگاه'),('settings','تنظیمات'),('backup','پشتیبان'),('password','رمز')] %}
     <label style="display:block;font-weight:normal;">
-      <input type="checkbox" name="allowed_sections" value="{{ sec }}"
-        {% if sec in allowed_sections %}checked{% endif %}>
-      {{ title }}
+      <input type="checkbox" name="allowed_sections" value="{{ sec }}" {% if sec in allowed_sections %}checked{% endif %}> {{ title }}
     </label>
     {% endfor %}
-
-    <br>
     <button type="submit" class="btn">ذخیره</button>
   </form>
 </div>
