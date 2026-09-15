@@ -1,75 +1,59 @@
 {% extends "base.html" %}
-{% block title %}{{ service.name }} - {{ site_name|default("کافی نت آنلاین نوین") }}{% endblock %}
+{% block title %}{{ service.name }}{% endblock %}
 {% block content %}
 <div class="card">
   <a href="{{ url_for('index') }}" class="btn btn-secondary">بازگشت</a>
-  <br><br>
   <h1>{{ service.name }}</h1>
   {% if service.category %}<div class="badge">{{ service.category }}</div>{% endif %}
   {% if service.description %}<p>{{ service.description }}</p>{% endif %}
   {% if service.price and service.price > 0 %}
-  <div class="price">قیمت: {{ "{:,}".format(service.price) }} تومان</div>
+  <div class="price">{{ "{:,}".format(service.price) }} تومان</div>
   {% endif %}
 </div>
-
 <div class="card">
   <h2>ثبت درخواست</h2>
-  <form method="POST" enctype="multipart/form-data">
+  <form method="POST" enctype="multipart/form-data" action="{{ url_for('service', service_id=service.id) }}">
     <label>نام و نام خانوادگی *</label>
-    <input type="text" name="name" required class="latin-input">
-
+    <input type="text" name="name" required>
     <label>کد ملی</label>
-    <input type="text" name="national_id" maxlength="10" class="latin-digits" inputmode="numeric">
-
-    <label>شماره موبایل</label>
-    <input type="text" name="phone" class="latin-digits" inputmode="tel">
-
-    {% if fields %}
-      {% for field in fields %}
-        <label>{{ field.get('label', field.get('name', 'فیلد')) }}</label>
-        {% if field.get('type') == 'textarea' %}
-          <textarea name="field_{{ loop.index }}" class="latin-input" {% if field.get('required') %}required{% endif %}></textarea>
-        {% else %}
-          <input type="{{ field.get('type', 'text') }}" name="field_{{ loop.index }}" class="latin-input" {% if field.get('required') %}required{% endif %}>
-        {% endif %}
-      {% endfor %}
-    {% endif %}
-
+    <input type="text" name="national_id" maxlength="10">
+    <label>تلفن *</label>
+    <input type="text" name="phone" required>
+    {% for field in fields %}
+      <label>{{ field.get('label') or field.get('name') or ('فیلد '\~loop.index) }}</label>
+      {% if field.get('type') == 'textarea' %}
+      <textarea name="field_{{ loop.index }}" {% if field.get('required') %}required{% endif %}></textarea>
+      {% else %}
+      <input type="{{ field.get('type','text') }}" name="field_{{ loop.index }}" {% if field.get('required') %}required{% endif %}>
+      {% endif %}
+    {% endfor %}
     <label>توضیحات مشتری</label>
-    <textarea name="customer_note" class="latin-input"></textarea>
-
+    <textarea name="customer_note"></textarea>
     <label>کد تخفیف</label>
-    <input type="text" name="discount_code" class="latin-input" style="direction:ltr;">
-
+    <input type="text" name="discount_code">
     {% if documents %}
-    <hr><h3>مدارک مورد نیاز</h3>
-    <ul>{% for document in documents %}<li>{{ document }}</li>{% endfor %}</ul>
+    <h3>مدارک مورد نیاز</h3>
+    <ul>{% for d in documents %}<li>{{ d }}</li>{% endfor %}</ul>
     {% endif %}
-
     <label>ارسال مدارک</label>
     <input type="file" name="documents" multiple accept=".jpg,.jpeg,.png,.webp,.pdf">
     <br><br>
     <button type="submit" class="btn btn-success">ثبت درخواست</button>
   </form>
 </div>
-
 <script>
-function toLatinDigits(str){
-  if(!str) return str;
-  var p='۰۱۲۳۴۵۶۷۸۹', a='٠١٢٣٤٥٦٧٨٩';
-  return String(str).replace(/[۰-۹٠-٩]/g, function(c){
-    var i=p.indexOf(c); if(i>=0) return String(i);
-    i=a.indexOf(c); if(i>=0) return String(i);
-    return c;
+(function(){
+  function toLatin(s){
+    var p='۰۱۲۳۴۵۶۷۸۹', a='٠١٢٣٤٥٦٧٨٩', o='';
+    for(var i=0;i<s.length;i++){
+      var c=s[i], j=p.indexOf(c), k=a.indexOf(c);
+      o += j>=0?String(j):(k>=0?String(k):c);
+    }
+    return o;
+  }
+  document.querySelectorAll('input,textarea').forEach(function(el){
+    el.addEventListener('input', function(){ this.value = toLatin(this.value); });
   });
-}
-document.querySelectorAll('.latin-digits, .latin-input').forEach(function(el){
-  el.addEventListener('input', function(){
-    var start=el.selectionStart, end=el.selectionEnd;
-    var v=toLatinDigits(el.value);
-    if(el.classList.contains('latin-digits')) v=v.replace(/[^\d+]/g,'');
-    if(el.value!==v){ el.value=v; try{el.setSelectionRange(start,end);}catch(e){} }
-  });
-});
+})();
 </script>
 {% endblock %}
