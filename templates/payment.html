@@ -2,14 +2,12 @@
 {% block title %}پرداخت{% endblock %}
 {% block content %}
 <div class="card">
-  <h1>پرداخت درخواست</h1>
+  <h1>پرداخت</h1>
   <p>کد پیگیری: <strong>{{ req.tracking_code }}</strong></p>
   <p>خدمت: {{ req.service_name }}</p>
-  <p>مبلغ: <strong>{{ "{:,}".format(req.total_price or 0) }} تومان</strong></p>
-  <p>وضعیت: در انتظار پرداخت</p>
+  <p>مبلغ: <strong>{{ "{:,}".format(req.total_price or 0) }}</strong> تومان</p>
   <form method="POST">
     <button type="submit" class="btn btn-success">تأیید پرداخت (شبیه‌سازی درگاه)</button>
   </form>
-  <p><small>پس از اتصال درگاه واقعی، این بخش با callback بانک جایگزین می‌شود.</small></p>
 </div>
 {% endblock %}
