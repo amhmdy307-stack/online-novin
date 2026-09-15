@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block body_class %}admin-page{% endblock %}
+{% block title %}حساب کارشناس{% endblock %}
+{% block content %}
+<div class="card">
+  <a href="{{ url_for('admin') }}" class="btn btn-secondary">بازگشت</a>
+  <h1>حساب و کتاب کارشناس</h1>
+</div>
+
+{% if is_admin %}
+  {% for row in data %}
+  <div class="card">
+    <h3>{{ row.user.full_name or row.user.username }}</h3>
+    <p>درصد سهم: <strong>{{ row.earn.percent }}٪</strong></p>
+    <p>شبا: {{ row.earn.sheba or '-' }}</p>
+    <p>جمع طلبکاری: <strong>{{ "{:,}".format(row.earn.total) }}</strong> تومان</p>
+    <table>
+      <thead><tr><th>کد</th><th>خدمت</th><th>مشتری</th><th>مبلغ پرونده</th><th>سهم کارشناس</th><th>تاریخ</th></tr></thead>
+      <tbody>
+      {% for it in row.earn.items %}
+        <tr>
+          <td>{{ it.tracking_code }}</td>
+          <td>{{ it.service_name }}</td>
+          <td>{{ it.customer_name }}</td>
+          <td>{{ "{:,}".format(it.paid_price) }}</td>
+          <td>{{ "{:,}".format(it.commission) }}</td>
+          <td>{{ it.updated_at }}</td>
+        </tr>
+      {% else %}
+        <tr><td colspan="6">پرونده انجام‌شده‌ای نیست</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="card"><p>کارشناسی نیست</p></div>
+  {% endfor %}
+{% else %}
+  <div class="card">
+    <p>نام: <strong>{{ me.full_name }}</strong></p>
+    <p>درصد سهم: <strong>{{ me.percent }}٪</strong></p>
+    <p>شبا: {{ me.sheba or '-' }}</p>
+    <p>جمع طلبکاری شما: <strong>{{ "{:,}".format(me.total) }}</strong> تومان</p>
+    <table>
+      <thead><tr><th>کد</th><th>خدمت</th><th>مشتری</th><th>مبلغ پرونده</th><th>سهم شما</th><th>تاریخ</th></tr></thead>
+      <tbody>
+      {% for it in me.items %}
+        <tr>
+          <td>{{ it.tracking_code }}</td>
+          <td>{{ it.service_name }}</td>
+          <td>{{ it.customer_name }}</td>
+          <td>{{ "{:,}".format(it.paid_price) }}</td>
+          <td>{{ "{:,}".format(it.commission) }}</td>
+          <td>{{ it.updated_at }}</td>
+        </tr>
+      {% else %}
+        <tr><td colspan="6">هنوز پرونده انجام‌شده ندارید</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endif %}
+{% endblock %}
