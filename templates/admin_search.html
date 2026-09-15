@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block body_class %}admin-page{% endblock %}
+{% block title %}جستجوی پرونده{% endblock %}
+{% block content %}
+<div class="card">
+  <a href="{{ url_for('admin') }}" class="btn btn-secondary">بازگشت</a>
+  <h1>جستجوی پرونده</h1>
+  <form method="GET" action="{{ url_for('admin_search') }}">
+    <label>کد پیگیری / کدملی / نام / تلفن</label>
+    <input type="text" name="q" value="{{ q or '' }}" required placeholder="جستجو...">
+    <button type="submit" class="btn">جستجو</button>
+  </form>
+</div>
+
+<div class="card">
+  <table>
+    <thead>
+      <tr>
+        <th>کد</th>
+        <th>نام</th>
+        <th>کدملی</th>
+        <th>تلفن</th>
+        <th>خدمت</th>
+        <th>کارشناس</th>
+        <th>وضعیت</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for r in rows %}
+      <tr>
+        <td>{{ r.tracking_code }}</td>
+        <td>{{ r.customer_name or '-' }}</td>
+        <td>{{ r.customer_national_id or '-' }}</td>
+        <td>{{ r.customer_phone or '-' }}</td>
+        <td>{{ r.service_name or '-' }}</td>
+        <td>{{ r.expert_name or '-' }}</td>
+        <td>{{ r.status }}</td>
+        <td>
+          <a class="btn" style="padding:5px 8px;font-size:12px;" href="{{ url_for('admin_request', rid=r.id) }}">مشاهده</a>
+        </td>
+      </tr>
+    {% else %}
+      <tr><td colspan="8">موردی یافت نشد</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
