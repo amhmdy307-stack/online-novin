@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block body_class %}admin-page{% endblock %}
+{% block title %}درخواست عضویت{% endblock %}
+{% block content %}
+<div class="card" style="max-width:480px;margin:30px auto;">
+  <h1>درخواست عضویت کاربر</h1>
+  <form method="POST">
+    <label>نام کامل *</label>
+    <input type="text" name="full_name" required>
+    <label>نام کاربری *</label>
+    <input type="text" name="username" required>
+    <label>تلفن</label>
+    <input type="text" name="phone">
+    <label>شماره شبا</label>
+    <input type="text" name="sheba" placeholder="IR...">
+    <label>رمز عبور *</label>
+    <input type="password" name="password" minlength="6" required>
+    <label>توضیح</label>
+    <textarea name="note"></textarea>
+    <button type="submit" class="btn">ارسال درخواست</button>
+  </form>
+  <p style="margin-top:12px;"><a href="{{ url_for('admin_login') }}">بازگشت به ورود</a></p>
+</div>
+{% endblock %}
