@@ -5,6 +5,11 @@
 <div class="card">
   <a href="{{ url_for('admin') }}" class="btn btn-secondary">بازگشت</a>
   <h1>حساب و کتاب کارشناس</h1>
+  {% if payout_reminder and payout_reminder > 0 %}
+  <div class="alert" style="background:#fff7ed;color:#9a3412;">
+    یادآوری پایان روز: {{ payout_reminder }} کارشناس هنوز طلب دارند.
+  </div>
+  {% endif %}
 </div>
 
 {% if is_admin %}
@@ -12,10 +17,14 @@
   <div class="card">
     <h3>{{ row.user.full_name or row.user.username }}</h3>
     <p>درصد سهم: <strong>{{ row.earn.percent }}٪</strong></p>
-    <p>شبا: {{ row.earn.sheba or '-' }}</p>
-    <p>جمع طلبکاری: <strong>{{ "{:,}".format(row.earn.total) }}</strong> تومان</p>
-    <table>
-      <thead><tr><th>کد</th><th>خدمت</th><th>مشتری</th><th>مبلغ پرونده</th><th>سهم کارشناس</th><th>تاریخ</th></tr></thead>
+    <p>شبا: <span style="direction:ltr;">{{ row.earn.sheba or '-' }}</span></p>
+    <p>طلبکاری فعلی: <strong>{{ "{:,}".format(row.earn.owed) }}</strong> تومان</p>
+    <p>جمع پرداخت‌شده قبلی: {{ "{:,}".format(row.earn.paid_total) }} تومان</p>
+    {% if row.earn.owed > 0 %}
+    <a class="btn" href="{{ url_for('expert_payout_start', expert_id=row.user.id) }}">واریز از درگاه / ثبت پرداخت</a>
+    {% endif %}
+    <table style="margin-top:12px;">
+      <thead><tr><th>کد</th><th>خدمت</th><th>مشتری</th><th>مبلغ پرونده</th><th>سهم</th><th>تاریخ</th></tr></thead>
       <tbody>
       {% for it in row.earn.items %}
         <tr>
@@ -27,22 +36,38 @@
           <td>{{ it.updated_at }}</td>
         </tr>
       {% else %}
-        <tr><td colspan="6">پرونده انجام‌شده‌ای نیست</td></tr>
+        <tr><td colspan="6">پرونده انجام‌شده نیست</td></tr>
       {% endfor %}
       </tbody>
     </table>
+    {% if row.earn.payouts %}
+    <h4>سوابق واریز</h4>
+    <table>
+      <thead><tr><th>مبلغ</th><th>وضعیت</th><th>تاریخ</th><th>کد پیگیری واریز</th></tr></thead>
+      <tbody>
+      {% for p in row.earn.payouts %}
+        <tr>
+          <td>{{ "{:,}".format(p.amount) }}</td>
+          <td>{{ p.status }}</td>
+          <td>{{ p.created_at }}</td>
+          <td>{{ p.tracking_code }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% endif %}
   </div>
   {% else %}
-  <div class="card"><p>کارشناسی نیست</p></div>
+  <div class="card"><p>کارشناسی ثبت نشده</p></div>
   {% endfor %}
 {% else %}
   <div class="card">
     <p>نام: <strong>{{ me.full_name }}</strong></p>
-    <p>درصد سهم: <strong>{{ me.percent }}٪</strong></p>
-    <p>شبا: {{ me.sheba or '-' }}</p>
-    <p>جمع طلبکاری شما: <strong>{{ "{:,}".format(me.total) }}</strong> تومان</p>
+    <p>درصد: <strong>{{ me.percent }}٪</strong></p>
+    <p>شبا: <span style="direction:ltr;">{{ me.sheba or '-' }}</span></p>
+    <p>طلبکاری شما: <strong>{{ "{:,}".format(me.owed) }}</strong> تومان</p>
     <table>
-      <thead><tr><th>کد</th><th>خدمت</th><th>مشتری</th><th>مبلغ پرونده</th><th>سهم شما</th><th>تاریخ</th></tr></thead>
+      <thead><tr><th>کد</th><th>خدمت</th><th>مشتری</th><th>مبلغ</th><th>سهم شما</th><th>تاریخ</th></tr></thead>
       <tbody>
       {% for it in me.items %}
         <tr>
@@ -54,7 +79,7 @@
           <td>{{ it.updated_at }}</td>
         </tr>
       {% else %}
-        <tr><td colspan="6">هنوز پرونده انجام‌شده ندارید</td></tr>
+        <tr><td colspan="6">خالی</td></tr>
       {% endfor %}
       </tbody>
     </table>
