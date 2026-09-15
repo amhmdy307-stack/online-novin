@@ -1,18 +1,18 @@
 {% extends "base.html" %}
+{% block body_class %}admin-page{% endblock %}
 {% block title %}ورود مدیریت{% endblock %}
 {% block content %}
 <div class="card" style="max-width:420px;margin:40px auto;">
-  <h1>ورود به پنل مدیریت</h1>
+  <h1>ورود پنل مدیریت</h1>
   <form method="POST">
     <label>نام کاربری</label>
-    <input type="text" name="username" required autocomplete="username">
+    <input type="text" name="username" required>
     <label>رمز عبور</label>
-    <input type="password" name="password" required autocomplete="current-password">
+    <input type="password" name="password" required>
     <button type="submit" class="btn">ورود</button>
   </form>
-  <p style="margin-top:16px;">
-    <a href="{{ url_for('forgot_password') }}">فراموشی رمز</a>
-    &nbsp;|&nbsp;
+  <p style="margin-top:12px;">
+    <a href="{{ url_for('forgot_password') }}">فراموشی رمز</a> |
     <a href="{{ url_for('forgot_username') }}">فراموشی نام کاربری</a>
   </p>
 </div>
