@@ -1,40 +1,24 @@
 {% extends "base.html" %}
-{% block title %}پشتیبانی{% endblock %}
+{% block title %}ارتباط با پشتیبانی{% endblock %}
 {% block content %}
 <div class="card">
   <a href="{{ url_for('index') }}" class="btn btn-secondary">بازگشت</a>
   <h1>ارتباط با پشتیبانی</h1>
   <form method="POST">
-    <label>کارشناس / مدیر</label>
+    <label>انتخاب کارشناس / مدیر</label>
     <select name="expert_id" required>
-      <option value="">انتخاب</option>
+      <option value="">انتخاب کنید</option>
       {% for e in experts %}
       <option value="{{ e.id }}">{{ e.full_name or e.username }} ({{ e.role }})</option>
       {% endfor %}
     </select>
-    <label>نام</label>
+    <label>نام شما</label>
     <input type="text" name="name" required>
-    <label>موبایل</label>
-    <input type="text" name="phone" required id="supportPhone" class="latin-digits">
+    <label>تلفن</label>
+    <input type="text" name="phone" required>
     <label>پیام</label>
     <textarea name="message" required></textarea>
     <button type="submit" class="btn">ارسال</button>
   </form>
 </div>
-<script>
-function toLatinDigits(str){
-  var p='۰۱۲۳۴۵۶۷۸۹', a='٠١٢٣٤٥٦٧٨٩';
-  return String(str||'').replace(/[۰-۹٠-٩]/g,function(c){
-    var i=p.indexOf(c); if(i>=0) return ''+i;
-    i=a.indexOf(c); return i>=0?''+i:c;
-  });
-}
-document.querySelectorAll('.latin-digits').forEach(function(el){
-  el.addEventListener('input', function(){ this.value=toLatinDigits(this.value).replace(/[^\d+]/g,''); });
-});
-document.querySelector('form').addEventListener('submit', function(){
-  var p=document.getElementById('supportPhone').value;
-  if(p) localStorage.setItem('customer_phone', p);
-});
-</script>
 {% endblock %}
