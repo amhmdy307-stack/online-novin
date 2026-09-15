@@ -77,7 +77,8 @@ def create_tables():
     conn.execute("""CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT UNIQUE NOT NULL, password TEXT NOT NULL,
         full_name TEXT DEFAULT '', role TEXT NOT NULL DEFAULT 'expert', active INTEGER NOT NULL DEFAULT 1,
-        phone TEXT DEFAULT '', allowed_services TEXT DEFAULT '[]', allowed_sections TEXT DEFAULT '[]',
+        phone TEXT DEFAULT '', sheba TEXT DEFAULT '', commission_percent INTEGER DEFAULT 0,
+        allowed_services TEXT DEFAULT '[]', allowed_sections TEXT DEFAULT '[]',
         expires_at TEXT DEFAULT '', created_at TEXT DEFAULT CURRENT_TIMESTAMP)""")
     conn.execute("""CREATE TABLE IF NOT EXISTS customers (
         id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, phone TEXT DEFAULT '',
@@ -96,6 +97,7 @@ def create_tables():
         payment_confirmed INTEGER DEFAULT 0, form_data TEXT DEFAULT '{}', documents TEXT DEFAULT '[]',
         rejected_fields TEXT DEFAULT '[]', rejected_docs TEXT DEFAULT '[]', personal_note TEXT DEFAULT '',
         receipt_file TEXT DEFAULT '', invoice_code TEXT DEFAULT '', sms_draft TEXT DEFAULT '',
+        zibal_track_id TEXT DEFAULT '',
         created_at TEXT DEFAULT CURRENT_TIMESTAMP, updated_at TEXT DEFAULT CURRENT_TIMESTAMP)""")
     conn.execute("""CREATE TABLE IF NOT EXISTS messages (
         id INTEGER PRIMARY KEY AUTOINCREMENT, customer_id INTEGER, request_id INTEGER,
@@ -113,10 +115,20 @@ def create_tables():
     conn.execute("""CREATE TABLE IF NOT EXISTS sms_log (
         id INTEGER PRIMARY KEY AUTOINCREMENT, phone TEXT, body TEXT, status TEXT DEFAULT 'pending',
         created_at TEXT DEFAULT CURRENT_TIMESTAMP)""")
+    conn.execute("""CREATE TABLE IF NOT EXISTS membership_requests (
+        id INTEGER PRIMARY KEY AUTOINCREMENT, full_name TEXT NOT NULL, username TEXT NOT NULL,
+        phone TEXT DEFAULT '', sheba TEXT DEFAULT '', password TEXT NOT NULL, note TEXT DEFAULT '',
+        status TEXT DEFAULT 'در انتظار', created_at TEXT DEFAULT CURRENT_TIMESTAMP)""")
+    conn.execute("""CREATE TABLE IF NOT EXISTS expert_payouts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT, expert_id INTEGER NOT NULL, amount INTEGER NOT NULL DEFAULT 0,
+        status TEXT DEFAULT 'در انتظار', tracking_code TEXT DEFAULT '', note TEXT DEFAULT '',
+        zibal_track_id TEXT DEFAULT '', created_at TEXT DEFAULT CURRENT_TIMESTAMP, paid_at TEXT DEFAULT '')""")
 
     for table, column, definition in [
         ("users", "full_name", "TEXT DEFAULT ''"),
         ("users", "phone", "TEXT DEFAULT ''"),
+        ("users", "sheba", "TEXT DEFAULT ''"),
+        ("users", "commission_percent", "INTEGER DEFAULT 0"),
         ("users", "allowed_services", "TEXT DEFAULT '[]'"),
         ("users", "allowed_sections", "TEXT DEFAULT '[]'"),
         ("users", "expires_at", "TEXT DEFAULT ''"),
@@ -135,8 +147,10 @@ def create_tables():
         ("requests", "receipt_file", "TEXT DEFAULT ''"),
         ("requests", "invoice_code", "TEXT DEFAULT ''"),
         ("requests", "sms_draft", "TEXT DEFAULT ''"),
+        ("requests", "zibal_track_id", "TEXT DEFAULT ''"),
         ("messages", "sender_name", "TEXT DEFAULT ''"),
         ("discounts", "is_credit", "INTEGER DEFAULT 0"),
+        ("expert_payouts", "zibal_track_id", "TEXT DEFAULT ''"),
     ]:
         add_column_if_missing(conn, table, column, definition)
 
@@ -145,7 +159,7 @@ def create_tables():
         "default_payment_mode": "gateway", "payment_merchant_code": "",
         "sms_api_key": "", "sms_phone": "", "backup_email": "",
         "seal_image": "", "theme_primary": "#0f5132", "theme_font": "Tahoma",
-        "last_auto_backup": "",
+        "last_auto_backup": "", "last_payout_reminder": "",
     }
     for k, v in defaults.items():
         conn.execute("INSERT OR IGNORE INTO settings(key, value) VALUES (?, ?)", (k, v))
@@ -182,7 +196,7 @@ def get_current_user():
         return None
     conn = get_db()
     user = conn.execute(
-        "SELECT id, username, full_name, role, active, phone, allowed_services, allowed_sections, expires_at FROM users WHERE id=?",
+        "SELECT id, username, full_name, role, active, phone, sheba, commission_percent, allowed_services, allowed_sections, expires_at FROM users WHERE id=?",
         (uid,)
     ).fetchone()
     conn.close()
@@ -325,11 +339,7 @@ def send_sms(phone, text):
         "https://api.sms.ir/v1/send/bulk",
         data=data,
         method="POST",
-        headers={
-            "Content-Type": "application/json",
-            "Accept": "application/json",
-            "X-API-KEY": api_key,
-        },
+        headers={"Content-Type": "application/json", "Accept": "application/json", "X-API-KEY": api_key},
     )
     try:
         with urllib.request.urlopen(req, timeout=25) as resp:
@@ -338,7 +348,7 @@ def send_sms(phone, text):
                 body = json.loads(raw)
             except Exception:
                 _log_sms(phone, text, "bad_json:" + raw[:200])
-                return False, "پاسخ نامعتبر: " + raw[:150]
+                return False, "پاسخ نامعتبر"
             st = body.get("status")
             msg = body.get("message", "")
             if st == 1 or st == "1":
@@ -406,6 +416,125 @@ def payment_mode_of(row):
     return (row["payment_mode"] if row and row["payment_mode"] else None) or get_settings().get("default_payment_mode", "gateway")
 
 
+def zibal_http(url, payload):
+    data = json.dumps(payload).encode("utf-8")
+    req = urllib.request.Request(
+        url, data=data, method="POST",
+        headers={"Content-Type": "application/json", "Accept": "application/json"}
+    )
+    with urllib.request.urlopen(req, timeout=30) as resp:
+        raw = resp.read().decode("utf-8", errors="ignore")
+        return json.loads(raw)
+
+
+def zibal_request_payment(amount_toman, callback_url, description, order_id):
+    merchant = (get_settings().get("payment_merchant_code") or "").strip()
+    if not merchant:
+        return False, "کد مرچنت زیبال در تنظیمات خالی است"
+    amount_rial = max(1000, to_int(amount_toman) * 10)
+    payload = {
+        "merchant": merchant,
+        "amount": amount_rial,
+        "callbackUrl": callback_url,
+        "description": (description or "پرداخت کافی‌نت نوین")[:255],
+        "orderId": str(order_id)[:50],
+    }
+    try:
+        body = zibal_http("https://gateway.zibal.ir/v1/request", payload)
+        if body.get("result") == 100:
+            return True, body.get("trackId")
+        return False, "خطای زیبال: " + str(body.get("message") or body.get("result"))
+    except Exception as e:
+        app.logger.exception("zibal request")
+        return False, str(e)
+
+
+def zibal_verify_payment(track_id):
+    merchant = (get_settings().get("payment_merchant_code") or "").strip()
+    if not merchant:
+        return False, "مرچنت خالی است", {}
+    payload = {"merchant": merchant, "trackId": int(track_id)}
+    try:
+        body = zibal_http("https://gateway.zibal.ir/v1/verify", payload)
+        if body.get("result") == 100:
+            return True, "پرداخت موفق", body
+        return False, str(body.get("message") or body.get("result")), body
+    except Exception as e:
+        app.logger.exception("zibal verify")
+        return False, str(e), {}
+
+
+def expert_commission_amount(paid_price, percent):
+    paid_price = to_int(paid_price)
+    percent = to_int(percent)
+    if paid_price <= 0 or percent <= 0:
+        return 0
+    return int(paid_price * percent / 100)
+
+
+def get_expert_earnings(expert_id):
+    conn = get_db()
+    user = conn.execute(
+        "SELECT commission_percent, full_name, sheba, phone, username FROM users WHERE id=?",
+        (expert_id,)
+    ).fetchone()
+    rows = conn.execute(
+        """SELECT r.tracking_code, r.paid_price, r.updated_at, s.name AS service_name, c.name AS customer_name
+           FROM requests r
+           LEFT JOIN services s ON s.id=r.service_id
+           LEFT JOIN customers c ON c.id=r.customer_id
+           WHERE r.expert_id=? AND r.status='انجام شد'
+           ORDER BY r.id DESC""",
+        (expert_id,)
+    ).fetchall()
+    paid_total = conn.execute(
+        "SELECT COALESCE(SUM(amount),0) FROM expert_payouts WHERE expert_id=? AND status='پرداخت شد'",
+        (expert_id,)
+    ).fetchone()[0]
+    payouts = conn.execute(
+        "SELECT * FROM expert_payouts WHERE expert_id=? ORDER BY id DESC LIMIT 30",
+        (expert_id,)
+    ).fetchall()
+    conn.close()
+    percent = to_int(user["commission_percent"] if user else 0)
+    items = []
+    gross = 0
+    for r in rows:
+        amount = expert_commission_amount(r["paid_price"], percent)
+        gross += amount
+        items.append({
+            "tracking_code": r["tracking_code"],
+            "service_name": r["service_name"],
+            "customer_name": r["customer_name"],
+            "paid_price": r["paid_price"] or 0,
+            "commission": amount,
+            "updated_at": r["updated_at"],
+        })
+    owed = max(0, gross - to_int(paid_total))
+    return {
+        "percent": percent,
+        "sheba": (user["sheba"] if user else "") or "",
+        "full_name": (user["full_name"] if user else "") or "",
+        "phone": (user["phone"] if user else "") or "",
+        "items": items,
+        "gross": gross,
+        "paid_total": to_int(paid_total),
+        "owed": owed,
+        "payouts": payouts,
+    }
+
+
+def count_experts_with_owed():
+    conn = get_db()
+    experts = conn.execute("SELECT id FROM users WHERE role='expert' AND active=1").fetchall()
+    conn.close()
+    n = 0
+    for e in experts:
+        if get_expert_earnings(e["id"])["owed"] > 0:
+            n += 1
+    return n
+
+
 def maybe_auto_backup():
     s = get_settings()
     last = s.get("last_auto_backup") or ""
@@ -423,6 +552,28 @@ def maybe_auto_backup():
         set_setting("last_auto_backup", now.strftime("%Y-%m-%d %H:%M:%S"))
     except Exception:
         pass
+
+
+def maybe_payout_reminder():
+    hour = datetime.now().hour
+    if hour < 20:
+        return
+    s = get_settings()
+    today = datetime.now().strftime("%Y-%m-%d")
+    if s.get("last_payout_reminder") == today:
+        return
+    n = count_experts_with_owed()
+    if n <= 0:
+        return
+    conn = get_db()
+    admins = conn.execute("SELECT id, phone FROM users WHERE role='admin' AND active=1").fetchall()
+    conn.close()
+    text = "یادآوری کافی‌نت نوین\nپایان روز: " + str(n) + " کارشناس طلبکاری پرداخت‌نشده دارند."
+    for a in admins:
+        add_notification(user_id=a["id"], title="یادآوری واریز کارشناس", body=text)
+        if a["phone"]:
+            send_sms(a["phone"], text)
+    set_setting("last_payout_reminder", today)
 
 
 def create_request_core(service_id, name, phone, national_id, customer_note, discount_code, form_data, uploaded):
@@ -506,10 +657,7 @@ def create_request_core(service_id, name, phone, national_id, customer_note, dis
     add_notification(customer_phone=phone, title="ثبت درخواست", body=sms_text)
 
     staff_text = (
-        f"درخواست جدید ثبت شد\n"
-        f"کد پیگیری: {tracking_code}\n"
-        f"مشتری: {name}\n"
-        f"خدمت: {service_row['name']}"
+        f"درخواست جدید ثبت شد\nکد پیگیری: {tracking_code}\nمشتری: {name}\nخدمت: {service_row['name']}"
     )
     if payment_confirmed:
         notify_staff("درخواست جدید", staff_text, service_id, only_accountant=False)
@@ -531,9 +679,10 @@ def _auto_backup_hook():
     if request.endpoint and not str(request.endpoint).startswith("static"):
         try:
             maybe_auto_backup()
+            maybe_payout_reminder()
         except Exception:
             pass
-            @app.route("/")
+@app.route("/")
 def index():
     conn = get_db()
     services = conn.execute("SELECT * FROM services WHERE active=1 ORDER BY sort_order ASC, id DESC").fetchall()
@@ -576,35 +725,84 @@ def service(service_id):
 
 @app.route("/payment/<tracking_code>", methods=["GET", "POST"])
 def payment_page(tracking_code):
+    tracking_code = to_latin_digits(tracking_code)
     conn = get_db()
     row = conn.execute(
         """SELECT r.*, c.name AS customer_name, c.phone AS customer_phone, s.name AS service_name
            FROM requests r LEFT JOIN customers c ON c.id=r.customer_id
            LEFT JOIN services s ON s.id=r.service_id WHERE r.tracking_code=?""",
-        (to_latin_digits(tracking_code),)
+        (tracking_code,)
     ).fetchone()
     conn.close()
     if not row:
         abort(404)
+    if row["payment_confirmed"]:
+        flash("این پرونده قبلاً پرداخت شده است.", "success")
+        return redirect(url_for("tracking"))
     if request.method == "POST":
+        callback = url_for("zibal_customer_callback", _external=True)
+        ok, track_or_err = zibal_request_payment(
+            row["total_price"], callback,
+            "پرداخت درخواست " + tracking_code,
+            tracking_code
+        )
+        if not ok:
+            flash("خطای درگاه زیبال: " + str(track_or_err), "error")
+            return redirect(url_for("payment_page", tracking_code=tracking_code))
         conn = get_db()
-        conn.execute(
-            "UPDATE requests SET payment_confirmed=1, paid_price=total_price, status=?, updated_at=CURRENT_TIMESTAMP WHERE id=?",
-            ("در انتظار بررسی", row["id"])
-        )
-        conn.execute(
-            "INSERT INTO messages (customer_id, request_id, sender, sender_name, message) VALUES (?,?,?,?,?)",
-            (row["customer_id"], row["id"], "system", "سامانه", "پرداخت تأیید شد.")
-        )
+        conn.execute("UPDATE requests SET zibal_track_id=? WHERE id=?", (str(track_or_err), row["id"]))
         conn.commit()
         conn.close()
-        staff_text = f"پرداخت تأیید شد\nکد پیگیری: {tracking_code}"
-        notify_staff("پرداخت تأیید شد", staff_text, row["service_id"])
-        sms_staff_new_request(staff_text, row["service_id"], only_accountant=False)
-        send_sms(row["customer_phone"], f"پرداخت کد پیگیری {tracking_code} تأیید شد.")
-        flash("پرداخت ثبت شد.", "success")
-        return redirect(url_for("tracking"))
+        return redirect("https://gateway.zibal.ir/start/" + str(track_or_err))
     return render_template("payment.html", req=row, settings=get_settings())
+
+
+@app.route("/payment/zibal/callback")
+def zibal_customer_callback():
+    track_id = request.args.get("trackId") or request.args.get("track_id") or ""
+    success = request.args.get("success")
+    if not track_id:
+        flash("بازگشت نامعتبر از درگاه.", "error")
+        return redirect(url_for("index"))
+    conn = get_db()
+    row = conn.execute(
+        """SELECT r.*, c.phone AS customer_phone, c.name AS customer_name, s.name AS service_name
+           FROM requests r LEFT JOIN customers c ON c.id=r.customer_id
+           LEFT JOIN services s ON s.id=r.service_id WHERE r.zibal_track_id=?""",
+        (str(track_id),)
+    ).fetchone()
+    if not row:
+        conn.close()
+        flash("پرونده پرداخت پیدا نشد.", "error")
+        return redirect(url_for("index"))
+    if str(success) != "1":
+        conn.close()
+        flash("پرداخت ناموفق یا لغو شد.", "error")
+        return redirect(url_for("payment_page", tracking_code=row["tracking_code"]))
+    ok, msg, body = zibal_verify_payment(track_id)
+    if not ok:
+        conn.close()
+        flash("تأیید زیبال ناموفق: " + str(msg), "error")
+        return redirect(url_for("payment_page", tracking_code=row["tracking_code"]))
+    paid_rial = to_int(body.get("amount"))
+    paid_toman = paid_rial // 10 if paid_rial else to_int(row["total_price"])
+    conn.execute(
+        """UPDATE requests SET payment_confirmed=1, paid_price=?, status=?, updated_at=CURRENT_TIMESTAMP WHERE id=?""",
+        (paid_toman, "در انتظار بررسی", row["id"])
+    )
+    conn.execute(
+        "INSERT INTO messages (customer_id, request_id, sender, sender_name, message) VALUES (?,?,?,?,?)",
+        (row["customer_id"], row["id"], "system", "سامانه",
+         "پرداخت زیبال تأیید شد. مبلغ: " + "{:,}".format(paid_toman) + " تومان")
+    )
+    conn.commit()
+    conn.close()
+    staff_text = "پرداخت تأیید شد\nکد پیگیری: " + row["tracking_code"] + "\nمبلغ: " + "{:,}".format(paid_toman)
+    notify_staff("پرداخت تأیید شد", staff_text, row["service_id"])
+    sms_staff_new_request(staff_text, row["service_id"], only_accountant=False)
+    send_sms(row["customer_phone"] or "", "پرداخت کد پیگیری " + row["tracking_code"] + " تأیید شد.")
+    flash("پرداخت با موفقیت انجام شد.", "success")
+    return redirect(url_for("tracking"))
 
 
 @app.route("/tracking", methods=["GET", "POST"])
@@ -636,7 +834,7 @@ def tracking():
                     ).fetchall()
                 if result["customer_id"]:
                     tickets = conn.execute(
-                        """SELECT * FROM messages WHERE customer_id=? ORDER BY id DESC LIMIT 80""",
+                        "SELECT * FROM messages WHERE customer_id=? ORDER BY id DESC LIMIT 80",
                         (result["customer_id"],)
                     ).fetchall()
             else:
@@ -698,7 +896,7 @@ def resubmit_docs(tracking_code):
         )
         conn.commit()
         conn.close()
-        notify_staff("اصلاح پرونده", f"کد پیگیری: {tracking_code}", row["service_id"])
+        notify_staff("اصلاح پرونده", "کد پیگیری: " + tracking_code, row["service_id"])
         flash("ارسال شد.", "success")
         return redirect(url_for("tracking"))
     conn.close()
@@ -804,6 +1002,77 @@ def forgot_username():
     return render_template("forgot.html", title="فراموشی نام کاربری", field_name="phone", field_label="موبایل")
 
 
+@app.route("/admin/register-request", methods=["GET", "POST"])
+def register_request():
+    if request.method == "POST":
+        full_name = request.form.get("full_name", "").strip()
+        username = request.form.get("username", "").strip()
+        phone = to_latin_digits(request.form.get("phone", "").strip())
+        sheba = to_latin_digits(request.form.get("sheba", "").strip())
+        password = request.form.get("password", "")
+        note = request.form.get("note", "").strip()
+        if not full_name or not username or len(password) < 6:
+            flash("نام، نام کاربری و رمز (حداقل ۶) لازم است.", "error")
+            return redirect(url_for("register_request"))
+        conn = get_db()
+        if conn.execute("SELECT id FROM users WHERE username=?", (username,)).fetchone():
+            conn.close()
+            flash("این نام کاربری قبلاً ثبت شده.", "error")
+            return redirect(url_for("register_request"))
+        conn.execute(
+            """INSERT INTO membership_requests (full_name, username, phone, sheba, password, note, status)
+               VALUES (?,?,?,?,?,?,?)""",
+            (full_name, username, phone, sheba, generate_password_hash(password), note, "در انتظار")
+        )
+        conn.commit()
+        conn.close()
+        notify_staff("درخواست عضویت", "کاربر جدید: " + full_name + " / " + username, None, only_accountant=False)
+        flash("درخواست عضویت ثبت شد.", "success")
+        return redirect(url_for("admin_login"))
+    return render_template("register_request.html")
+
+
+@app.route("/admin/membership/<int:mid>/approve", methods=["POST"])
+@admin_required
+def membership_approve(mid):
+    role = request.form.get("role", "expert")
+    commission_percent = to_int(request.form.get("commission_percent", 0))
+    conn = get_db()
+    row = conn.execute("SELECT * FROM membership_requests WHERE id=? AND status='در انتظار'", (mid,)).fetchone()
+    if not row:
+        conn.close()
+        flash("درخواست معتبر نیست.", "error")
+        return redirect(url_for("admin") + "#users")
+    if conn.execute("SELECT id FROM users WHERE username=?", (row["username"],)).fetchone():
+        conn.close()
+        flash("نام کاربری تکراری است.", "error")
+        return redirect(url_for("admin") + "#users")
+    conn.execute(
+        """INSERT INTO users (username, password, full_name, role, active, phone, sheba, commission_percent,
+           allowed_services, allowed_sections)
+           VALUES (?,?,?,?,1,?,?,?,'[]','[]')""",
+        (row["username"], row["password"], row["full_name"], role, row["phone"], row["sheba"], commission_percent)
+    )
+    conn.execute("UPDATE membership_requests SET status='تأیید شد' WHERE id=?", (mid,))
+    conn.commit()
+    conn.close()
+    if row["phone"]:
+        send_sms(row["phone"], "کافی‌نت نوین\nعضویت شما تأیید شد.")
+    flash("کاربر تأیید شد.", "success")
+    return redirect(url_for("admin") + "#users")
+
+
+@app.route("/admin/membership/<int:mid>/reject", methods=["POST"])
+@admin_required
+def membership_reject(mid):
+    conn = get_db()
+    conn.execute("UPDATE membership_requests SET status='رد شد' WHERE id=?", (mid,))
+    conn.commit()
+    conn.close()
+    flash("رد شد.", "success")
+    return redirect(url_for("admin") + "#users")
+
+
 @app.route("/admin")
 @login_required
 def admin():
@@ -858,7 +1127,7 @@ def admin():
     customers = conn.execute("SELECT * FROM customers ORDER BY id DESC").fetchall()
     services = conn.execute("SELECT * FROM services ORDER BY sort_order ASC, id DESC").fetchall()
     users = conn.execute(
-        "SELECT id, username, full_name, role, active, phone, allowed_services, allowed_sections, expires_at FROM users ORDER BY id DESC"
+        "SELECT id, username, full_name, role, active, phone, sheba, commission_percent, allowed_services, allowed_sections, expires_at FROM users ORDER BY id DESC"
     ).fetchall()
     discounts = conn.execute("SELECT * FROM discounts ORDER BY id DESC").fetchall()
     total_income = conn.execute("SELECT COALESCE(SUM(paid_price),0) FROM requests").fetchone()[0]
@@ -892,14 +1161,19 @@ def admin():
         SELECT m.*, c.name AS customer_name, c.phone AS customer_phone FROM messages m
         LEFT JOIN customers c ON c.id=m.customer_id WHERE m.request_id IS NULL ORDER BY m.id DESC LIMIT 100
     """).fetchall()
+    memberships = conn.execute(
+        "SELECT * FROM membership_requests WHERE status='در انتظار' ORDER BY id DESC"
+    ).fetchall()
     conn.close()
+    payout_reminder = count_experts_with_owed()
     return render_template(
         "admin.html", requests=requests_rows, customers=customers, services=services, users=users,
         discounts=discounts, debts=debts, total_income=total_income, total_debt=total_debt,
         income_daily=income_daily, income_weekly=income_weekly,
         income_monthly=income_monthly, income_yearly=income_yearly,
         support_messages=support_messages, settings=get_settings(), current_user=user,
-        allowed_sections=allowed_sections, status_filter=status_filter, pending_warn=pending_warn
+        allowed_sections=allowed_sections, status_filter=status_filter, pending_warn=pending_warn,
+        memberships=memberships, payout_reminder=payout_reminder
     )
 
 
@@ -1130,7 +1404,7 @@ def accept_request(rid):
     else:
         send_sms(row["customer_phone"] or "", msg)
         add_notification(customer_phone=row["customer_phone"] or "", title="پذیرش پرونده", body=msg)
-        flash("پذیرش شد و پیامک برای مشتری ارسال شد.", "success")
+        flash("پذیرش شد و پیامک ارسال شد.", "success")
     return redirect(url_for("admin_request", rid=rid))
 
 
@@ -1214,7 +1488,6 @@ def admin_request(rid):
                 note = (
                     "پرداخت توسط " + accountant_name + " ثبت شد.\n"
                     "مبلغ تأییدشده: " + "{:,}".format(paid_now) + " تومان\n"
-                    "مبلغ کل: " + "{:,}".format(total) + " تومان\n"
                     "کد پیگیری: " + row["tracking_code"]
                 )
                 conn.execute(
@@ -1223,26 +1496,22 @@ def admin_request(rid):
                 )
                 conn.commit()
                 customer_sms = (
-                    "کافی‌نت نوین\n"
-                    "پرداخت شما توسط " + accountant_name + " بررسی شد.\n"
+                    "کافی‌نت نوین\nپرداخت شما توسط " + accountant_name + " بررسی شد.\n"
                     "مبلغ تأییدشده: " + "{:,}".format(paid_now) + " تومان\n"
-                    "کد پیگیری: " + row["tracking_code"] + "\n"
-                    "وضعیت: " + new_status
+                    "کد پیگیری: " + row["tracking_code"] + "\nوضعیت: " + new_status
                 )
                 send_sms(cust_phone, customer_sms)
                 add_notification(customer_phone=cust_phone, title="تأیید پرداخت", body=customer_sms)
                 if fully_paid:
                     staff_text = (
-                        "پرداخت تأیید شد — آماده پذیرش\n"
-                        "کد پیگیری: " + row["tracking_code"] + "\n"
-                        "مشتری: " + (row["customer_name"] or "-") + "\n"
-                        "مبلغ: " + "{:,}".format(paid_now) + " تومان"
+                        "پرداخت تأیید شد — آماده پذیرش\nکد پیگیری: " + row["tracking_code"] + "\n"
+                        "مشتری: " + (row["customer_name"] or "-") + "\nمبلغ: " + "{:,}".format(paid_now)
                     )
                     notify_staff("پرداخت تأیید شد", staff_text, row["service_id"], only_accountant=False)
                     sms_staff_new_request(staff_text, row["service_id"], only_accountant=False)
-                    flash("پرداخت کامل تأیید و برای کارشناسان ارسال شد.", "success")
+                    flash("پرداخت کامل تأیید شد.", "success")
                 else:
-                    flash("مبلغ ناقص ثبت شد. پرونده هنوز در انتظار پرداخت است.", "success")
+                    flash("مبلغ ناقص ثبت شد.", "success")
             return redirect(url_for("admin_request", rid=rid))
 
         if action == "receipt":
@@ -1269,10 +1538,8 @@ def admin_request(rid):
             invoice_code = "INV-" + row["tracking_code"] + "-" + secrets.token_hex(2).upper()
 
         msg = (
-            "کافی‌نت نوین\n"
-            "وضعیت پرونده: " + status + "\n"
-            "کد پیگیری: " + row["tracking_code"] + "\n"
-            "کارشناس: " + sender_name
+            "کافی‌نت نوین\nوضعیت پرونده: " + status + "\n"
+            "کد پیگیری: " + row["tracking_code"] + "\nکارشناس: " + sender_name
         )
         if estimated_time:
             msg += "\nمدت تقریبی: " + estimated_time
@@ -1299,7 +1566,7 @@ def admin_request(rid):
         conn.commit()
         conn.close()
         if mode in ("card_to_card", "payment_link") and status in ("پذیرش شد", "در انتظار بررسی"):
-            flash("وضعیت ذخیره شد. پیامک خودکار ارسال نشد — از پیش‌نویس دستی ارسال کنید.", "success")
+            flash("وضعیت ذخیره شد. پیامک خودکار ارسال نشد.", "success")
         else:
             send_sms(cust_phone, msg)
             add_notification(customer_phone=cust_phone, title="تغییر وضعیت", body=msg)
@@ -1365,6 +1632,8 @@ def create_user():
     password = request.form.get("password", "")
     full_name = request.form.get("full_name", "").strip()
     phone = to_latin_digits(request.form.get("phone", "").strip())
+    sheba = to_latin_digits(request.form.get("sheba", "").strip())
+    commission_percent = to_int(request.form.get("commission_percent", 0))
     role = request.form.get("role", "expert")
     expires_at = request.form.get("expires_at", "").strip()
     allowed_services = request.form.getlist("allowed_services")
@@ -1378,9 +1647,10 @@ def create_user():
         flash("نام کاربری تکراری.", "error")
         return redirect(url_for("admin") + "#users")
     conn.execute(
-        """INSERT INTO users (username, password, full_name, role, active, phone, allowed_services, allowed_sections, expires_at)
-           VALUES (?,?,?,?,1,?,?,?,?)""",
-        (username, generate_password_hash(password), full_name, role, phone,
+        """INSERT INTO users (username, password, full_name, role, active, phone, sheba, commission_percent,
+           allowed_services, allowed_sections, expires_at)
+           VALUES (?,?,?,?,1,?,?,?,?,?,?)""",
+        (username, generate_password_hash(password), full_name, role, phone, sheba, commission_percent,
          json.dumps([int(x) for x in allowed_services if x]), json.dumps(allowed_sections), expires_at)
     )
     conn.commit()
@@ -1401,6 +1671,8 @@ def edit_user(user_id):
     if request.method == "POST":
         full_name = request.form.get("full_name", "").strip()
         phone = to_latin_digits(request.form.get("phone", "").strip())
+        sheba = to_latin_digits(request.form.get("sheba", "").strip())
+        commission_percent = to_int(request.form.get("commission_percent", 0))
         role = request.form.get("role", user["role"])
         expires_at = request.form.get("expires_at", "").strip()
         allowed_services = request.form.getlist("allowed_services")
@@ -1408,10 +1680,10 @@ def edit_user(user_id):
         password = request.form.get("password", "")
         conn.execute(
             """UPDATE users SET full_name=?, phone=?, role=?, expires_at=?,
-               allowed_services=?, allowed_sections=? WHERE id=?""",
+               allowed_services=?, allowed_sections=?, sheba=?, commission_percent=? WHERE id=?""",
             (full_name, phone, role, expires_at,
              json.dumps([int(x) for x in allowed_services if x]),
-             json.dumps(allowed_sections), user_id)
+             json.dumps(allowed_sections), sheba, commission_percent, user_id)
         )
         if password and len(password) >= 6:
             conn.execute("UPDATE users SET password=? WHERE id=?", (generate_password_hash(password), user_id))
@@ -1499,7 +1771,7 @@ def generate_credit_code():
     )
     conn.commit()
     conn.close()
-    flash("کد نسیه: " + code + ((" — سقف " + "{:,}".format(credit_amount) + " تومان") if credit_amount else ""), "success")
+    flash("کد نسیه: " + code, "success")
     return redirect(url_for("admin") + "#discounts")
 
 
@@ -1539,7 +1811,7 @@ def admin_password():
 @admin_required
 def create_backup():
     ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-    path = os.path.join(BACKUP_FOLDER, f"novin_backup_{ts}.db")
+    path = os.path.join(BACKUP_FOLDER, "novin_backup_" + ts + ".db")
     shutil.copy2(DATABASE, path)
     email = get_settings().get("backup_email", "")
     msg = "پشتیبان: " + os.path.basename(path)
@@ -1581,6 +1853,135 @@ def debt_sms():
         send_sms(phone, message)
     flash("ثبت شد.", "success")
     return redirect(url_for("admin") + "#debts")
+
+
+@app.route("/admin/earnings")
+@login_required
+def admin_earnings():
+    user = get_current_user()
+    payout_reminder = count_experts_with_owed()
+    if user["role"] == "admin":
+        conn = get_db()
+        experts = conn.execute(
+            "SELECT id, username, full_name, phone, sheba, commission_percent FROM users WHERE role='expert' AND active=1"
+        ).fetchall()
+        conn.close()
+        data = [{"user": e, "earn": get_expert_earnings(e["id"])} for e in experts]
+        return render_template("earnings.html", is_admin=True, data=data, me=None, payout_reminder=payout_reminder)
+    return render_template("earnings.html", is_admin=False, data=[], me=get_expert_earnings(user["id"]), payout_reminder=0)
+
+
+@app.route("/admin/expert-payout/<int:expert_id>", methods=["GET", "POST"])
+@admin_required
+def expert_payout_start(expert_id):
+    conn = get_db()
+    expert = conn.execute("SELECT * FROM users WHERE id=? AND role='expert'", (expert_id,)).fetchone()
+    if not expert:
+        conn.close()
+        abort(404)
+    earn = get_expert_earnings(expert_id)
+    amount = earn["owed"]
+    if amount <= 0:
+        conn.close()
+        flash("طلبکاری‌ای برای واریز نیست.", "error")
+        return redirect(url_for("admin_earnings"))
+    code = "PO" + str(secrets.randbelow(900000) + 100000)
+    cur = conn.execute(
+        "INSERT INTO expert_payouts (expert_id, amount, status, tracking_code) VALUES (?,?,?,?)",
+        (expert_id, amount, "در انتظار", code)
+    )
+    payout_id = cur.lastrowid
+    conn.commit()
+    payout = conn.execute("SELECT * FROM expert_payouts WHERE id=?", (payout_id,)).fetchone()
+    conn.close()
+
+    if request.method == "POST" and request.form.get("go_zibal") == "1":
+        callback = url_for("zibal_expert_callback", _external=True)
+        ok, track_or_err = zibal_request_payment(amount, callback, "واریز سهم کارشناس " + code, code)
+        if not ok:
+            flash("خطای زیبال: " + str(track_or_err), "error")
+            return redirect(url_for("admin_earnings"))
+        conn = get_db()
+        conn.execute("UPDATE expert_payouts SET zibal_track_id=? WHERE id=?", (str(track_or_err), payout_id))
+        conn.commit()
+        conn.close()
+        return redirect("https://gateway.zibal.ir/start/" + str(track_or_err))
+
+    merchant = get_settings().get("payment_merchant_code", "")
+    return render_template("expert_payout.html", expert=expert, amount=amount, payout=payout, merchant=merchant)
+
+
+@app.route("/admin/expert-payout/confirm/<int:payout_id>", methods=["POST"])
+@admin_required
+def expert_payout_confirm(payout_id):
+    paid_amount = to_int(request.form.get("paid_amount", 0))
+    note = request.form.get("note", "").strip()
+    conn = get_db()
+    payout = conn.execute("SELECT * FROM expert_payouts WHERE id=?", (payout_id,)).fetchone()
+    if not payout or payout["status"] == "پرداخت شد":
+        conn.close()
+        flash("واریز معتبر نیست.", "error")
+        return redirect(url_for("admin_earnings"))
+    if paid_amount <= 0:
+        paid_amount = payout["amount"]
+    expert = conn.execute("SELECT * FROM users WHERE id=?", (payout["expert_id"],)).fetchone()
+    conn.execute(
+        """UPDATE expert_payouts SET amount=?, status='پرداخت شد', note=?, paid_at=CURRENT_TIMESTAMP WHERE id=?""",
+        (paid_amount, note, payout_id)
+    )
+    conn.commit()
+    conn.close()
+    if expert and expert["phone"]:
+        sms = (
+            "کافی‌نت نوین\nمبلغ " + "{:,}".format(paid_amount) + " تومان بابت سهم کارشناسی واریز شد.\n"
+            "کد واریز: " + (payout["tracking_code"] or "") + "\nشبا: " + (expert["sheba"] or "-")
+        )
+        send_sms(expert["phone"], sms)
+        add_notification(user_id=expert["id"], title="واریز سهم", body=sms)
+    flash("واریز ثبت و پیامک ارسال شد.", "success")
+    return redirect(url_for("admin_earnings"))
+
+
+@app.route("/payment/zibal/expert-callback")
+def zibal_expert_callback():
+    track_id = request.args.get("trackId") or request.args.get("track_id") or ""
+    success = request.args.get("success")
+    if not track_id:
+        flash("بازگشت نامعتبر.", "error")
+        return redirect(url_for("admin_earnings"))
+    conn = get_db()
+    payout = conn.execute("SELECT * FROM expert_payouts WHERE zibal_track_id=?", (str(track_id),)).fetchone()
+    if not payout:
+        conn.close()
+        flash("واریز پیدا نشد.", "error")
+        return redirect(url_for("admin_earnings"))
+    if str(success) != "1":
+        conn.close()
+        flash("پرداخت زیبال ناموفق/لغو شد.", "error")
+        return redirect(url_for("admin_earnings"))
+    ok, msg, body = zibal_verify_payment(track_id)
+    if not ok:
+        conn.close()
+        flash("تأیید زیبال ناموفق: " + str(msg), "error")
+        return redirect(url_for("admin_earnings"))
+    paid_rial = to_int(body.get("amount"))
+    paid_toman = paid_rial // 10 if paid_rial else to_int(payout["amount"])
+    expert = conn.execute("SELECT * FROM users WHERE id=?", (payout["expert_id"],)).fetchone()
+    conn.execute(
+        """UPDATE expert_payouts SET amount=?, status='پرداخت شد', note=?, paid_at=CURRENT_TIMESTAMP WHERE id=?""",
+        (paid_toman, "پرداخت زیبال trackId=" + str(track_id), payout["id"])
+    )
+    conn.commit()
+    conn.close()
+    if expert and expert["phone"]:
+        sms = (
+            "کافی‌نت نوین\nمبلغ " + "{:,}".format(paid_toman) + " تومان از درگاه زیبال واریز شد.\n"
+            "کد واریز: " + (payout["tracking_code"] or "")
+        )
+        send_sms(expert["phone"], sms)
+        add_notification(user_id=expert["id"], title="واریز زیبال", body=sms)
+    flash("واریز زیبال موفق و پیامک ارسال شد.", "success")
+    return redirect(url_for("admin_earnings"))
 
 
 @app.route("/uploads/<path:filename>")
