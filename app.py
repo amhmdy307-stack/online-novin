@@ -533,7 +533,7 @@ def _auto_backup_hook():
             maybe_auto_backup()
         except Exception:
             pass
-@app.route("/")
+            @app.route("/")
 def index():
     conn = get_db()
     services = conn.execute("SELECT * FROM services WHERE active=1 ORDER BY sort_order ASC, id DESC").fetchall()
@@ -561,8 +561,8 @@ def service(service_id):
             return redirect(url_for("service", service_id=service_id))
         form_data = {}
         for i, field in enumerate(fields, start=1):
-            label = field.get("label") or field.get("name") or f"field_{i}"
-            form_data[label] = to_latin_digits(request.form.get(f"field_{i}", ""))
+            label = field.get("label") or field.get("name") or ("فیلد " + str(i))
+            form_data[label] = to_latin_digits(request.form.get("field_" + str(i), ""))
         uploaded = save_uploaded_files(request.files.getlist("documents"))
         result = create_request_core(service_id, name, phone, national_id, customer_note, discount_code, form_data, uploaded)
         if not result:
@@ -631,12 +631,12 @@ def tracking():
                            FROM requests r LEFT JOIN services s ON s.id=r.service_id
                            JOIN customers c ON c.id=r.customer_id
                            LEFT JOIN users u ON u.id=r.expert_id
-                           WHERE c.national_id=? ORDER BY r.id DESC LIMIT 30""",
+                           WHERE c.national_id=? ORDER BY r.id DESC LIMIT 50""",
                         (result["customer_national_id"],)
                     ).fetchall()
                 if result["customer_id"]:
                     tickets = conn.execute(
-                        """SELECT * FROM messages WHERE customer_id=? AND request_id IS NULL ORDER BY id DESC LIMIT 40""",
+                        """SELECT * FROM messages WHERE customer_id=? ORDER BY id DESC LIMIT 80""",
                         (result["customer_id"],)
                     ).fetchall()
             else:
@@ -732,15 +732,15 @@ def support():
         ename = ((expert["full_name"] or "").strip() or expert["username"]) if expert else ""
         conn.execute(
             "INSERT INTO messages (customer_id, request_id, sender, sender_name, message) VALUES (?,?,?,?,?)",
-            (cid, None, "customer", name, f"[به {ename}] {message}")
+            (cid, None, "customer", name, "[به " + ename + "] " + message)
         )
         conn.commit()
         conn.close()
-        add_notification(user_id=int(expert_id), title="پشتیبانی", body=f"{name}: {message}")
+        add_notification(user_id=int(expert_id), title="پشتیبانی", body=name + ": " + message)
         conn2 = get_db()
         for a in conn2.execute("SELECT id FROM users WHERE role='admin' AND active=1").fetchall():
             if int(a["id"]) != int(expert_id):
-                add_notification(user_id=a["id"], title="پشتیبانی", body=f"{name}: {message}")
+                add_notification(user_id=a["id"], title="پشتیبانی", body=name + ": " + message)
         conn2.close()
         flash("ارسال شد.", "success")
         return redirect(url_for("index"))
@@ -865,6 +865,18 @@ def admin():
     total_debt = conn.execute(
         "SELECT COALESCE(SUM(CASE WHEN total_price>paid_price THEN total_price-paid_price ELSE 0 END),0) FROM requests"
     ).fetchone()[0]
+    income_daily = conn.execute(
+        "SELECT COALESCE(SUM(paid_price),0) FROM requests WHERE date(created_at)=date('now','localtime')"
+    ).fetchone()[0]
+    income_weekly = conn.execute(
+        "SELECT COALESCE(SUM(paid_price),0) FROM requests WHERE date(created_at)>=date('now','localtime','-7 day')"
+    ).fetchone()[0]
+    income_monthly = conn.execute(
+        "SELECT COALESCE(SUM(paid_price),0) FROM requests WHERE strftime('%Y-%m', created_at)=strftime('%Y-%m','now','localtime')"
+    ).fetchone()[0]
+    income_yearly = conn.execute(
+        "SELECT COALESCE(SUM(paid_price),0) FROM requests WHERE strftime('%Y', created_at)=strftime('%Y','now','localtime')"
+    ).fetchone()[0]
     debts = conn.execute("""
         SELECT r.id, r.tracking_code, r.total_price, r.paid_price,
                (r.total_price - r.paid_price) AS debt,
@@ -884,6 +896,8 @@ def admin():
     return render_template(
         "admin.html", requests=requests_rows, customers=customers, services=services, users=users,
         discounts=discounts, debts=debts, total_income=total_income, total_debt=total_debt,
+        income_daily=income_daily, income_weekly=income_weekly,
+        income_monthly=income_monthly, income_yearly=income_yearly,
         support_messages=support_messages, settings=get_settings(), current_user=user,
         allowed_sections=allowed_sections, status_filter=status_filter, pending_warn=pending_warn
     )
@@ -910,7 +924,7 @@ def admin_search():
                   OR IFNULL(c.name,'') LIKE ?
                   OR IFNULL(c.phone,'') LIKE ?
                ORDER BY r.id DESC LIMIT 100""",
-            (f"%{q_lat}%", f"%{q_lat}%", f"%{q}%", f"%{q_lat}%")
+            ("%" + q_lat + "%", "%" + q_lat + "%", "%" + q + "%", "%" + q_lat + "%")
         ).fetchall()
         conn.close()
     return render_template("admin_search.html", q=q, rows=rows)
@@ -1096,9 +1110,9 @@ def accept_request(rid):
         flash("این پرونده قبلاً پذیرش شده است.", "error")
         return redirect(url_for("admin"))
     msg = (
-        f"کافی‌نت نوین\n"
-        f"پرونده شما توسط {expert_name} پذیرش شد و در حال بررسی است.\n"
-        f"کد پیگیری: {row['tracking_code']}"
+        "کافی‌نت نوین\n"
+        "پرونده شما توسط " + expert_name + " پذیرش شد و در حال بررسی است.\n"
+        "کد پیگیری: " + row["tracking_code"]
     )
     conn.execute(
         """UPDATE requests SET expert_id=?, status=?, sms_draft=?, updated_at=CURRENT_TIMESTAMP WHERE id=?""",
@@ -1154,7 +1168,7 @@ def admin_request(rid):
                     (row["customer_id"], rid, "admin", sender_name, message)
                 )
                 conn.commit()
-                send_sms(cust_phone, f"{sender_name}:\n{message}\nکد پیگیری: {row['tracking_code']}")
+                send_sms(cust_phone, sender_name + ":\n" + message + "\nکد پیگیری: " + row["tracking_code"])
                 add_notification(customer_phone=cust_phone, title="پیام کارشناس", body=message)
                 flash("پیام ارسال شد.", "success")
             return redirect(url_for("admin_request", rid=rid))
@@ -1198,10 +1212,10 @@ def admin_request(rid):
                     (payment_confirmed, paid_now, new_status, rid)
                 )
                 note = (
-                    f"پرداخت توسط {accountant_name} ثبت شد.\n"
-                    f"مبلغ تأییدشده: {paid_now:,} تومان\n"
-                    f"مبلغ کل: {total:,} تومان\n"
-                    f"کد پیگیری: {row['tracking_code']}"
+                    "پرداخت توسط " + accountant_name + " ثبت شد.\n"
+                    "مبلغ تأییدشده: " + "{:,}".format(paid_now) + " تومان\n"
+                    "مبلغ کل: " + "{:,}".format(total) + " تومان\n"
+                    "کد پیگیری: " + row["tracking_code"]
                 )
                 conn.execute(
                     "INSERT INTO messages (customer_id, request_id, sender, sender_name, message) VALUES (?,?,?,?,?)",
@@ -1209,20 +1223,20 @@ def admin_request(rid):
                 )
                 conn.commit()
                 customer_sms = (
-                    f"کافی‌نت نوین\n"
-                    f"پرداخت شما توسط {accountant_name} بررسی شد.\n"
-                    f"مبلغ تأییدشده: {paid_now:,} تومان\n"
-                    f"کد پیگیری: {row['tracking_code']}\n"
-                    f"وضعیت: {new_status}"
+                    "کافی‌نت نوین\n"
+                    "پرداخت شما توسط " + accountant_name + " بررسی شد.\n"
+                    "مبلغ تأییدشده: " + "{:,}".format(paid_now) + " تومان\n"
+                    "کد پیگیری: " + row["tracking_code"] + "\n"
+                    "وضعیت: " + new_status
                 )
                 send_sms(cust_phone, customer_sms)
                 add_notification(customer_phone=cust_phone, title="تأیید پرداخت", body=customer_sms)
                 if fully_paid:
                     staff_text = (
-                        f"پرداخت تأیید شد — آماده پذیرش\n"
-                        f"کد پیگیری: {row['tracking_code']}\n"
-                        f"مشتری: {row['customer_name'] or '-'}\n"
-                        f"مبلغ: {paid_now:,} تومان"
+                        "پرداخت تأیید شد — آماده پذیرش\n"
+                        "کد پیگیری: " + row["tracking_code"] + "\n"
+                        "مشتری: " + (row["customer_name"] or "-") + "\n"
+                        "مبلغ: " + "{:,}".format(paid_now) + " تومان"
                     )
                     notify_staff("پرداخت تأیید شد", staff_text, row["service_id"], only_accountant=False)
                     sms_staff_new_request(staff_text, row["service_id"], only_accountant=False)
@@ -1255,20 +1269,20 @@ def admin_request(rid):
             invoice_code = "INV-" + row["tracking_code"] + "-" + secrets.token_hex(2).upper()
 
         msg = (
-            f"کافی‌نت نوین\n"
-            f"وضعیت پرونده: {status}\n"
-            f"کد پیگیری: {row['tracking_code']}\n"
-            f"کارشناس: {sender_name}"
+            "کافی‌نت نوین\n"
+            "وضعیت پرونده: " + status + "\n"
+            "کد پیگیری: " + row["tracking_code"] + "\n"
+            "کارشناس: " + sender_name
         )
         if estimated_time:
-            msg += f"\nمدت تقریبی: {estimated_time}"
+            msg += "\nمدت تقریبی: " + estimated_time
         if admin_note:
-            msg += f"\nتوضیحات: {admin_note}"
+            msg += "\nتوضیحات: " + admin_note
         if status == "انجام شد":
             inv = url_for("invoice_view", tracking_code=row["tracking_code"], _external=True)
-            msg += f"\nفاکتور: {inv}"
+            msg += "\nفاکتور: " + inv
             if row["receipt_file"]:
-                msg += f"\nرسید: {url_for('uploaded_file', filename=row['receipt_file'], _external=True)}"
+                msg += "\nرسید: " + url_for("uploaded_file", filename=row["receipt_file"], _external=True)
 
         conn.execute(
             """UPDATE requests SET status=?, estimated_time=?, admin_note=?, total_price=?, paid_price=?,
@@ -1338,7 +1352,7 @@ def support_reply():
         conn.commit()
         conn.close()
         if cust and cust["phone"]:
-            send_sms(cust["phone"], f"{sender_name}:\n{message}")
+            send_sms(cust["phone"], sender_name + ":\n" + message)
             add_notification(customer_phone=cust["phone"], title="پاسخ پشتیبانی", body=message)
         flash("پاسخ ارسال شد.", "success")
     return redirect(url_for("admin") + "#support")
@@ -1485,7 +1499,7 @@ def generate_credit_code():
     )
     conn.commit()
     conn.close()
-    flash(f"کد نسیه: {code}" + (f" — سقف {credit_amount:,} تومان" if credit_amount else ""), "success")
+    flash("کد نسیه: " + code + ((" — سقف " + "{:,}".format(credit_amount) + " تومان") if credit_amount else ""), "success")
     return redirect(url_for("admin") + "#discounts")
 
 
@@ -1528,9 +1542,9 @@ def create_backup():
     path = os.path.join(BACKUP_FOLDER, f"novin_backup_{ts}.db")
     shutil.copy2(DATABASE, path)
     email = get_settings().get("backup_email", "")
-    msg = f"پشتیبان: {os.path.basename(path)}"
+    msg = "پشتیبان: " + os.path.basename(path)
     if email:
-        msg += f" — ثبت برای ایمیل {email}"
+        msg += " — ثبت برای ایمیل " + email
     flash(msg, "success")
     return redirect(url_for("admin") + "#backup")
 
