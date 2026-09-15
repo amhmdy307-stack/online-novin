@@ -4,7 +4,7 @@
 
 <div class="hero-box">
   {% if settings.get('logo') %}
-  <img src="{{ url_for('uploaded_logo', filename=settings.get('logo')) }}" alt="لوگو">
+  <img class="hero-logo" src="{{ url_for('uploaded_logo', filename=settings.get('logo')) }}" alt="لوگو">
   {% endif %}
   <div class="title">{{ site_name|default("کافی نت آنلاین نوین") }}</div>
   <div class="line">{{ phone|default("۰۹۹۲۰۳۴۵۱۳۹") }}</div>
@@ -28,13 +28,15 @@
 <div class="services-grid">
   {% for s in services %}
   <div class="card">
-    <h3 style="margin-top:0;">{{ s.name }}</h3>
+    <h3 style="margin-top:0;text-align:center;">{{ s.name }}</h3>
     {% if s.category %}<div class="badge">{{ s.category }}</div>{% endif %}
-    {% if s.description %}<p>{{ s.description }}</p>{% endif %}
+    {% if s.description %}<p style="text-align:center;">{{ s.description }}</p>{% endif %}
     {% if s.price and s.price > 0 %}
-    <div class="price">{{ "{:,}".format(s.price) }} تومان</div>
+    <div class="price" style="text-align:center;">{{ "{:,}".format(s.price) }} تومان</div>
     {% endif %}
-    <a href="{{ url_for('service', service_id=s.id) }}" class="btn">ثبت درخواست</a>
+    <div style="text-align:center;">
+      <a href="{{ url_for('service', service_id=s.id) }}" class="btn">ثبت درخواست</a>
+    </div>
   </div>
   {% else %}
   <div class="card" style="grid-column:1 / -1;text-align:center;">هنوز خدمتی ثبت نشده است.</div>
